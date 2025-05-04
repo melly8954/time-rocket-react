@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../authStore"; // zustand store 가져오기
 import axios from "axios";
+import SocialLoginButtons from "../components/ui/SocialLoginButtons";
 import styles from '../style/Login.module.css'; // 스타일 적용
 
 const Login = () => {
@@ -87,7 +88,7 @@ const Login = () => {
         
         <hr />
         <h2>소셜 로그인</h2>
-    
+        <SocialLoginButtons />
       </div>
     </div>
   );
