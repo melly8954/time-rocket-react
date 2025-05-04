@@ -6,7 +6,7 @@ import styles from '../style/Login.module.css'; // 스타일 적용
 
 const Login = () => {
   const navigate = useNavigate();
-  const { setIsLoggedIn, setAccessToken, rememberMe, setRememberMe } = useAuthStore(); // 상태 업데이트 함수 가져오기
+  const { setIsLoggedIn, setAccessToken, rememberMe, setRememberMe, setNickname} = useAuthStore(); // 상태 업데이트 함수 가져오기
   const [userData, setUserData] = useState({ username: "", password: "" });
 
   const handleSignupPage = () => {  // 화살표 함수로 정의
@@ -27,16 +27,22 @@ const Login = () => {
     try {
       const response = await axios.post("http://localhost:8081/api/users/login", formData, { withCredentials: true });
       const accessToken = response.headers["authorization"];
-
       // 상태 저장
       setAccessToken(accessToken);
       setIsLoggedIn(true);
-
       localStorage.setItem('accessToken', accessToken);
+
+      // accessToken 포함해서 유저 정보 요청
+      const userInfo = await axios.get("http://localhost:8081/api/users/profile", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
+        withCredentials: true,
+      });
+      setNickname(userInfo.data.data.nickname); // 응답 구조에 맞게 닉네임 추출
 
       alert("로그인 성공!");
       navigate("/");
-
     } catch (err) {
       console.error(err);
       alert("로그인 실패");

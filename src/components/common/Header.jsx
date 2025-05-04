@@ -1,7 +1,9 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import useAuthStore from '../../authStore';
 
 const Header = () => {
+  const { isLoggedIn, nickname } = useAuthStore(); // 로그인 상태 가져오기
   return (
     <header style={styles.header}>
       <div style={styles.topBar}>
@@ -16,8 +18,17 @@ const Header = () => {
           </Link>
         </div>
         <div style={styles.authButtons}>
-          <Link to="/login" style={styles.authLink}>로그인</Link>
-          <Link to="/signup" style={styles.authLink}>회원가입</Link>
+          {isLoggedIn ? (
+            <>
+              <span>{nickname}님 환영합니다!</span>
+              <Link to="/logout" style={styles.authLink}>로그아웃</Link>
+            </>
+          ) : (
+            <>
+              <Link to="/login" style={styles.authLink}>로그인</Link>
+              <Link to="/signup" style={styles.authLink}>회원가입</Link>
+            </>
+          )}
         </div>
       </div>
       <nav style={styles.nav}>
