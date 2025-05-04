@@ -1,0 +1,56 @@
+.header {
+    background-color: #fcebd3;
+    color: #1f3a57;
+    padding: 10px 20px;
+  }
+  
+  .topBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .logoSection {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .logo {
+    height: 40px;
+  }
+  
+  .titleLink {
+    text-decoration: none;
+  }
+  
+  .title {
+    font-size: 24px;
+    margin: 0;
+  }
+  
+  .authButtons {
+    display: flex;
+    gap: 15px;
+  }
+  
+  .authLink {
+    color: #1f3a57;
+    text-decoration: none;
+    font-size: 16px;
+  }
+  
+  .nav {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    border-top: 1px solid #444;
+    padding-top: 10px;
+  }
+  
+  .link {
+    color: #1f3a57;
+    text-decoration: none;
+    font-size: 18px;
+  }
