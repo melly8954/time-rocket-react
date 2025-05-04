@@ -4,6 +4,7 @@ import Header from './components/common/Header'
 import Home from './pages/Home';
 import SignUp from './pages/Signup';
 import Login from './pages/Login';
+import Logout from './components/common/Logout';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/logout" element={<Logout />} />
         <Route path="/rocket" element={<div>로켓 제작 페이지</div>} />
         <Route path="/display" element={<div>진열장 페이지</div>} />
         <Route path="/chest" element={<div>보관함 페이지</div>} />
