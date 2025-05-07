@@ -50,6 +50,10 @@ const Login = () => {
     }
   };
 
+  const navigatePasswordReset = () => {  // 화살표 함수로 정의
+    navigate("/password-reset");
+  };
+  
   return (
     <div className={styles.container}>
       <div className={styles.box}>
@@ -85,7 +89,7 @@ const Login = () => {
 
         <button className={styles.submitBtn} onClick={handleSignupPage}>회원가입</button>
         <button className={styles.submitBtn} onClick={handleLoginBtn}>로그인</button>
-        
+        <button className={styles.submitBtn} onClick={navigatePasswordReset}>비밀번호 초기화</button>
         <hr />
         <h2>소셜 로그인</h2>
         <SocialLoginButtons />
