@@ -32,6 +32,7 @@ const Header = () => {
           {isLoggedIn ? (
             <>
               <span>{nickname}님 환영합니다!</span>
+              <Link to="/mypage">mypage</Link>
               <Link to="/logout" className={styles.authLink}>로그아웃</Link>
             </>
           ) : (

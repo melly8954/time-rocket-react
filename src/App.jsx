@@ -3,10 +3,11 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/common/Header';
 import Home from './pages/Home';
-import SignUp from './pages/Signup';
+import SignUp from './pages/SignUp';
 import Login from './pages/Login';
 import Logout from './components/common/Logout';
 import OAuthRedirect from './pages/OAuthRedirect';
+import Mypage from "./pages/Mypage";
 import useAuthStore from './authStore'; // 경로는 실제 경로로 맞춰줘
 
 function App() {
@@ -74,6 +75,7 @@ function App() {
         <Route path="/display" element={<div>진열장 페이지</div>} />
         <Route path="/chest" element={<div>보관함 페이지</div>} />
         <Route path="/community" element={<div>커뮤니티 페이지</div>} />
+        <Route path="/mypage" element={<Mypage />} />
       </Routes>
     </Router>
   );

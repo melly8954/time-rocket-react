@@ -1,0 +1,146 @@
+.mypage-container {
+    font-family: 'Arial', sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #0a0a2a;
+    color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 255, 0.3);
+  }
+  
+  .rocket-section {
+    display: flex;
+    margin-bottom: 30px;
+    align-items: flex-start;
+  }
+  
+  .rocket-image {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+  
+  .rocket {
+    font-size: 80px;
+    margin-bottom: 10px;
+  }
+  
+  .rocket-time {
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+  }
+  
+  .profile-box {
+    flex: 2;
+    background-color: rgba(25, 25, 70, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    margin-left: 20px;
+    border: 1px solid #444;
+  }
+  
+  .profile-header h2 {
+    margin: 0;
+    color: #4af;
+  }
+  
+  .badge-icon {
+    color: gold;
+  }
+  
+  .bio {
+    font-style: italic;
+    color: #aaa;
+  }
+  
+  .status-section {
+    margin-top: 15px;
+  }
+  
+  .level-bar {
+    width: 100%;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+  
+  .level-progress {
+    height: 100%;
+    background: linear-gradient(90deg, #0066ff, #00ccff);
+    position: relative;
+    transition: width 0.5s ease;
+  }
+  
+  .level-progress::after {
+    content: attr(data-xp);
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: white;
+  }
+  
+  .content-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #444;
+  }
+  
+  .content-tabs button {
+    flex: 1;
+    padding: 10px;
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+  }
+  
+  .content-tabs button.active {
+    color: #4af;
+    border-bottom: 2px solid #4af;
+  }
+  
+  .tab-content {
+    min-height: 200px;
+    padding: 15px;
+    background-color: rgba(25, 25, 70, 0.5);
+    border-radius: 5px;
+  }
+  
+  .badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+  }
+  
+  .badge-item {
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 5px;
+  }
+  
+  .badge-item .badge-icon {
+    font-size: 30px;
+    margin-bottom: 5px;
+  }
+  
+  .storage-content ul, .posts-content ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .storage-content li, .posts-content li {
+    padding: 8px;
+    margin-bottom: 5px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
