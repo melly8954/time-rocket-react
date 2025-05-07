@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../authStore';
+import rocketImg from '../../../assets/rocket.png';
 import styles from '../../style/Header.module.css';
 
 const Header = () => {
@@ -22,7 +23,7 @@ const Header = () => {
     <header className={styles.header}>
       <div className={styles.topBar}>
         <div className={styles.logoSection}>
-          <img src="/logo.png" alt="logo" className={styles.logo} />
+          <img src={rocketImg} alt="logo" className={styles.logo} />
           <Link to="/" className={styles.titleLink}>
             <h1 className={styles.title}>Time Rocket</h1>
           </Link>
