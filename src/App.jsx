@@ -6,15 +6,18 @@ import Home from './pages/Home';
 import SignUp from './pages/SignUp';
 import Login from './pages/Login';
 import Logout from './components/common/Logout';
+import PasswordReset from './pages/PasswordReset';
 import OAuthRedirect from './pages/OAuthRedirect';
-import Mypage from "./pages/Mypage";
-import useAuthStore from './authStore'; // 경로는 실제 경로로 맞춰줘
+import Mypage from "./pages/MyPage.jsx";
+import PasswordChange from "./pages/PasswordChange";
+import useAuthStore from './authStore'; 
 
 function App() {
   const didRun = useRef(false);
   const {
     setIsLoggedIn,
     setAccessToken,
+    setUserId,
     setNickname,
   } = useAuthStore();
 
@@ -34,8 +37,10 @@ function App() {
           withCredentials: true,
         });
         console.log("로그인 유지됨:", res.data);
+        const userId = res.data.data.userId;
         setIsLoggedIn(true);
         setAccessToken(accessToken);
+        setUserId(userId); 
         setNickname(res.data.data.nickname); // 서버 응답 구조에 따라 key 이름 확인
       } catch (err) {
         console.log(err);
@@ -69,6 +74,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/password-reset" element={<PasswordReset />} />
         <Route path="/oauth/redirect" element={<OAuthRedirect />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/rocket" element={<div>로켓 제작 페이지</div>} />
@@ -76,6 +82,7 @@ function App() {
         <Route path="/chest" element={<div>보관함 페이지</div>} />
         <Route path="/community" element={<div>커뮤니티 페이지</div>} />
         <Route path="/mypage" element={<Mypage />} />
+        <Route path="/password-change/:userId" element={<PasswordChange />} />
       </Routes>
     </Router>
   );
