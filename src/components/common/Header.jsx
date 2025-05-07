@@ -45,7 +45,7 @@ const Header = () => {
         <Link to="/rocket" className={styles.link} onClick={(e) => handleMenuClick(e, '/rocket')}>로켓 제작</Link>
         <Link to="/display" className={styles.link} onClick={(e) => handleMenuClick(e, '/display')}>진열장</Link>
         <Link to="/chest" className={styles.link} onClick={(e) => handleMenuClick(e, '/chest')}>보관함</Link>
-        <Link to="/community" className={styles.link} onClick={(e) => handleMenuClick(e, '/community')}>커뮤니티</Link>
+        <Link to="/community" className={styles.link} >커뮤니티</Link>
       </nav>
     </header>
   );
