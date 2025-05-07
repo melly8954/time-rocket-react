@@ -37,6 +37,7 @@ function App() {
         setAccessToken(accessToken);
         setNickname(res.data.data.nickname); // 서버 응답 구조에 따라 key 이름 확인
       } catch (err) {
+        console.log(err);
         if (err.response?.status === 401) {
           try {
             const res = await axios.post("/api/tokens/refresh", null, {
