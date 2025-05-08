@@ -1,56 +1,77 @@
 .header {
-    background-color: #fcebd3;
-    color: #1f3a57;
-    padding: 10px 20px;
-  }
-  
-  .topBar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  
-  .logoSection {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .logo {
-    height: 40px;
-  }
-  
-  .titleLink {
-    text-decoration: none;
-  }
-  
-  .title {
-    font-size: 24px;
-    margin: 0;
-  }
-  
-  .authButtons {
-    display: flex;
-    gap: 15px;
-  }
-  
-  .authLink {
-    color: #1f3a57;
-    text-decoration: none;
-    font-size: 16px;
-  }
-  
-  .nav {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    border-top: 1px solid #444;
-    padding-top: 10px;
-  }
-  
-  .link {
-    color: #1f3a57;
-    text-decoration: none;
-    font-size: 18px;
-  }
+  background: rgba(10, 10, 30, 0.8);
+  color: #00f0ff;
+  padding: 12px 30px;
+  border-radius: 0 0 18px 18px;
+  box-shadow: 0 2px 16px #00f0ff55;
+  position: relative;
+  z-index: 2;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.logoSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  height: 40px;
+}
+
+.titleLink {
+  text-decoration: none;
+}
+
+.title {
+  font-size: 1.5rem;
+  margin: 0;
+  color: #00f0ff;
+  text-shadow: 0 0 8px #00f0ff;
+}
+
+.authButtons {
+  display: flex;
+  gap: 15px;
+}
+
+.authLink {
+  color: #00f0ff;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.authLink:hover {
+  color: #fff;
+  text-shadow: 0 0 8px #00f0ff;
+}
+
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  border-top: 1px solid #00f0ff55;
+  padding-top: 10px;
+}
+
+.link {
+  color: #00f0ff;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: #fff;
+  text-shadow: 0 0 8px #00f0ff;
+}
