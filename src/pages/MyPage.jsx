@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useAuthStore from "../authStore";
 import axios from 'axios';
 import '../style/MyPage.css';
 
 const MyPage = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState(null);
+    const { setIsLoggedIn, setAccessToken, setNickname } = useAuthStore();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [activeTab, setActiveTab] = useState('badges');
     const [userData, setUserData] = useState({
         nickname: '우주탐험가',
         email: 'explorer@universe.com',
-        provider: null,  
+        provider: null,
         providerId: null,
         bio: '새로운 은하를 탐험하는 중입니다.',
         status: '목성 궤도에서 3일차',
@@ -122,6 +124,34 @@ const MyPage = () => {
                                 className="change-password-button"
                             >
                                 비밀번호 변경
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (!window.confirm("정말 계정을 탈퇴하시겠습니까?")) return;
+
+                                    try {
+                                        const accessToken = localStorage.getItem("accessToken");
+                                        await axios.patch(`/api/users/${userId}/status`,
+                                            { status: "DELETED" },
+                                            {
+                                                headers: {
+                                                    Authorization: `Bearer ${accessToken}`,
+                                                    'Content-Type': 'application/json',
+                                                },
+                                                withCredentials: true,
+                                            }
+                                        );
+                                        alert("계정이 탈퇴 처리되었습니다.");
+                                        // 로그아웃 처리
+                                        navigate("/logout"); // 홈 또는 로그인 페이지로
+                                    } catch (error) {
+                                        console.error("계정 탈퇴 실패", error);
+                                        alert(error.data.data.message);
+                                    }
+                                }}
+                                className="delete-account-button"
+                            >
+                                계정 탈퇴
                             </button>
                         </p>
                         <p className="bio">{userData.bio}</p>

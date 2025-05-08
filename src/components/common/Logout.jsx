@@ -27,7 +27,6 @@ const Logout = () => {
       } finally {
         // 토큰 삭제 및 상태 초기화
         localStorage.removeItem("accessToken");
-        sessionStorage.removeItem("accessToken");
         setAccessToken(null);
         setIsLoggedIn(false);
         setNickname("");
