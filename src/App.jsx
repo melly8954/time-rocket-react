@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/common/Header';
+import StarBackground from "./components/common/StarBackground";
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
 import Login from './pages/Login';
@@ -69,6 +70,7 @@ function App() {
 
   return (
     <Router>
+      <StarBackground />
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
