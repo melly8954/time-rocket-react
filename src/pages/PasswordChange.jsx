@@ -7,12 +7,18 @@ const PasswordChange = () => {
     const navigate = useNavigate();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState('');
 
     const { userId } = useParams(); // URL 파라미터로 전달된 userId를 받음
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();
+
+        if (newPassword !== confirmPassword) {
+            setMessage('새 비밀번호와 확인 비밀번호가 일치하지 않습니다.');
+            return;
+        }
 
         try {
             await axios.patch(`/api/users/${userId}/password`, {
@@ -50,6 +56,15 @@ const PasswordChange = () => {
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                    />
+                </div>
+                <div className={styles['form-group']}>
+                    <label>새 비밀번호 확인</label>
+                    <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
                         required
                     />
                 </div>
