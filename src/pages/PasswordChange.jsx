@@ -54,7 +54,7 @@ const PasswordChange = () => {
                     />
                 </div>
                 {message && <p className={styles['error-message']}>{message}</p>}
-                <button type="submit">비밀번호 변경</button>
+                <button type="submit" className={styles.submitBtn}>비밀번호 변경</button>
             </form>
         </div>
     );
