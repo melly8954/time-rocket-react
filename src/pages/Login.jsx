@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../authStore"; // zustand store 가져오기
 import axios from "axios";
@@ -7,7 +7,7 @@ import styles from '../style/Login.module.css'; // 스타일 적용
 
 const Login = () => {
   const navigate = useNavigate();
-  const { setIsLoggedIn, setAccessToken, rememberMe, setRememberMe, setNickname} = useAuthStore(); // 상태 업데이트 함수 가져오기
+  const { isLoggedIn , setIsLoggedIn, setAccessToken, rememberMe, setRememberMe, setNickname} = useAuthStore(); // 상태 업데이트 함수 가져오기
   const [userData, setUserData] = useState({ username: "", password: "" });
 
   const handleSignupPage = () => {  // 화살표 함수로 정의
@@ -53,6 +53,12 @@ const Login = () => {
   const navigatePasswordReset = () => {  // 화살표 함수로 정의
     navigate("/password-reset");
   };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate("/"); // 이미 로그인되어 있으면 홈으로 리디렉션
+    }
+  }, [isLoggedIn, navigate]);
   
   return (
     <div className={styles.container}>
