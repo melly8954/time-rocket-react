@@ -94,7 +94,7 @@ const PasswordReset = () => {
               placeholder="임시 비밀번호 입력"
             />
             <button className={styles.submitBtn} onClick={handleVerifyTempPassword}>
-              임시 비밀번호 인증
+              임시 비밀번호 인증 후 변경
             </button>
           </>
         )}
