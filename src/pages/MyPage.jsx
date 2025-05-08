@@ -20,7 +20,6 @@ const MyPage = () => {
         posts: ['우주 여행기 #1', '행성 관측 기록'],
         files: ['space_image1.png', 'research_data.pdf']
     });
-
     // 행성 레벨 시스템 데이터
     const planetLevels = [
         { name: '수성', minXp: 0, maxXp: 50, levelRange: '1-5' },
@@ -68,8 +67,15 @@ const MyPage = () => {
                     },
                     withCredentials: true,
                 });
-                const userId = res.data.data.userId;
+                const { email, nickname, userId } = res.data.data;
+                // userId는 따로 저장
                 setUserId(userId);
+                // userData의 일부 필드만 업데이트
+                setUserData(prev => ({
+                    ...prev,
+                    email,
+                    nickname
+                }));
             } catch (err) {
                 console.log(err);
             }
