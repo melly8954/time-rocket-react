@@ -7,7 +7,7 @@ const PasswordReset = () => {
   const [email, setEmail] = useState('');
   const [tempPassword, setTempPassword] = useState('');
   const [isTempSent, setIsTempSent] = useState(false);
-  const navigate = useNavigate(); // useNavigate 훅 사용
+  const navigate = useNavigate();
 
   const handleSendTempPassword = async () => {
     if (!email) {
@@ -52,6 +52,12 @@ const PasswordReset = () => {
     }
   };
 
+  const handleResetEmail = () => {
+    setIsTempSent(false);
+    setEmail('');
+    setTempPassword('');
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.box}>
@@ -63,11 +69,20 @@ const PasswordReset = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="이메일 입력"
+          disabled={isTempSent}
         />
 
-        <button className={styles.submitBtn} onClick={handleSendTempPassword}>
-          임시 비밀번호 발급
-        </button>
+        <div className={styles.btnGroup}>
+          {!isTempSent ? (
+            <button className={styles.submitBtn} onClick={handleSendTempPassword}>
+              임시 비밀번호 발급
+            </button>
+          ) : (
+            <button className={styles.cancelBtn} onClick={handleResetEmail}>
+              이메일 재입력
+            </button>
+          )}
+        </div>
 
         {isTempSent && (
           <>
@@ -79,7 +94,7 @@ const PasswordReset = () => {
               placeholder="임시 비밀번호 입력"
             />
             <button className={styles.submitBtn} onClick={handleVerifyTempPassword}>
-              임시 비밀번호 인증
+              임시 비밀번호 인증 후 변경
             </button>
           </>
         )}

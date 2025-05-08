@@ -11,6 +11,8 @@ const MyPage = () => {
     const [userData, setUserData] = useState({
         nickname: '우주탐험가',
         email: 'explorer@universe.com',
+        provider: null,  
+        providerId: null,
         bio: '새로운 은하를 탐험하는 중입니다.',
         status: '목성 궤도에서 3일차',
         level: 23,
@@ -67,14 +69,16 @@ const MyPage = () => {
                     },
                     withCredentials: true,
                 });
-                const { email, nickname, userId } = res.data.data;
+                const { email, nickname, userId, provider, providerId } = res.data.data;
                 // userId는 따로 저장
                 setUserId(userId);
                 // userData의 일부 필드만 업데이트
                 setUserData(prev => ({
                     ...prev,
                     email,
-                    nickname
+                    nickname,
+                    provider,
+                    providerId
                 }));
             } catch (err) {
                 console.log(err);
@@ -98,7 +102,7 @@ const MyPage = () => {
                             hour: '2-digit',
                             minute: '2-digit',
                             second: '2-digit',
-                            hour12: false
+                            hour12: false,
                         }).replace(/. /g, '-').replace(',', '')}
                     </div>
                 </div>
@@ -108,7 +112,13 @@ const MyPage = () => {
                         <h2>{userData.nickname} <span className="badge-icon">⭐</span></h2>
                         <p>{userData.email}
                             <button
-                                onClick={() => navigate(`/password-change/${userId}`)}
+                                onClick={() => {
+                                    if (userData.provider && userData.providerId) {
+                                        alert("소셜 로그인은 비밀번호 변경이 불가합니다.");
+                                        return;
+                                    }
+                                    navigate(`/password-change/${userId}`);
+                                }}
                                 className="change-password-button"
                             >
                                 비밀번호 변경
