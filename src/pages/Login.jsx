@@ -46,7 +46,7 @@ const Login = () => {
       navigate("/");
     } catch (err) {
       console.error(err);
-      alert("로그인 실패");
+      alert(err.response.data.message);
     }
   };
 
