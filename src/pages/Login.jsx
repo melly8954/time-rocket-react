@@ -7,7 +7,7 @@ import styles from '../style/Login.module.css'; // 스타일 적용
 
 const Login = () => {
   const navigate = useNavigate();
-  const { isLoggedIn , setIsLoggedIn, setAccessToken, rememberMe, setRememberMe, setNickname} = useAuthStore(); // 상태 업데이트 함수 가져오기
+  const { isLoggedIn , setIsLoggedIn, setAccessToken, rememberMe, setRememberMe, setUserId, setNickname} = useAuthStore(); // 상태 업데이트 함수 가져오기
   const [userData, setUserData] = useState({ username: "", password: "" });
 
   const handleSignupPage = () => {  // 화살표 함수로 정의
@@ -40,6 +40,7 @@ const Login = () => {
         },
         withCredentials: true,
       });
+      setUserId(userInfo.data.data.userId);
       setNickname(userInfo.data.data.nickname); // 응답 구조에 맞게 닉네임 추출
 
       alert("로그인 성공!");

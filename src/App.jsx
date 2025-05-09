@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import useAuthStore from './authStore'; 
 import axios from 'axios';
 import Header from './components/common/Header';
 import StarBackground from "./components/common/StarBackground";
@@ -11,7 +12,7 @@ import PasswordReset from './pages/PasswordReset';
 import OAuthRedirect from './pages/OAuthRedirect';
 import Mypage from "./pages/MyPage.jsx";
 import PasswordChange from "./pages/PasswordChange";
-import useAuthStore from './authStore'; 
+import Rocket from "./pages/Rocket";
 
 function App() {
   const didRun = useRef(false);
@@ -79,7 +80,7 @@ function App() {
         <Route path="/password-reset" element={<PasswordReset />} />
         <Route path="/oauth/redirect" element={<OAuthRedirect />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/rocket" element={<div>로켓 제작 페이지</div>} />
+        <Route path="/rocket" element={<Rocket />} />
         <Route path="/display" element={<div>진열장 페이지</div>} />
         <Route path="/chest" element={<div>보관함 페이지</div>} />
         <Route path="/community" element={<div>커뮤니티 페이지</div>} />

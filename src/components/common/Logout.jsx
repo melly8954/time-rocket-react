@@ -6,7 +6,7 @@ import axios from "axios";
 
 const Logout = () => {
   const navigate = useNavigate();
-  const { setIsLoggedIn, setAccessToken, setNickname } = useAuthStore();
+  const { setIsLoggedIn, setAccessToken, setUserId, setNickname } = useAuthStore();
   const effectRan = useRef(false);
 
   useEffect(() => {
@@ -29,6 +29,7 @@ const Logout = () => {
         localStorage.removeItem("accessToken");
         setAccessToken(null);
         setIsLoggedIn(false);
+        setUserId(null); // zustand persist 로 관리하기떄문에 null 형태로 삭제처리
         setNickname("");
         alert("로그아웃 되었습니다.");
         navigate("/login");

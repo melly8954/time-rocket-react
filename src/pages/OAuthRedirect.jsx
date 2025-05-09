@@ -5,7 +5,7 @@ import axios from "axios";
 
 const OAuthRedirect = () => {
   const navigate = useNavigate();
-  const { setAccessToken, setIsLoggedIn, setNickname } = useAuthStore();
+  const { setAccessToken, setIsLoggedIn, setUserId, setNickname } = useAuthStore();
   const effectRan = useRef(false);
 
   useEffect(() => {
@@ -26,7 +26,10 @@ const OAuthRedirect = () => {
 
       axios
         .get("/api/users/profile", { headers: { Authorization: `Bearer ${token}` }, withCredentials: true })
-        .then(res => setNickname(res.data.data.nickname))
+        .then((res) => {
+          setNickname(res.data.data.nickname);
+          setUserId(res.data.data.userId); // 이 줄만 추가!
+        })
         .catch(() => { /* 에러 무시 */ });
 
       // 쿠키 삭제
