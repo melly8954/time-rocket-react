@@ -61,8 +61,16 @@ function Rocket() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // 잠금 해제일 유효성 검사
+        const selectedDate = new Date(form.lockExpiredAt);
+        const currentDate = new Date();
+        if (selectedDate < currentDate) {
+            alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
+            return;
+        }
+
         const userId = userData.userId;
-        const email = userData.email;
         try {
             await axios.post(`/api/rockets/users/${userId}`, form,
                 {
@@ -89,6 +97,8 @@ function Rocket() {
                 name="lockExpiredAt"
                 value={form.lockExpiredAt}
                 onChange={handleChange}
+                min={new Date().toISOString().slice(0, 19)}
+                step="1" // 초 단위 입력 허용
                 required
             />
 
