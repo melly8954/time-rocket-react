@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import axios from "axios";
+import api from "../api"; // 수정된 공통 axios 인스턴스 import
 
 function Rocket() {
     const navigate = useNavigate(); // useNavigate 훅 사용
@@ -38,12 +38,7 @@ function Rocket() {
             if (!accessToken) return;
 
             try {
-                const res = await axios.get("/api/users/profile", {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    withCredentials: true,
-                });
+                const res = await api.get("/users/profile");
                 const { userId, email } = res.data.data;
                 // userData의 일부 필드만 업데이트
                 setUserData(prev => ({
@@ -72,13 +67,7 @@ function Rocket() {
 
         const userId = userData.userId;
         try {
-            await axios.post(`/api/rockets/users/${userId}`, form,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    withCredentials: true,
-                });
+            await api.post(`/rockets/users/${userId}`, form);
             alert("로켓이 전송되었습니다!");
             navigate("/");
         } catch (err) {
