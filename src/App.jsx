@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import useAuthStore from './authStore'; 
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import useAuthStore from './authStore';
 import axios from 'axios';
+import { setNavigator } from "./utils/navigate";
+
 import Header from './components/common/Header';
 import StarBackground from "./components/common/StarBackground";
 import Home from './pages/Home';
@@ -42,7 +44,7 @@ function App() {
         const userId = res.data.data.userId;
         setIsLoggedIn(true);
         setAccessToken(accessToken);
-        setUserId(userId); 
+        setUserId(userId);
         setNickname(res.data.data.nickname); // 서버 응답 구조에 따라 key 이름 확인
       } catch (err) {
         console.log(err);
@@ -69,8 +71,14 @@ function App() {
     checkLoginStatus();
   }, []);
 
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setNavigator(navigate); // navigate를 전역으로 설정
+  }, [navigate]);
+
   return (
-    <Router>
+    <>
       <StarBackground />
       <Header />
       <Routes>
@@ -87,7 +95,7 @@ function App() {
         <Route path="/mypage" element={<Mypage />} />
         <Route path="/password-change/:userId" element={<PasswordChange />} />
       </Routes>
-    </Router>
+    </>
   );
 }
 
