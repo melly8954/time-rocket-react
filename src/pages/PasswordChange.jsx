@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
-import styles from '../style/PasswordChange.module.css'; // CSS 모듈 import
+import api from "../utils/api";
+import { fetchUserProfile } from '../utils/profile';
+import styles from '../style/PasswordChange.module.css'; 
 
 const PasswordChange = () => {
     const navigate = useNavigate();
@@ -12,6 +13,13 @@ const PasswordChange = () => {
 
     const { userId } = useParams(); // URL 파라미터로 전달된 userId를 받음
 
+    useEffect(() => {
+        const fetchData = async () => {
+            await fetchUserProfile();
+        };
+        fetchData();
+    }, []);
+
     const handlePasswordChange = async (e) => {
         e.preventDefault();
 
@@ -21,7 +29,7 @@ const PasswordChange = () => {
         }
 
         try {
-            await axios.patch(`/api/users/${userId}/password`, {
+            await api.patch(`/users/${userId}/password`, {
                 currentPassword,
                 newPassword
             }, {

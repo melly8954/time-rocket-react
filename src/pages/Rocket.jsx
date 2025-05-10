@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import api from "../api"; // 수정된 공통 axios 인스턴스 import
-
+import api from "../utils/api"; 
+import { fetchUserProfile } from '../utils/profile';
 function Rocket() {
     const navigate = useNavigate(); // useNavigate 훅 사용
     const accessToken = localStorage.getItem("accessToken");
@@ -32,26 +32,19 @@ function Rocket() {
         });
     };
 
-    // 로켓 제작 메뉴뉴 렌더링 시 한번만 호출 (의존성 배열이 비어있기 때문)
+    // 로켓 제작 메뉴 렌더링 시 한번만 호출 (의존성 배열이 비어있기 때문)
     useEffect(() => {
-        const fetchProfile = async () => {
+        const loadUserProfile = async () => {
             if (!accessToken) return;
 
             try {
-                const res = await api.get("/users/profile");
-                const { userId, email } = res.data.data;
-                // userData의 일부 필드만 업데이트
-                setUserData(prev => ({
-                    ...prev,
-                    userId,
-                    email,
-                }));
+                const { userId, email } = await fetchUserProfile(); 
+                setUserData({ userId, email });
             } catch (err) {
-                console.log(err);
+                console.error("프로필 불러오기 실패", err);
             }
         };
-
-        fetchProfile();
+        loadUserProfile();
     }, []);
 
     const handleSubmit = async (e) => {

@@ -1,6 +1,6 @@
 import axios from "axios";
-import useAuthStore from "./authStore";
-import { goTo } from "./utils/navigate"; // 전역 navigate 사용
+import useAuthStore from "../authStore";
+import { goTo } from "./navigate"; // 전역 navigate 사용
 
 const api = axios.create({
   baseURL: "/api",
