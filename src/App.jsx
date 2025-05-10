@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import axios from 'axios';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import useAuthStore from './authStore';
+import { setNavigator } from "./utils/navigate";
+import { fetchUserProfile } from './utils/profile';
 import Header from './components/common/Header';
 import StarBackground from "./components/common/StarBackground";
 import Home from './pages/Home';
@@ -11,7 +13,7 @@ import PasswordReset from './pages/PasswordReset';
 import OAuthRedirect from './pages/OAuthRedirect';
 import Mypage from "./pages/MyPage.jsx";
 import PasswordChange from "./pages/PasswordChange";
-import useAuthStore from './authStore'; 
+import Rocket from "./pages/Rocket";
 
 function App() {
   const didRun = useRef(false);
@@ -27,49 +29,33 @@ function App() {
     didRun.current = true;
 
     const checkLoginStatus = async () => {
-      const accessToken = localStorage.getItem("accessToken");
-      if (!accessToken) return;
-
       try {
-        const res = await axios.get("/api/users/profile", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          withCredentials: true,
-        });
-        console.log("로그인 유지됨:", res.data);
-        const userId = res.data.data.userId;
+        const data = await fetchUserProfile(); // 커스텀 API 호출
+        console.log("로그인 유지됨:", data);
         setIsLoggedIn(true);
-        setAccessToken(accessToken);
-        setUserId(userId); 
-        setNickname(res.data.data.nickname); // 서버 응답 구조에 따라 key 이름 확인
+        setNickname(data.nickname);
+        setUserId(data.userId);
+        // setAccessToken 생략 가능: 인터셉터에서 이미 갱신함
       } catch (err) {
-        console.log(err);
-        if (err.response?.status === 401) {
-          try {
-            const res = await axios.post("/api/tokens/refresh", null, {
-              withCredentials: true,
-            });
-            const newAccess = res.headers["authorization"];
-            localStorage.setItem("accessToken", newAccess);
-            setAccessToken(newAccess);
-            await checkLoginStatus(); // 재시도 후 상태 갱신
-          } catch (refreshErr) {
-            console.log("refresh 실패, 로그아웃 처리");
-            localStorage.removeItem("accessToken");
-            setIsLoggedIn(false);
-            setAccessToken(null);
-            setNickname("");
-          }
-        }
+        console.log("로그인 상태 확인 실패:", err);
+        localStorage.removeItem("accessToken");
+        setIsLoggedIn(false);
+        setAccessToken(null);
+        setNickname("");
       }
     };
 
     checkLoginStatus();
   }, []);
 
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setNavigator(navigate); // navigate를 전역으로 설정
+  }, [navigate]);
+
   return (
-    <Router>
+    <>
       <StarBackground />
       <Header />
       <Routes>
@@ -79,14 +65,14 @@ function App() {
         <Route path="/password-reset" element={<PasswordReset />} />
         <Route path="/oauth/redirect" element={<OAuthRedirect />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/rocket" element={<div>로켓 제작 페이지</div>} />
+        <Route path="/rocket" element={<Rocket />} />
         <Route path="/display" element={<div>진열장 페이지</div>} />
         <Route path="/chest" element={<div>보관함 페이지</div>} />
         <Route path="/community" element={<div>커뮤니티 페이지</div>} />
         <Route path="/mypage" element={<Mypage />} />
         <Route path="/password-change/:userId" element={<PasswordChange />} />
       </Routes>
-    </Router>
+    </>
   );
 }
 

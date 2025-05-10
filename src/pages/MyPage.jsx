@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useAuthStore from "../authStore";
-import axios from 'axios';
+import api from "../utils/api";
+import { fetchUserProfile } from '../utils/profile';
 import '../style/MyPage.css';
 
 const MyPage = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState(null);
-    const { setIsLoggedIn, setAccessToken, setNickname } = useAuthStore();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [activeTab, setActiveTab] = useState('badges');
     const [userData, setUserData] = useState({
@@ -60,21 +59,11 @@ const MyPage = () => {
 
     // 마이페이지 렌더링 시 한번만 호출
     useEffect(() => {
-        const fetchProfile = async () => {
-            const accessToken = localStorage.getItem("accessToken");
-            if (!accessToken) return;
-
+        const getProfile = async () => {
             try {
-                const res = await axios.get("/api/users/profile", {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    withCredentials: true,
-                });
-                const { email, nickname, userId, provider, providerId } = res.data.data;
-                // userId는 따로 저장
+                const data = await fetchUserProfile();
+                const { email, nickname, userId, provider, providerId } = data;
                 setUserId(userId);
-                // userData의 일부 필드만 업데이트
                 setUserData(prev => ({
                     ...prev,
                     email,
@@ -83,11 +72,10 @@ const MyPage = () => {
                     providerId
                 }));
             } catch (err) {
-                console.log(err);
+                console.error("프로필 불러오기 실패", err);
             }
         };
-
-        fetchProfile(); // 마이페이지 렌더링 시에만 호출
+        getProfile();   // 마이페이지 렌더링 시에만 호출
     }, []);
 
     return (
@@ -131,7 +119,7 @@ const MyPage = () => {
 
                                     try {
                                         const accessToken = localStorage.getItem("accessToken");
-                                        await axios.patch(`/api/users/${userId}/status`,
+                                        await api.patch(`/users/${userId}/status`,
                                             { status: "DELETED" },
                                             {
                                                 headers: {
