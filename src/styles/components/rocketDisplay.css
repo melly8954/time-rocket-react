@@ -1,0 +1,327 @@
+Copy
+/* src/styles/components/rocketDisplay.css */
+.rocket-display {
+  width: 100%;
+  padding: var(--spacing-lg);
+}
+
+.rocket-display-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.rocket-display-header h2 {
+  font-size: 1.8rem;
+  background: linear-gradient(to right, #ffffff, #a18cd1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.create-rocket-button {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(145deg, #7e57c2, #03a9f4);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(126, 87, 194, 0.3);
+}
+
+.create-rocket-button span {
+  margin-left: 8px;
+}
+
+.create-rocket-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(126, 87, 194, 0.5);
+}
+
+.create-rocket-button.large {
+  font-size: 1.1rem;
+  padding: 1rem 2rem;
+  margin-top: var(--spacing-md);
+}
+
+.rocket-filter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.filter-options {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-button {
+  padding: 0.5rem 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-button.active {
+  background-color: rgba(126, 87, 194, 0.2);
+  color: #7e57c2;
+  border-color: #7e57c2;
+}
+
+.filter-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.filter-search {
+  display: flex;
+  align-items: center;
+}
+
+.filter-search input {
+  padding: 0.6rem 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px 0 0 20px;
+  color: var(--text-light);
+  width: 200px;
+  outline: none;
+}
+
+.filter-search input:focus {
+  border-color: #7e57c2;
+}
+
+.search-button {
+  background-color: rgba(126, 87, 194, 0.2);
+  border: 1px solid #7e57c2;
+  border-left: none;
+  padding: 0.6rem 1rem;
+  border-radius: 0 20px 20px 0;
+  cursor: pointer;
+  color: #7e57c2;
+}
+
+.rocket-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.rocket-item {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(5px);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rocket-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(126, 87, 194, 0.3);
+}
+
+.rocket-item.scheduled {
+  border-top: 3px solid #03a9f4;
+}
+
+.rocket-item.completed {
+  border-top: 3px solid #43b581;
+}
+
+.rocket-item.draft {
+  border-top: 3px solid #faa61a;
+}
+
+.rocket-item-content {
+  padding: var(--spacing-md);
+}
+
+.rocket-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  margin-bottom: var(--spacing-md);
+}
+
+.rocket-icon {
+  width: 60px;
+  height: auto;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+}
+
+.status-indicator {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  bottom: 0;
+  right: 40%;
+  border: 2px solid #121212;
+}
+
+.status-indicator.scheduled {
+  background-color: #03a9f4;
+}
+
+.status-indicator.completed {
+  background-color: #43b581;
+}
+
+.status-indicator.draft {
+  background-color: #faa61a;
+}
+
+.rocket-item h3 {
+  font-size: 1.2rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-light);
+  text-align: center;
+}
+
+.rocket-description {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+  height: 2.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.rocket-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+}
+
+.launch-date {
+  color: var(--text-muted);
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.scheduled {
+  background-color: rgba(3, 169, 244, 0.15);
+  color: #03a9f4;
+}
+
+.status-badge.completed {
+  background-color: rgba(67, 181, 129, 0.15);
+  color: #43b581;
+}
+
+.status-badge.draft {
+  background-color: rgba(250, 166, 26, 0.15);
+  color: #faa61a;
+}
+
+.rocket-item-actions {
+  display: flex;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-button {
+  flex: 1;
+  padding: 0.8rem;
+  background-color: transparent;
+  border: none;
+  color: var(--text-light);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.action-button.edit {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rocket-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) 0;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+.rocket-empty-state h3 {
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-light);
+}
+
+.rocket-empty-state p {
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .rocket-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-options {
+    overflow-x: auto;
+    padding-bottom: var(--spacing-sm);
+  }
+  
+  .filter-search {
+    width: 100%;
+  }
+  
+  .filter-search input {
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .rocket-display-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+  
+  .create-rocket-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .rocket-grid {
+    grid-template-columns: 1fr;
+  }
+}

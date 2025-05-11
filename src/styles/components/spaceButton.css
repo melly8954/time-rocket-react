@@ -1,0 +1,138 @@
+Copy
+/* src/styles/components/spaceButton.css */
+.space-button {
+  position: relative;
+  border: none;
+  border-radius: 30px;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+}
+
+.space-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, rgba(100, 50, 255, 0.8), rgba(0, 180, 255, 0.8));
+  z-index: -2;
+}
+
+.button-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 1rem 2rem;
+  z-index: 1;
+}
+
+.button-glow {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: skewX(-25deg);
+  transition: 0.5s ease;
+  z-index: -1;
+}
+
+.space-button:hover .button-glow {
+  left: 100%;
+  transition: 0.7s ease;
+}
+
+.button-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.button-star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background-color: white;
+  border-radius: 50%;
+  opacity: 0;
+  animation: starTwinkle 3s infinite;
+}
+
+@keyframes starTwinkle {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.space-button.primary {
+  background: linear-gradient(145deg, #5f34d1, #28b4e9);
+  color: white;
+  box-shadow: 0 5px 15px rgba(95, 52, 209, 0.4), 0 0 20px rgba(40, 180, 233, 0.2);
+}
+
+.space-button.secondary {
+  background: linear-gradient(145deg, #303650, #16172c);
+  color: #7e57c2;
+  border: 1px solid #7e57c2;
+  box-shadow: 0 5px 15px rgba(48, 54, 80, 0.3), 0 0 10px rgba(126, 87, 194, 0.2);
+}
+
+.space-button.success {
+  background: linear-gradient(145deg, #43b581, #1e9c5a);
+  color: white;
+  box-shadow: 0 5px 15px rgba(67, 181, 129, 0.4), 0 0 10px rgba(30, 156, 90, 0.2);
+}
+
+.space-button.danger {
+  background: linear-gradient(145deg, #f04747, #c63535);
+  color: white;
+  box-shadow: 0 5px 15px rgba(240, 71, 71, 0.4), 0 0 10px rgba(198, 53, 53, 0.2);
+}
+
+.space-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 7px 20px rgba(95, 52, 209, 0.5), 0 0 30px rgba(40, 180, 233, 0.3);
+}
+
+.space-button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(95, 52, 209, 0.4), 0 0 15px rgba(40, 180, 233, 0.2);
+}
+
+.space-button.small {
+  font-size: 0.8rem;
+}
+
+.space-button.medium {
+  font-size: 1rem;
+}
+
+.space-button.large {
+  font-size: 1.2rem;
+}
+
+.space-button.with-icon .button-icon {
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+}
