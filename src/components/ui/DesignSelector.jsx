@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 
 export const designs = [
-  { id: 'design1', label: '기본 로켓', imgUrl: 'http://localhost:8081/images/rocket_design/ds1.jpg' },
-  { id: 'design2', label: '파란 로켓', imgUrl: 'http://localhost:8081/images/rocket_design/ds2.jpg' },
-  { id: 'design3', label: '분홍 로켓', imgUrl: 'http://localhost:8081/images/rocket_design/ds3.jpg' },
+  { id: 'design1', label: '기본 로켓', imgUrl: 'http://localhost:8081/images/ds1.jpg' },
+  { id: 'design2', label: '파란 로켓', imgUrl: 'http://localhost:8081/images/ds2.jpg' },
+  { id: 'design3', label: '분홍 로켓', imgUrl: 'http://localhost:8081/images/ds3.jpg' },
 ];
 
 function DesignSelector({ currentIdx, setCurrentIdx, setDesignImgUrl }) {
