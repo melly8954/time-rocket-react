@@ -13,7 +13,7 @@ function Rocket() {
         rocketName: "",
         design: "",
         lockExpiredAt: "",
-        receiverType: [],
+        receiverType: "",
         receiverEmail: "",
         content: "",
     });
@@ -39,24 +39,18 @@ function Rocket() {
     }, [currentDesignIdx]);  // currentDesignIdx가 변경될 때만 실행되도록
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value } = e.target;
 
-        if (type === "checkbox" && name === "receiverType") {
-            setForm((prev) => {
-                const updatedTypes = checked
-                    ? [...prev.receiverType, value]
-                    : prev.receiverType.filter((v) => v !== value);
-
-                return {
-                    ...prev,
-                    receiverType: updatedTypes,
-                    receiverEmail: updatedTypes.includes("self") ? userData.email : prev.receiverEmail,
-                };
-            });
+        if (name === "receiverType") {
+            setForm((prev) => ({
+                ...prev,
+                receiverType: value,
+                receiverEmail: value === "self" ? userData.email : "", // self면 자동입력, 아니면 초기화
+            }));
         } else {
             setForm((prev) => ({
                 ...prev,
-                [name]: value, // name에 따라 form 상태를 업데이트
+                [name]: value,
             }));
         }
     };
@@ -73,7 +67,6 @@ function Rocket() {
             alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
             return;
         }
-        console.log(form.rocketName); // name 값 확인
 
         try {
             await api.post(`/rockets/users/${userData.userId}`, form);
@@ -90,9 +83,12 @@ function Rocket() {
             <form className="rocket-form" onSubmit={handleSubmit}>
                 <div className="form-header">
                     <label htmlFor="rocketName">로켓 이름</label>
+                </div>
+                <div className="rocket-temp-btn-group">
                     <button type="button" onClick={handleTempSave} className="btn-green">임시 저장</button>
                     <button type="button" className="btn-green">불러오기</button>
                 </div>
+
                 <input
                     type="text"
                     name="rocketName" // 여기서 name을 "rocketName"으로 변경
@@ -117,7 +113,6 @@ function Rocket() {
                     onChange={handleChange}
                     min={new Date().toISOString().slice(0, 19)}
                     step="1"
-                    required
                 />
 
                 <label>수신자 유형</label>
@@ -167,7 +162,6 @@ function Rocket() {
                             placeholder="수신자 이메일"
                             value={form.receiverEmail}
                             onChange={handleChange}
-                            required
                         />
                     </div>
                 )}
@@ -178,7 +172,6 @@ function Rocket() {
                     id="content"
                     value={form.content}
                     onChange={handleChange}
-                    required
                 />
 
                 <button type="submit" className="btn-submit">
