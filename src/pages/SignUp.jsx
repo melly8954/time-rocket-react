@@ -50,6 +50,11 @@ const SignUp = () => {
     };
 
     const duplicateNickname = async () => {
+        if (!formData.nickname.trim()) {
+            alert("닉네임을 입력해주세요.");
+            return;
+        }
+
         try {
             const response = await axios.get(`http://localhost:8081/api/users/duplicate-nickname/${formData.nickname}`);
             // 요청 성공 시 처리
@@ -86,7 +91,7 @@ const SignUp = () => {
         if (!isNicknameAvailable) {
             alert("닉네임 중복 확인을 해주세요.");
             return;
-          }
+        }
 
         const userData = { email: formData.email, password: formData.password, nickname: formData.nickname };
 
