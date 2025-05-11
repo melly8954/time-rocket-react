@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
-import api from "../utils/api"; 
-import { fetchUserProfile } from '../utils/profile';
+import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
+import { fetchUserProfile } from "../utils/profile";
+import DesignSelector, { designs } from "../components/ui/DesignSelector";
+import "../style/Rocket.css";
+
 function Rocket() {
-    const navigate = useNavigate(); // useNavigate 훅 사용
-    const accessToken = localStorage.getItem("accessToken");
-    const [userData, setUserData] = useState({
-        userId: null,
-        email: "",
-    });
+    const navigate = useNavigate();
+    const [currentDesignIdx, setCurrentDesignIdx] = useState(0);
+    const [userData, setUserData] = useState({ userId: null, email: "" });
     const [form, setForm] = useState({
-        name: "",
+        rocketName: "",
         design: "",
         lockExpiredAt: "",
         receiverType: "",
@@ -18,27 +18,10 @@ function Rocket() {
         content: "",
     });
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm((prev) => {
-            const updatedForm = { ...prev, [name]: value };
-
-            // receiverType이 'self'일 경우, receiverEmail을 email로 설정
-            if (name === "receiverType" && value === "self") {
-                updatedForm.receiverEmail = userData.email;
-            }
-
-            return updatedForm;
-        });
-    };
-
-    // 로켓 제작 메뉴 렌더링 시 한번만 호출 (의존성 배열이 비어있기 때문)
     useEffect(() => {
         const loadUserProfile = async () => {
-            if (!accessToken) return;
-
             try {
-                const { userId, email } = await fetchUserProfile(); 
+                const { userId, email } = await fetchUserProfile();
                 setUserData({ userId, email });
             } catch (err) {
                 console.error("프로필 불러오기 실패", err);
@@ -47,63 +30,155 @@ function Rocket() {
         loadUserProfile();
     }, []);
 
+    useEffect(() => {
+        // 선택된 디자인의 URL을 부모 컴포넌트에 반영
+        setForm((prev) => ({
+            ...prev,
+            design: designs[currentDesignIdx].imgUrl,  // Use currentDesignIdx here
+        }));
+    }, [currentDesignIdx]);  // currentDesignIdx가 변경될 때만 실행되도록
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        if (name === "receiverType") {
+            setForm((prev) => ({
+                ...prev,
+                receiverType: value,
+                receiverEmail: value === "self" ? userData.email : "", // self면 자동입력, 아니면 초기화
+            }));
+        } else {
+            setForm((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
+    };
+
+    const handleTempSave = () => {
+        alert("임시 저장되었습니다.");
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // 잠금 해제일 유효성 검사
         const selectedDate = new Date(form.lockExpiredAt);
-        const currentDate = new Date();
-        if (selectedDate < currentDate) {
+        const now = new Date();
+        if (selectedDate < now) {
             alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
             return;
         }
 
-        const userId = userData.userId;
         try {
-            await api.post(`/rockets/users/${userId}`, form);
+            await api.post(`/rockets/users/${userData.userId}`, form);
             alert("로켓이 전송되었습니다!");
             navigate("/");
         } catch (err) {
-            console.log(err);
+            console.error(err);
             alert(err.response.data.message);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "8px", maxWidth: "400px" }}>
-            <input type="text" name="name" placeholder="로켓 이름" value={form.name} onChange={handleChange} required />
-            <input type="text" name="design" placeholder="디자인" value={form.design} onChange={handleChange} required />
+        <div className="rocket-form-container">
+            <form className="rocket-form" onSubmit={handleSubmit}>
+                <div className="form-header">
+                    <label htmlFor="rocketName">로켓 이름</label>
+                </div>
+                <div className="rocket-temp-btn-group">
+                    <button type="button" onClick={handleTempSave} className="btn-green">임시 저장</button>
+                    <button type="button" className="btn-green">불러오기</button>
+                </div>
 
-            <input
-                type="datetime-local"
-                name="lockExpiredAt"
-                value={form.lockExpiredAt}
-                onChange={handleChange}
-                min={new Date().toISOString().slice(0, 19)}
-                step="1" // 초 단위 입력 허용
-                required
-            />
-
-            <select name="receiverType" value={form.receiverType} onChange={handleChange} required>
-                <option value="">수신자 유형 선택</option>
-                <option value="self">본인에게 보내기</option>
-                <option value="other">다른사람에게 보내기</option>
-            </select>
-
-            {form.receiverType === "other" && (
                 <input
-                    type="email"
-                    name="receiverEmail"
-                    placeholder="수신자 이메일"
-                    value={form.receiverEmail}
+                    type="text"
+                    name="rocketName" // 여기서 name을 "rocketName"으로 변경
+                    id="rocketName"
+                    value={form.rocketName} // form.rocketName을 사용
                     onChange={handleChange}
-                    required
-                />
-            )}
 
-            <textarea name="content" placeholder="내용" value={form.content} onChange={handleChange} required />
-            <button type="submit">로켓 보내기</button>
-        </form>
+                />
+
+
+                <DesignSelector
+                    currentIdx={currentDesignIdx}
+                    setCurrentIdx={setCurrentDesignIdx}
+                />
+
+                <label htmlFor="lockExpiredAt">잠금 해제일</label>
+                <input
+                    type="datetime-local"
+                    name="lockExpiredAt"
+                    id="lockExpiredAt"
+                    value={form.lockExpiredAt}
+                    onChange={handleChange}
+                    min={new Date().toISOString().slice(0, 19)}
+                    step="1"
+                />
+
+                <label>수신자 유형</label>
+                <div className="radio-group">
+                    <label>
+                        <input
+                            type="radio"
+                            name="receiverType"
+                            value="self"
+                            checked={form.receiverType === "self"}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setForm((prev) => ({
+                                    ...prev,
+                                    receiverType: value,
+                                    receiverEmail: userData.email, // 본인 이메일 자동 입력
+                                }));
+                            }}
+                        />
+                        본인에게 보내기
+                    </label>
+                    <label>
+                        <input
+                            type="radio"
+                            name="receiverType"
+                            value="other"
+                            checked={form.receiverType === "other"}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setForm((prev) => ({
+                                    ...prev,
+                                    receiverType: value,
+                                    receiverEmail: "", // 직접 입력
+                                }));
+                            }}
+                        />
+                        다른 사람에게 보내기
+                    </label>
+                </div>
+
+                {form.receiverType === "other" && (
+                    <div>
+                        <label>수신자 이메일</label>
+                        <input
+                            type="email"
+                            name="receiverEmail"
+                            placeholder="수신자 이메일"
+                            value={form.receiverEmail}
+                            onChange={handleChange}
+                        />
+                    </div>
+                )}
+
+                <label htmlFor="content">내용</label>
+                <textarea
+                    name="content"
+                    id="content"
+                    value={form.content}
+                    onChange={handleChange}
+                />
+
+                <button type="submit" className="btn-submit">
+                    로켓 보내기
+                </button>
+            </form>
+        </div>
     );
 }
 

@@ -1,0 +1,95 @@
+.rocket-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.rocket-form {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  gap: 16px;
+  max-width: 500px;
+  width: 100%;
+  padding: 32px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.checkbox-group {
+  display: flex;
+  gap: 20px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.rocket-temp-btn-group {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-green {
+  background-color: #b5f566; /* 형광 연두색 (네이버 스타일) */
+  color: #1a1a1a;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-green:hover {
+  background-color: #a0eb50;
+}
+
+.btn-submit {
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-submit:disabled {
+  background-color: #c8e6c9;
+  cursor: not-allowed;
+}
+
+/* 수신자 이메일 칸 간격 넓히기 */
+input[type="email"] {
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+label {
+  font-weight: 500;
+  margin-bottom: 4px;
+  margin-right: 8px;
+}
