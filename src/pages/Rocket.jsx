@@ -55,9 +55,22 @@ function Rocket() {
         }
     };
 
-    const handleTempSave = () => {
+    const handleTempSave = async () => {
+    try {
+        const selectedDate = new Date(form.lockExpiredAt);
+        const now = new Date();
+        if (selectedDate < now) {
+            alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
+            return;
+        }
+
+        await api.post(`/rockets/users/${userData.userId}/temp`, form);
         alert("임시 저장되었습니다.");
-    };
+    } catch (err) {
+        console.error("임시 저장 실패", err);
+        alert(err.response?.data?.message || "임시 저장 중 오류가 발생했습니다.");
+    }
+};
 
     const handleSubmit = async (e) => {
         e.preventDefault();
