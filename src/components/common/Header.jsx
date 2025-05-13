@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../authStore';
 import rocketImg from '../../assets/rocket.png';
+import { WebIcon, RocketIcon, PeopleIcon } from '../ui/Icons';
 import styles from '../../style/Header.module.css';
 
 const Header = () => {
@@ -28,6 +29,22 @@ const Header = () => {
             <h1 className={styles.title}>Time Rocket</h1>
           </Link>
         </div>
+
+        <div className={styles.iconMenu}>
+          <Link to="/rocket" className={styles.link} onClick={(e) => handleMenuClick(e, '/rocket')}>
+            <RocketIcon className={styles.icon} />
+            <span className={styles.iconLabel}>로켓</span>
+          </Link>
+          <Link to="/friends" className={styles.link} onClick={(e) => handleMenuClick(e, '/friends')}>
+            <PeopleIcon className={styles.icon} />
+            <span className={styles.iconLabel}>친구</span>
+          </Link>
+          <Link to="/community" className={styles.link} onClick={(e) => handleMenuClick(e, '/community')}>
+            <WebIcon className={styles.icon} />
+            <span className={styles.iconLabel}>커뮤니티</span>
+          </Link>
+        </div>
+
         <div className={styles.authButtons}>
           {isLoggedIn ? (
             <>
@@ -43,12 +60,12 @@ const Header = () => {
           )}
         </div>
       </div>
-      <nav className={styles.nav}>
+      {/* <nav className={styles.nav}>
         <Link to="/rocket" className={styles.link} onClick={(e) => handleMenuClick(e, '/rocket')}>로켓 제작</Link>
         <Link to="/display" className={styles.link} onClick={(e) => handleMenuClick(e, '/display')}>진열장</Link>
         <Link to="/chest" className={styles.link} onClick={(e) => handleMenuClick(e, '/chest')}>보관함</Link>
         <Link to="/community" className={styles.link} >커뮤니티</Link>
-      </nav>
+      </nav> */}
     </header>
   );
 };

@@ -4,7 +4,8 @@ import useAuthStore from './authStore';
 import { setNavigator } from "./utils/navigate";
 import { fetchUserProfile } from './utils/profile';
 import Header from './components/common/Header';
-import StarBackground from "./components/common/StarBackground";
+import Footer from './components/common/Footer';
+import SpaceBackground from "./components/common/SpaceBackground";
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
 import Login from './pages/Login';
@@ -56,7 +57,7 @@ function App() {
 
   return (
     <>
-      <StarBackground />
+      <SpaceBackground />
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -72,6 +73,9 @@ function App() {
         <Route path="/mypage" element={<Mypage />} />
         <Route path="/password-change/:userId" element={<PasswordChange />} />
       </Routes>
+
+      <Footer />
+
     </>
   );
 }

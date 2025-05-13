@@ -1,0 +1,11 @@
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-label="Naver Icon" role="img">
+  <circle cx="24" cy="24" r="24" fill="#03C75A"/>
+  <g>
+    <!-- 왼쪽 세로 획 -->
+    <rect x="13" y="13" width="7" height="22" fill="#fff"/>
+    <!-- 대각선 획 -->
+    <polygon points="20,13 35,35 28,35 13,13" fill="#fff"/>
+    <!-- 오른쪽 세로 획 -->
+    <rect x="28" y="13" width="7" height="22" fill="#fff"/>
+  </g>
+</svg>

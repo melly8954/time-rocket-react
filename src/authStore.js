@@ -15,6 +15,7 @@ const useAuthStore = create(
       setRememberMe: (status) => set({ rememberMe: status }),
       setUserId: (id) => set({ userId: id }),
       setNickname: (name) => set({ nickname: name }),
+      setEmail: (email) => set({ email: email }),
     }),
     {
       name: 'userId', // localStorage에 저장될 키

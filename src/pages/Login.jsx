@@ -95,9 +95,16 @@ const Login = () => {
         </label>
 
         <button className={styles.submitBtn} onClick={handleLoginBtn}>로그인</button>
-        <button className={styles.submitBtn} onClick={handleSignupPage}>회원가입</button>
-        <button className={styles.submitBtn} onClick={navigatePasswordReset}>비밀번호 초기화</button>
-        <hr />
+        
+         <div className={styles.linkContainer}>
+          <span>계정이 없으신가요? <a onClick={handleSignupPage} className={styles.textLink}>회원가입</a></span>
+          <a onClick={navigatePasswordReset} className={styles.textLink}>비밀번호 찾기</a>
+        </div>
+        
+        <div className={styles.divider}>
+          <span>또는</span>
+        </div>
+
         <h2>소셜 로그인</h2>
         <SocialLoginButtons />
       </div>
