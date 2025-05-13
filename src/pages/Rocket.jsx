@@ -93,15 +93,6 @@ function Rocket() {
 
     return (
         <div className="rocket-form-container">
-
-            <div className="nebula"></div>
-            <div className="galaxy"></div>
-            <div className="planetarium"></div>
-            <div className="space-dust"></div>
-            <div className="meteor meteor-1"></div>
-            <div className="meteor meteor-2"></div>
-            <div className="meteor meteor-3"></div>
-
             <form className="rocket-form" onSubmit={handleSubmit}>
                 <div className="form-header">
                     <label htmlFor="rocketName">로켓 이름</label>
