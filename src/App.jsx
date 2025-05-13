@@ -1,66 +1,83 @@
-// src/App.jsx
-import { useState, useEffect } from 'react';
-import { RouterProvider } from 'react-router-dom';
-import router from './router';
-import AuthModal from './components/auth/AuthModal';
-import './styles/global.css';
+import React, { useEffect, useRef } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import useAuthStore from './authStore';
+import { setNavigator } from "./utils/navigate";
+import { fetchUserProfile } from './utils/profile';
+import Header from './components/common/Header';
+import Footer from './components/common/Footer';
+import SpaceBackground from "./components/common/SpaceBackground";
+import Home from './pages/Home';
+import SignUp from './pages/SignUp';
+import Login from './pages/Login';
+import Logout from './components/common/Logout';
+import PasswordReset from './pages/PasswordReset';
+import OAuthRedirect from './pages/OAuthRedirect';
+import Mypage from "./pages/MyPage.jsx";
+import PasswordChange from "./pages/PasswordChange";
+import Rocket from "./pages/Rocket";
 
-const App = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  
-  // 로그인 상태 확인 (로컬 스토리지나 세션으로부터)
+function App() {
+  const didRun = useRef(false);
+  const {
+    setIsLoggedIn,
+    setAccessToken,
+    setUserId,
+    setNickname,
+  } = useAuthStore();
+
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const userData = localStorage.getItem('userData');
-    
-    if (token && userData) {
-      setIsLoggedIn(true);
-      setCurrentUser(JSON.parse(userData));
-    }
-    
-    // 비로그인 사용자에 대한 3분 타이머
-    let timer;
-    if (!token) {
-      timer = setTimeout(() => {
-        setShowAuthModal(true);
-      }, 3 * 60 * 1000); // 3분
-    }
-    
-    return () => {
-      if (timer) clearTimeout(timer);
+    if (didRun.current) return;
+    didRun.current = true;
+
+    const checkLoginStatus = async () => {
+      try {
+        const data = await fetchUserProfile(); // 커스텀 API 호출
+        console.log("로그인 유지됨:", data);
+        setIsLoggedIn(true);
+        setNickname(data.nickname);
+        setUserId(data.userId);
+        // setAccessToken 생략 가능: 인터셉터에서 이미 갱신함
+      } catch (err) {
+        console.log("로그인 상태 확인 실패:", err);
+        localStorage.removeItem("accessToken");
+        setIsLoggedIn(false);
+        setAccessToken(null);
+        setNickname("");
+      }
     };
+
+    checkLoginStatus();
   }, []);
-  
-  // 로그인 처리
-  const handleLogin = (userData, token) => {
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('userData', JSON.stringify(userData));
-    setIsLoggedIn(true);
-    setCurrentUser(userData);
-    setShowAuthModal(false);
-  };
-  
-  // 로그아웃 처리
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-  };
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setNavigator(navigate); // navigate를 전역으로 설정
+  }, [navigate]);
 
   return (
     <>
-      <RouterProvider 
-        router={router} 
-        context={{ isLoggedIn, currentUser, handleLogin, handleLogout }}
-      />
-      {showAuthModal && !isLoggedIn && (
-        <AuthModal onClose={() => setShowAuthModal(false)} onLogin={handleLogin} />
-      )}
+      <SpaceBackground />
+      <Header />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/password-reset" element={<PasswordReset />} />
+        <Route path="/oauth/redirect" element={<OAuthRedirect />} />
+        <Route path="/logout" element={<Logout />} />
+        <Route path="/rocket" element={<Rocket />} />
+        <Route path="/display" element={<div>진열장 페이지</div>} />
+        <Route path="/chest" element={<div>보관함 페이지</div>} />
+        <Route path="/community" element={<div>커뮤니티 페이지</div>} />
+        <Route path="/mypage" element={<Mypage />} />
+        <Route path="/password-change/:userId" element={<PasswordChange />} />
+      </Routes>
+
+      <Footer />
+
     </>
   );
-};
+}
 
 export default App;

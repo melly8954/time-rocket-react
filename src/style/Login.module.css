@@ -1,0 +1,388 @@
+Copy
+/* Login.module.css */
+:root {
+  --primary-color: #7128ff;
+  --secondary-color: #00d2ff;
+  --accent-pink: #ff1b8d;
+  --accent-purple: #9200ff;
+  --glass-bg: rgba(26, 23, 62, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --input-bg: rgba(15, 14, 35, 0.5);
+  --input-border: rgba(255, 255, 255, 0.1);
+  --input-focus: rgba(0, 210, 255, 0.5);
+  --neon-glow: 0 0 15px rgba(0, 210, 255, 0.7);
+  --text-white: #ffffff;
+  --text-silver: #e0e0e0;
+  --text-gray: #9aa0b9;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0c0b26 0%, #1a1150 50%, #3d1a6c 100%);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 배경에 별 효과 추가 */
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.9) 1px, transparent 1px),
+    radial-gradient(circle at 25% 45%, rgba(255, 255, 255, 0.6) 1px, transparent 2px),
+    radial-gradient(circle at 35% 15%, rgba(255, 255, 255, 0.7) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 2px, transparent 2px),
+    radial-gradient(circle at 65% 80%, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
+    radial-gradient(circle at 75% 30%, rgba(255, 255, 255, 0.7) 1px, transparent 2px),
+    radial-gradient(circle at 90% 65%, rgba(255, 255, 255, 0.9) 1px, transparent 1px),
+    radial-gradient(circle at 20% 60%, rgba(0, 210, 255, 0.8) 1px, transparent 2px),
+    radial-gradient(circle at 40% 30%, rgba(255, 27, 141, 0.7) 1px, transparent 2px),
+    radial-gradient(circle at 60% 10%, rgba(180, 0, 255, 0.7) 1px, transparent 2px),
+    radial-gradient(circle at 80% 40%, rgba(255, 247, 0, 0.6) 1px, transparent 2px);
+  background-size: 
+    250px 250px, 200px 200px, 300px 300px, 350px 350px, 
+    280px 280px, 230px 230px, 180px 180px, 
+    400px 400px, 380px 380px, 350px 350px, 420px 420px;
+  z-index: 0;
+  opacity: 0.7;
+}
+
+.box {
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  width: 400px;
+  text-align: left;
+  color: var(--text-white);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* 폼 내부 빛나는 효과 */
+.box::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(135deg, rgba(0, 210, 255, 0.05) 0%, transparent 50%, rgba(146, 0, 255, 0.05) 100%),
+    radial-gradient(ellipse at top right, rgba(255, 27, 141, 0.1) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 상단 그라데이션 효과 */
+.box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right,
+    rgba(46, 134, 222, 0),
+    rgba(46, 134, 222, 0.5),
+    rgba(136, 84, 208, 0.5),
+    rgba(46, 134, 222, 0.5),
+    rgba(46, 134, 222, 0)
+  );
+  z-index: 1;
+}
+
+.box h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(to right, var(--text-white), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
+}
+
+.box label {
+  font-weight: 500;
+  margin-top: 15px;
+  margin-bottom: 8px;
+  display: block;
+  color: var(--text-silver);
+  letter-spacing: 0.5px;
+  font-size: 0.95rem;
+  position: relative;
+  padding-left: 10px;
+}
+
+.box label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 70%;
+  background: linear-gradient(to bottom, var(--secondary-color), var(--primary-color));
+  border-radius: 3px;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  color: var(--text-white);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--input-focus);
+  box-shadow: var(--neon-glow);
+  background: rgba(15, 14, 35, 0.7);
+}
+
+.checkbox {
+  margin-right: 10px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--secondary-color);
+  cursor: pointer;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(146, 0, 255, 0.3);
+}
+
+.submitBtn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.submitBtn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(146, 0, 255, 0.5);
+}
+
+.submitBtn:hover::before {
+  opacity: 1;
+}
+
+.submitBtn:active {
+  transform: translateY(-1px);
+}
+
+hr {
+  margin: 30px 0;
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.05)
+  );
+}
+
+@media (max-width: 480px) {
+  .box {
+    padding: 30px 20px;
+    width: 100%;
+    max-width: 350px;
+  }
+  
+  .input {
+    padding: 12px 14px;
+  }
+  
+  .submitBtn {
+    padding: 12px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+Copy
+/* Login.module.css에 추가할 스타일 */
+
+/* 성운 효과 */
+.nebula {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(111, 0, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(0, 210, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 90%, rgba(255, 27, 141, 0.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 10%, rgba(255, 102, 0, 0.15) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, rgba(76, 0, 255, 0.1) 0%, transparent 60%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 별 효과 */
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
+    radial-gradient(circle at 30% 65%, rgba(255, 255, 255, 0.7) 1px, transparent 1px),
+    radial-gradient(circle at 55% 35%, rgba(255, 255, 255, 0.9) 1px, transparent 1px),
+    radial-gradient(circle at 72% 82%, rgba(255, 255, 255, 0.6) 1px, transparent 1px),
+    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.7) 1px, transparent 1px);
+  background-size: 220px 220px, 270px 270px, 320px 320px, 290px 290px, 240px 240px;
+  z-index: 0;
+}
+
+/* 체크박스 레이블 스타일 */
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  padding-left: 0;
+  cursor: pointer;
+  margin: 5px 0 15px;
+}
+
+.checkboxLabel::before {
+  display: none;
+}
+
+.checkboxLabel span {
+  font-size: 0.9rem;
+  color: var(--text-silver);
+}
+
+/* 텍스트 링크 스타일 */
+.textLink {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.textLink:hover {
+  color: var(--accent-pink);
+  text-shadow: 0 0 8px rgba(0, 210, 255, 0.4);
+}
+
+.textLink::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(to right, var(--secondary-color), var(--accent-pink));
+  transition: width 0.3s ease;
+}
+
+.textLink:hover::after {
+  width: 100%;
+}
+
+/* 링크 컨테이너 */
+.linkContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0;
+  font-size: 0.95rem;
+  color: var(--text-gray);
+}
+
+/* 구분선 */
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 25px 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.05)
+  );
+}
+
+.divider span {
+  position: relative;
+  background: var(--glass-bg);
+  padding: 0 15px;
+  color: var(--text-gray);
+  font-size: 0.9rem;
+}
+
+/* 소셜 로그인 제목 */
+.socialTitle {
+  text-align: center;
+  font-size: 0.5em;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--text-silver);
+}
+
+/* 옵션 행 */
+.optionRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
