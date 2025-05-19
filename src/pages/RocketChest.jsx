@@ -33,6 +33,13 @@ const RocketChest = () => {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [rocketsToDelete, setRocketsToDelete] = useState([]);
   
+  // 배치 이동을 위한 추가 상태
+  const [firstSelectedRocket, setFirstSelectedRocket] = useState(null);
+  const [secondSelectedRocket, setSecondSelectedRocket] = useState(null);
+  const [rocketPositions, setRocketPositions] = useState({});
+  const [initialRocketPositions, setInitialRocketPositions] = useState({});
+  const [swappedRockets, setSwappedRockets] = useState([]);
+  
   // 모달 상태
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRocket, setSelectedRocket] = useState(null);
@@ -65,7 +72,7 @@ const RocketChest = () => {
           page: currentPage,
           size: 10,
           sort: 'chestId',  // 기본 정렬 필드
-          order: 'desc'     // 기본 정렬 방향
+          order: sortOrder === 'oldest' ? 'asc' : 'desc' // 정렬 방향 적용
         };
         
         // 나에게 보낸 로켓 (myBase)
@@ -149,7 +156,45 @@ const RocketChest = () => {
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [userId, currentPage, activeTab]);
+  }, [userId, currentPage, activeTab, sortOrder]); // sortOrder 추가
+  
+  // 로켓 위치 초기화 - 그리드 기반 위치 설정
+  useEffect(() => {
+    // 로켓 데이터가 로드되면 초기 위치 생성
+    const initPositions = {};
+    
+    let currentRockets = [];
+    if (activeTab === 'myBase') currentRockets = myRockets;
+    else if (activeTab === 'mailbox') currentRockets = receivedRockets;
+    else if (activeTab === 'pod') currentRockets = podRockets;
+    
+    if (currentRockets.length === 0) return;
+    
+    // 각 로켓에 그리드 위치 할당
+    currentRockets.forEach((rocket, index) => {
+      // 그리드 내 위치 계산 (5x2 그리드)
+      const gridIndex = index; // 0부터 시작하는 인덱스
+      
+      // 랜덤으로 위치가 약간씩 다르게 보이도록 오프셋 추가
+      const rocketIdStr = rocket.chestId.toString();
+      const rocketIdSum = rocketIdStr.split('').reduce((sum, digit) => sum + parseInt(digit || 0), 0);
+      
+      // 약간의 오프셋 추가 (고정 랜덤)
+      const xOffset = ((rocketIdSum * 7) % 20) - 10; // -10~10 사이 값
+      const yOffset = ((rocketIdSum * 13) % 16) - 8; // -8~8 사이 값
+      
+      // 기본 위치 정보 저장
+      initPositions[rocket.chestId] = {
+        gridIndex, // 그리드 내 인덱스
+        x: xOffset, // 시각적 오프셋
+        y: yOffset, // 시각적 오프셋
+        position: gridIndex // 서버에 전송할 위치 정보 (인덱스 - 문자열이 아닌 숫자로 저장)
+      };
+    });
+    
+    setRocketPositions(initPositions);
+    setInitialRocketPositions(initPositions);
+  }, [myRockets, receivedRockets, podRockets, activeTab]);
   
   // 로켓 상세 정보 조회
   const fetchRocketDetail = async (chestId) => {
@@ -191,31 +236,150 @@ const RocketChest = () => {
     }
   };
   
-  // 로켓 배치이동
-  const saveRocketOrder = async () => {
-    if (!selectedRocketId) {
-      alert('이동할 로켓을 선택해주세요.');
-      return;
-    }
+  // 로켓 배치이동 - 두 로켓의 위치 교환
+  const swapRocketPositions = (rocket1Id, rocket2Id) => {
+    const updatedPositions = { ...rocketPositions };
     
-    try {
-      // 백엔드 API 명세에 맞게 요청 구성
-      const locationData = {
-        receiverType: activeTab === 'myBase' ? 'self' : activeTab === 'mailbox' ? 'other' : 'pod',
-        newLocation: `${Math.floor(Math.random() * 5)}-${Math.floor(Math.random() * 5)}` // 임시로 랜덤 위치 생성
-      };
+    // 두 로켓의 위치 정보 임시 저장
+    const pos1 = { ...updatedPositions[rocket1Id] };
+    const pos2 = { ...updatedPositions[rocket2Id] };
+    
+    // 그리드 인덱스 교환 (위치 교환의 핵심)
+    const tempGridIndex = pos1.gridIndex;
+    pos1.gridIndex = pos2.gridIndex;
+    pos2.gridIndex = tempGridIndex;
+    
+    // 교환된 위치 정보 저장
+    updatedPositions[rocket1Id] = pos1;
+    updatedPositions[rocket2Id] = pos2;
+    
+    // 위치가 바뀐 로켓들의 ID 저장
+    setSwappedRockets([...swappedRockets, rocket1Id, rocket2Id]);
+    setRocketPositions(updatedPositions);
+    
+    // UI에 변경 반영을 위한 로직
+    const currentRockets = getCurrentRockets();
+    const rocket1 = currentRockets.find(r => r.chestId === rocket1Id);
+    const rocket2 = currentRockets.find(r => r.chestId === rocket2Id);
+    
+    // 해당 로켓들의 인덱스 찾기
+    if (rocket1 && rocket2) {
+      const updatedRockets = [...currentRockets];
+      const index1 = updatedRockets.findIndex(r => r.chestId === rocket1Id);
+      const index2 = updatedRockets.findIndex(r => r.chestId === rocket2Id);
       
-      const response = await api.patch(`${API_PATHS.CHESTS}/${selectedRocketId}/location`, locationData);
-      console.log('배치 이동 응답:', response);
+      // 배열에서 위치 교환
+      [updatedRockets[index1], updatedRockets[index2]] = [updatedRockets[index2], updatedRockets[index1]];
       
-      setIsMovingMode(false);
-      setSelectedRocketId(null);
-      alert('로켓 배치가 저장되었습니다.');
-    } catch (err) {
-      console.error('배치 저장 실패:', err);
-      alert('로켓 배치 저장에 실패했습니다.');
+      // 현재 활성 탭에 따라 상태 업데이트
+      if (activeTab === 'myBase') {
+        setMyRockets([...updatedRockets]);
+      } else if (activeTab === 'mailbox') {
+        setReceivedRockets([...updatedRockets]);
+      } else if (activeTab === 'pod') {
+        setPodRockets([...updatedRockets]);
+      }
     }
   };
+  
+  // 로켓 배치 저장 - DB에 위치 변경 반영
+  const saveRocketOrder = async () => {
+  if (Object.keys(rocketPositions).length === 0) {
+    alert('배치 이동할 로켓이 없습니다.');
+    setIsMovingMode(false);
+    return;
+  }
+  
+  try {
+    // 두 로켓씩 묶어서 위치 교환 요청
+    const processedIds = new Set();
+    const swappedIds = [...new Set(swappedRockets)]; // 중복 제거
+    
+    for (let i = 0; i < swappedIds.length; i++) {
+      const swappedId = swappedIds[i];
+      
+      // 이미 처리한 ID는 건너뜀
+      if (processedIds.has(swappedId)) continue;
+      
+      // 다음 ID 찾기 - 순서대로 사용
+      const swappedIdIndex = swappedRockets.indexOf(swappedId);
+      let partnerId = null;
+      
+      // 같은 쌍의 파트너 ID 찾기
+      for (let j = swappedIdIndex + 1; j < swappedRockets.length; j++) {
+        if (!processedIds.has(swappedRockets[j])) {
+          partnerId = swappedRockets[j];
+          break;
+        }
+      }
+      
+      // 파트너 ID가 없으면 건너뜀
+      if (partnerId === null) continue;
+      
+      // 처리 표시
+      processedIds.add(swappedId);
+      processedIds.add(partnerId);
+      
+      // 요청 생성
+      const requestData = {
+        sourceChestId: swappedId,
+        targetChestId: partnerId
+      };
+      
+      console.log(`로켓 위치 교환 요청: ${swappedId} ↔ ${partnerId}`, requestData);
+      
+      try {
+        // 요청 보내기
+        const response = await api.patch(`${API_PATHS.CHESTS}/chest-location`, requestData);
+        console.log(`위치 저장 성공:`, response.data);
+      } catch (updateError) {
+        console.error(`로켓 위치 교환 실패:`, updateError);
+        
+        // 오류 상세 정보 로깅
+        if (updateError.response) {
+          console.error('오류 상태:', updateError.response.status);
+          console.error('오류 데이터:', updateError.response.data);
+          console.error('오류 헤더:', updateError.response.headers);
+        }
+        
+        throw updateError;
+      }
+    }
+      
+    // 상태 초기화
+    setIsMovingMode(false);
+    setFirstSelectedRocket(null);
+    setSecondSelectedRocket(null);
+    setSwappedRockets([]);
+    
+    alert('로켓 배치가 성공적으로 저장되었습니다.');
+  } catch (err) {
+    console.error('배치 저장 실패:', err);
+    
+    // 상세 오류 확인
+    if (err.response) {
+      console.error('오류 응답:', err.response.data);
+      console.error('오류 상태:', err.response.status);
+      console.error('오류 헤더:', err.response.headers);
+    }
+    
+    alert('로켓 배치 저장에 실패했습니다. 다시 시도해주세요.');
+    
+    // 실패 시 원래 위치로 복원
+    setRocketPositions(initialRocketPositions);
+    
+    // UI 상태도 초기화
+    setIsMovingMode(false);
+    setFirstSelectedRocket(null);
+    setSecondSelectedRocket(null);
+    setSwappedRockets([]);
+    
+    // 데이터 리로드
+    const currentTab = activeTab;
+    setActiveTab('');
+    setTimeout(() => setActiveTab(currentTab), 100);
+  }
+};
   
   // 선택한 로켓 삭제
   const deleteSelectedRockets = async () => {
@@ -279,14 +443,18 @@ const RocketChest = () => {
       alert('로켓 삭제에 실패했습니다.');
     }
   };
-
+  
   // 남은 시간 계산 함수
   const calculateTimeRemaining = (unlockDate) => {
+    if (!unlockDate) {
+      return { isUnlocked: true, timeString: '오픈 가능' };
+    }
+    
     const now = new Date();
     const targetDate = new Date(unlockDate);
     const diff = targetDate - now;
     
-    if (diff <= 0) {
+    if (diff <= 0 || isNaN(diff)) {
       return { isUnlocked: true, timeString: '오픈 가능' };
     }
     
@@ -322,21 +490,7 @@ const RocketChest = () => {
         rockets = [];
     }
     
-    // 정렬
-    return sortRockets(rockets);
-  };
-  
-  // 로켓 정렬
-  const sortRockets = (rockets) => {
-    return [...rockets].sort((a, b) => {
-      // chestId로 정렬할 수도 있지만 시간 기준으로 유지
-      const dateA = new Date(a.sentAt);
-      const dateB = new Date(b.sentAt);
-      
-      return sortOrder === 'oldest'
-        ? dateA - dateB
-        : dateB - dateA;
-    });
+    return rockets;
   };
   
   // 로켓 검색
@@ -352,13 +506,19 @@ const RocketChest = () => {
     const fetchSearchResults = async () => {
       setIsLoading(true);
       try {
+        // 현재 탭에 따라 receiverType 설정 추가
+        const receiverType = activeTab === 'myBase' ? 'self' : 
+                            activeTab === 'mailbox' ? 'other' : 
+                            activeTab === 'pod' ? 'pod' : null;
+        
         const response = await api.get(`${API_PATHS.CHESTS_USERS}/${userId}`, {
           params: {
             page: 1,
             size: 10,
             sort: 'chestId',
-            order: 'desc',
-            rocketName: searchTerm.trim()
+            order: sortOrder === 'oldest' ? 'asc' : 'desc',
+            rocketName: searchTerm.trim(),
+            receiverType: receiverType // 추가된 파라미터
           }
         });
         
@@ -408,11 +568,26 @@ const RocketChest = () => {
     
     if (isMovingMode) {
       // 배치 이동 모드일 때 선택한 로켓 저장
-      setSelectedRocketId(chestId);
+      if (!firstSelectedRocket) {
+        // 첫 번째 로켓 선택
+        setFirstSelectedRocket(rocket);
+        console.log("첫 번째 로켓 선택:", rocket.chestId, rocket.rocketName);
+      } else if (firstSelectedRocket.chestId !== chestId) {
+        // 두 번째 로켓 선택 - 위치 교환
+        setSecondSelectedRocket(rocket);
+        console.log("두 번째 로켓 선택:", rocket.chestId, rocket.rocketName);
+        
+        // 두 로켓의 위치 정보 교환
+        swapRocketPositions(firstSelectedRocket.chestId, chestId);
+        console.log("로켓 위치 교환:", firstSelectedRocket.chestId, "↔", chestId);
+        
+        setFirstSelectedRocket(null); // 선택 초기화
+      }
       return;
     }
     
     // 일반 모드일 때 모달 열기
+    console.log("모달에 표시할 로켓:", rocket);
     setSelectedRocket(rocket);
     setIsModalOpen(true);
   };
@@ -433,19 +608,47 @@ const RocketChest = () => {
   
   // 날짜 형식 변환
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return '날짜 정보 없음';
+    
+    try {
+      const date = new Date(dateString);
+      
+      if (isNaN(date.getTime())) {
+        return '날짜 형식 오류';
+      }
+      
+      return date.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('날짜 포맷 오류:', error);
+      return '날짜 포맷 오류';
+    }
   };
   
   // 페이지 변경 핸들러
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+  };
+  
+  // 배치 이동 버튼 클릭 핸들러
+  const handleMovingModeToggle = () => {
+    if (isMovingMode) {
+      // 저장 버튼 클릭 시
+      saveRocketOrder();
+    } else {
+      // 배치 이동 모드 시작
+      setIsMovingMode(true);
+      setIsDeleteMode(false);
+      setRocketsToDelete([]);
+      setFirstSelectedRocket(null);
+      setSecondSelectedRocket(null);
+      setSwappedRockets([]);
+    }
   };
   
   if (error) {
@@ -473,6 +676,8 @@ const RocketChest = () => {
               setIsDeleteMode(false);
               setRocketsToDelete([]);
               setIsMovingMode(false);
+              setFirstSelectedRocket(null);
+              setSecondSelectedRocket(null);
               setCurrentPage(1); // 탭 전환 시 첫 페이지로 이동
             }}
           >
@@ -486,6 +691,8 @@ const RocketChest = () => {
               setIsDeleteMode(false);
               setRocketsToDelete([]);
               setIsMovingMode(false);
+              setFirstSelectedRocket(null);
+              setSecondSelectedRocket(null);
               setCurrentPage(1); // 탭 전환 시 첫 페이지로 이동
             }}
           >
@@ -499,6 +706,8 @@ const RocketChest = () => {
               setIsDeleteMode(false);
               setRocketsToDelete([]);
               setIsMovingMode(false);
+              setFirstSelectedRocket(null);
+              setSecondSelectedRocket(null);
               setCurrentPage(1); // 탭 전환 시 첫 페이지로 이동
             }}
           >
@@ -536,20 +745,14 @@ const RocketChest = () => {
             </select>
           </div>
           
-          <button
-            className={`control-button ${isMovingMode ? 'active' : ''}`}
-            onClick={() => {
-              if (isMovingMode) {
-                saveRocketOrder(); 
-              } else {
-                setIsMovingMode(true);
-                setIsDeleteMode(false);
-                setRocketsToDelete([]);
-              }
-            }}
-          >
-            {isMovingMode ? '저장' : '배치 이동'}
-          </button>
+          {currentRockets.length > 0 && (
+            <button
+              className={`control-button ${isMovingMode ? 'active' : ''}`}
+              onClick={handleMovingModeToggle}
+            >
+              {isMovingMode ? '저장' : '배치 이동'}
+            </button>
+          )}
           
           <button
             className={`control-button delete ${isDeleteMode ? 'active' : ''}`}
@@ -560,6 +763,8 @@ const RocketChest = () => {
                 setIsDeleteMode(!isDeleteMode);
                 setIsMovingMode(false);
                 setRocketsToDelete([]);
+                setFirstSelectedRocket(null);
+                setSecondSelectedRocket(null);
               }
             }}
           >
@@ -589,15 +794,22 @@ const RocketChest = () => {
       ) : currentRockets.length > 0 ? (
         <div className="rockets-grid">
           {currentRockets.map((rocket) => {
-            // API 응답에서 chestId 사용
             const chestId = rocket.chestId;
             const { isUnlocked, timeString } = calculateTimeRemaining(rocket.lockExpiredAt);
             const isSelected = rocketsToDelete.includes(chestId);
+            const isFirstSelected = firstSelectedRocket && firstSelectedRocket.chestId === chestId;
+            
+            // 로켓 위치 스타일
+            const rocketPosition = rocketPositions[chestId] || { x: 0, y: 0 };
+            const positionStyle = {
+              transform: `translate(${rocketPosition.x}px, ${rocketPosition.y}px)${isFirstSelected ? ' scale(1.1)' : isMovingMode ? ' scale(1.05)' : ''}`
+            };
             
             return (
               <div
                 key={chestId}
-                className={`rocket-item ${isMovingMode ? 'moving' : ''} ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`}
+                className={`rocket-item ${isMovingMode ? 'moving' : ''} ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''} ${isFirstSelected ? 'first-selected' : ''}`}
+                style={positionStyle}
                 onClick={() => handleRocketClick(rocket)}
                 onContextMenu={(e) => toggleRocketVisibility(e, chestId)}
               >
@@ -690,7 +902,7 @@ const RocketChest = () => {
                   <strong>보낸 사람:</strong> {selectedRocket.senderEmail || '알 수 없음'}
                 </p>
                 <p className="rocket-sent-at">
-                  <strong>받은 시간:</strong> {formatDate(selectedRocket.sentAt)}
+                  <strong>받은 시간:</strong> {formatDate(selectedRocket.sentAt || selectedRocket.createdAt)}
                 </p>
                 
                 {(() => {

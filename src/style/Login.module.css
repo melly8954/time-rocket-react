@@ -7,12 +7,12 @@
   --glass-bg: rgba(26, 23, 62, 0.8);
   --glass-border: rgba(255, 255, 255, 0.12);
   --input-bg: rgba(15, 14, 35, 0.5);
-  --input-border: rgba(255, 255, 255, 0.1);
+  --input-border: rgba(255, 255, 255, 0.2); /* 더 뚜렷한 테두리 */
   --input-focus: rgba(0, 210, 255, 0.5);
   --neon-glow: 0 0 15px rgba(0, 210, 255, 0.7);
   --text-white: #ffffff;
-  --text-silver: #e0e0e0;
-  --text-gray: #9aa0b9;
+  --text-silver: #f0f0f0; /* 더 밝게 수정 */
+  --text-gray: #c0c5e4;   /* 더 밝게 수정 */
 }
 
 .container {
@@ -107,20 +107,19 @@
   margin-bottom: 30px;
   font-size: 28px;
   font-weight: 700;
-  background: linear-gradient(to right, var(--text-white), var(--secondary-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff; /* 그라데이션 대신 순수 흰색 */
+  text-shadow: 0 0 10px rgba(0, 210, 255, 0.5); /* 그림자 추가 */
   letter-spacing: 1px;
 }
 
 .box label {
-  font-weight: 500;
+  font-weight: 600; /* 더 두껍게 */
   margin-top: 15px;
   margin-bottom: 8px;
   display: block;
-  color: var(--text-silver);
+  color: #ffffff; /* 더 밝게 */
   letter-spacing: 0.5px;
-  font-size: 0.95rem;
+  font-size: 1rem; /* 크기 증가 */
   position: relative;
   padding-left: 10px;
 }
@@ -140,11 +139,12 @@
 .input {
   width: 100%;
   padding: 14px 16px;
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
+  background: rgba(15, 14, 35, 0.7); /* 약간 더 어둡게 */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* 더 뚜렷한 테두리 */
   border-radius: 12px;
-  color: var(--text-white);
-  font-size: 1rem;
+  color: #ffffff; /* 텍스트 색상 */
+  font-size: 1.05rem; /* 크기 증가 */
+  font-weight: 500; /* 더 두껍게 */
   transition: all 0.3s ease;
   margin-bottom: 15px;
   box-sizing: border-box;
@@ -234,21 +234,6 @@ hr {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-Copy
-/* Login.module.css에 추가할 스타일 */
-
 /* 성운 효과 */
 .nebula {
   position: absolute;
@@ -297,18 +282,20 @@ Copy
 }
 
 .checkboxLabel span {
-  font-size: 0.9rem;
-  color: var(--text-silver);
+  font-size: 0.95rem; /* 크기 증가 */
+  color: #ffffff; /* 더 밝게 */
+  font-weight: 500; /* 더 두껍게 */
 }
 
 /* 텍스트 링크 스타일 */
 .textLink {
-  color: var(--secondary-color);
+  color: #40e0ff; /* 더 밝은 색상 */
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700; /* 더 두껍게 */
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
+  text-shadow: 0 0 5px rgba(0, 210, 255, 0.5); /* 그림자 추가 */
 }
 
 .textLink:hover {
@@ -337,8 +324,8 @@ Copy
   justify-content: space-between;
   align-items: center;
   margin: 20px 0;
-  font-size: 0.95rem;
-  color: var(--text-gray);
+  font-size: 1rem; /* 크기 증가 */
+  color: #ffffff; /* 더 밝게 */
 }
 
 /* 구분선 */
@@ -366,17 +353,18 @@ Copy
   position: relative;
   background: var(--glass-bg);
   padding: 0 15px;
-  color: var(--text-gray);
-  font-size: 0.9rem;
+  color: #ffffff; /* 더 밝게 */
+  font-size: 0.95rem; /* 크기 증가 */
+  font-weight: 500; /* 더 두껍게 */
 }
 
 /* 소셜 로그인 제목 */
 .socialTitle {
   text-align: center;
-  font-size: 0.5em;
+  font-size: 0.85em; /* 크기 증가 */
   font-weight: 600;
   margin-bottom: 20px;
-  color: var(--text-silver);
+  color: #ffffff; /* 더 밝게 */
 }
 
 /* 옵션 행 */
