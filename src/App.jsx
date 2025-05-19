@@ -16,7 +16,7 @@ import Mypage from "./pages/MyPage.jsx";
 import PasswordChange from "./pages/PasswordChange";
 import RocketCreate from "./pages/RocketCreate";
 import RocketChest from './pages/RocketChest';
-
+import Display from './pages/Display';
 function App() {
   const didRun = useRef(false);
   const {
@@ -76,7 +76,7 @@ function App() {
         <Route path="/chests/:id" element={<RocketChest />} />
         
         {/* 진열장 페이지 */}
-        <Route path="/display" element={<div>진열장 페이지</div>} />
+        <Route path="/display" element={<Display />} />
         
         <Route path="/community" element={<div>커뮤니티 페이지</div>} />
         <Route path="/mypage" element={<Mypage />} />

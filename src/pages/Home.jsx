@@ -10,7 +10,8 @@ import '../style/components/Home.css';
 const API_PATHS = {
   USER_PROFILE: '/users/profile',
   ROCKETS: '/rockets',
-  CHESTS: '/chests/users'
+  CHESTS: '/chests/users',
+  DISPLAYS: '/displays/users'
 };
 
 // 프론트엔드 라우트 상수화 - ROCKET_STORAGE를 함수로 수정
@@ -19,7 +20,7 @@ const ROUTES = {
   ROCKET_DETAIL: (id) => `/rockets/${id}`,
   ROCKET_CREATE: '/rockets/create',
   ROCKET_STORAGE: (id) => `/chests/${id}`, // 함수로 변경
-  ROCKET_SHOWCASE: '/rockets/showcase',
+  ROCKET_SHOWCASE: '/display',
   USER_PROFILE: (id) => `/users/${id}`,
   LOGIN: '/login',
   SIGNUP: '/signup'
