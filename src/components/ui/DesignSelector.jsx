@@ -53,7 +53,6 @@ function DesignSelector({ currentIdx, setCurrentIdx, setDesignImgUrl }) {
         <button type="button" className={styles.navigationButton} onClick={next}>▶</button>
       </div>
       <div className={styles.thumbnailGrid}>
-
         {designs.map((d, idx) => (
           <div
             key={d.id}
