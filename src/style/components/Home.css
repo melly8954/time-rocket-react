@@ -954,3 +954,31 @@
   }
 }
 
+
+
+
+/* 프로필 영역에 클릭 가능 표시를 위한 스타일 */
+.clickable-profile {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.clickable-profile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* profile-actions는 프로필 클릭 영역에서 제외 */
+.profile-actions {
+  position: relative;
+  z-index: 2; /* 상위 레이어에 배치하여 클릭 이벤트 분리 */
+}
+
+/* 수정 버튼도 별도의 클릭 이벤트로 처리 */
+.edit-bio-btn {
+  position: relative;
+  z-index: 2;
+}
+
+

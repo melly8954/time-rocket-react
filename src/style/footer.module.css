@@ -216,3 +216,11 @@
     transform: translateX(-50%);
   }
 }
+
+
+.titleLink {
+  display: flex;
+  flex-direction: wrap;
+  cursor: pointer;
+  text-decoration: none;
+}

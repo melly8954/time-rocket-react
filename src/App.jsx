@@ -14,7 +14,8 @@ import PasswordReset from './pages/PasswordReset';
 import OAuthRedirect from './pages/OAuthRedirect';
 import Mypage from "./pages/MyPage.jsx";
 import PasswordChange from "./pages/PasswordChange";
-import Rocket from "./pages/Rocket";
+import RocketCreate from "./pages/RocketCreate";
+import RocketChest from './pages/RocketChest';
 
 function App() {
   const didRun = useRef(false);
@@ -66,16 +67,23 @@ function App() {
         <Route path="/password-reset" element={<PasswordReset />} />
         <Route path="/oauth/redirect" element={<OAuthRedirect />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/rocket" element={<Rocket />} />
+        
+        {/* 로켓 관련 라우트 */}
+        <Route path="/rockets/create" element={<RocketCreate />} />
+        
+        {/* 보관함(Chest) 관련 라우트 - API 명세에 맞춤 */}
+        <Route path="/chests" element={<RocketChest />} />
+        <Route path="/chests/:id" element={<RocketChest />} />
+        
+        {/* 진열장 페이지 */}
         <Route path="/display" element={<div>진열장 페이지</div>} />
-        <Route path="/chest" element={<div>보관함 페이지</div>} />
+        
         <Route path="/community" element={<div>커뮤니티 페이지</div>} />
         <Route path="/mypage" element={<Mypage />} />
         <Route path="/password-change/:userId" element={<PasswordChange />} />
       </Routes>
 
       <Footer />
-
     </>
   );
 }

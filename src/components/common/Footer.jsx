@@ -6,8 +6,10 @@ const Footer = () => {
     <footer className={styles.footer}>
       <div className={styles.footerContainer}>
         <div className={styles.footerLogo}>
+          <Link to="/" className={styles.titleLink}>
           <img src="/src/assets/rocket.png" alt="TimeRocket" />
           <h3>TimeRocket</h3>
+          </Link>
         </div>
         <div className={styles.footerLinks}>
           <div className={styles.footerSection}>

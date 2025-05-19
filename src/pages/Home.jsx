@@ -2,10 +2,30 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SpaceBackground from '../components/common/SpaceBackground';
 import useAuthStore from '../authStore';
+import api from '../utils/api';
 import { UserIcon, RocketIcon, StarIcon, EditIcon, LockIcon, CalendarIcon } from '../components/ui/Icons';
 import '../style/components/Home.css';
 
-const HomePage = () => {
+// API 경로 상수화 - /api 접두사 제거 (api 유틸리티의 baseURL이 이미 /api로 설정됨)
+const API_PATHS = {
+  USER_PROFILE: '/users/profile',
+  ROCKETS: '/rockets',
+  CHESTS: '/chests/users'
+};
+
+// 프론트엔드 라우트 상수화 - ROCKET_STORAGE를 함수로 수정
+const ROUTES = {
+  ROCKETS: '/rockets',
+  ROCKET_DETAIL: (id) => `/rockets/${id}`,
+  ROCKET_CREATE: '/rockets/create',
+  ROCKET_STORAGE: (id) => `/chests/${id}`, // 함수로 변경
+  ROCKET_SHOWCASE: '/rockets/showcase',
+  USER_PROFILE: (id) => `/users/${id}`,
+  LOGIN: '/login',
+  SIGNUP: '/signup'
+};
+
+const Home = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [mainRocket, setMainRocket] = useState(null);
   const [recentRockets, setRecentRockets] = useState([]);
@@ -25,68 +45,109 @@ const HomePage = () => {
       }
       
       try {
-        // 유저 프로필 데이터 로드 - 기존 사용자 데이터에 레벨, 행성 레벨 등 추가
-        const profileData = {
-          userId: userId || 0,
-          nickname: nickname || '사용자',
-          email: email || 'user@example.com',
-          bio: '미래와 과거를 여행하는 타임로켓 탐험가입니다. 새로운 시간대를 탐험하고 기록합니다.',
-          level: 1, // 기본값 설정
-          planetLevel: '초보 탐험가', // 기본값 설정
-          badges: ['🚀 로켓 초보자'],
-          stats: {
-            rockets: 0,
-            showcased: 0,
-            received: 0
-          },
-          recentActivity: []
-        };
-        setUserProfile(profileData);
+        console.log('API 요청 시작');
         
-        // 메인 로켓 데이터
-        const mainRocketData = {
-          id: 1,
-          rocketName: '우주 여행을 위한 타임캡슐',
-          design: 'A',
-          isLock: true,
-          lockExpiredAt: '2025-12-31T23:59:59',
-          content: '미래의 나에게 보내는 특별한 메시지. 2025년, 당신은 어떤 모습일까요?',
-          receiverType: 'me',
-          sentAt: '2023-05-10T14:30:00'
-        };
-        setMainRocket(mainRocketData);
+        // 유저 프로필 API 호출
+        const userResponse = await api.get(API_PATHS.USER_PROFILE);
+        console.log('API 응답 (userResponse):', userResponse);
         
-        // 최근 로켓 목록
-        const recentRocketsData = [
-          {
-            id: 2,
-            rocketName: '어린 시절의 나에게',
-            design: 'B',
-            isLock: false,
-            lockExpiredAt: '2023-01-01T00:00:00',
-            isPublic: true,
-            sentAt: '2023-04-15T09:15:00'
-          },
-          {
-            id: 3,
-            rocketName: '우주 여행 일지',
-            design: 'C',
-            isLock: true,
-            lockExpiredAt: '2024-06-30T12:00:00',
-            isPublic: false,
-            sentAt: '2023-03-20T18:45:00'
-          },
-          {
-            id: 4,
-            rocketName: '2030년의 나에게',
+        // API 응답에 맞게 사용자 프로필 설정
+        // 백엔드 응답 구조: {code: 200, message: "사용자 인증 완료", data: {...}}
+        if (userResponse.data && userResponse.data.data) {
+          const userData = userResponse.data.data;
+          
+          const profileData = {
+            userId: userData.userId || userId || 0,
+            nickname: userData.nickname || nickname || '사용자',
+            email: userData.email || email || 'user@example.com',
+            bio: '미래와 과거를 여행하는 타임로켓 탐험가입니다. 새로운 시간대를 탐험하고 기록합니다.',
+            level: 1,
+            planetLevel: '초보 탐험가',
+            badges: ['🚀 로켓 초보자'],
+            stats: {
+              rockets: 0,
+              showcased: 0,
+              received: 0
+            },
+            recentActivity: []
+          };
+          setUserProfile(profileData);
+        } else {
+          console.warn("API 응답 구조가 예상과 다릅니다:", userResponse.data);
+          setUserProfile({
+            userId: userId || 0,
+            nickname: nickname || '사용자',
+            email: email || 'user@example.com',
+            level: 1,
+            planetLevel: '초보 탐험가'
+          });
+        }
+        
+        try {
+          // 로켓 데이터 API 호출
+          const rocketsParams = {
+            userId: userId,
+            page: 1,
+            size: 4,
+            sort: 'sentAt',
+            order: 'desc'
+          };
+          
+          const rocketsResponse = await api.get(`${API_PATHS.CHESTS}/${userId}`, { params: rocketsParams });
+          console.log('API 응답 (rocketsResponse):', rocketsResponse);
+          
+          // API 응답 구조에 맞게 처리
+          if (rocketsResponse.data && rocketsResponse.data.data) {
+            const rocketsData = rocketsResponse.data.data;
+            
+            if (rocketsData.chests && rocketsData.chests.length > 0) {
+              setMainRocket(rocketsData.chests[0]);
+              setRecentRockets(rocketsData.chests.slice(1));
+            } else {
+              throw new Error('로켓 데이터가 없습니다');
+            }
+          } else {
+            throw new Error('로켓 API 응답 구조가 예상과 다릅니다');
+          }
+        } catch (rocketError) {
+          console.error('로켓 데이터 로드 실패:', rocketError);
+          
+          // 로켓 데이터는 없지만 UI는 표시
+          setMainRocket({
+            id: 1,
+            chestId: 1,
+            rocketName: '우주 여행을 위한 타임캡슐',
             design: 'A',
             isLock: true,
-            lockExpiredAt: '2030-01-01T00:00:00',
-            isPublic: false,
-            sentAt: '2023-05-01T10:30:00'
-          }
-        ];
-        setRecentRockets(recentRocketsData);
+            lockExpiredAt: '2025-12-31T23:59:59',
+            content: '미래의 나에게 보내는 특별한 메시지. 2025년, 당신은 어떤 모습일까요?',
+            receiverType: 'me',
+            sentAt: '2023-05-10T14:30:00'
+          });
+          
+          setRecentRockets([
+            {
+              id: 2,
+              chestId: 2,
+              rocketName: '어린 시절의 나에게',
+              design: 'B',
+              isLock: false,
+              lockExpiredAt: '2023-01-01T00:00:00',
+              isPublic: true,
+              sentAt: '2023-04-15T09:15:00'
+            },
+            {
+              id: 3,
+              chestId: 3,
+              rocketName: '우주 여행 일지',
+              design: 'C',
+              isLock: true,
+              lockExpiredAt: '2024-06-30T12:00:00',
+              isPublic: false,
+              sentAt: '2023-03-20T18:45:00'
+            }
+          ]);
+        }
         
         setIsLoading(false);
       } catch (error) {
@@ -132,10 +193,10 @@ const HomePage = () => {
             과거, 현재, 미래를 넘나드는 특별한 경험으로 당신만의 시간 여행을 시작하세요.
           </p>
           <div className="hero-actions">
-            <Link to="/signup" className="btn btn-primary">
+            <Link to={ROUTES.SIGNUP} className="btn btn-primary">
               회원가입하기
             </Link>
-            <Link to="/login" className="btn btn-secondary">
+            <Link to={ROUTES.LOGIN} className="btn btn-secondary">
               로그인하기
             </Link>
           </div>
@@ -179,7 +240,7 @@ const HomePage = () => {
         <div className="cta-content">
           <h2>지금 바로 시간여행을 시작하세요</h2>
           <p>미래의 자신에게, 혹은 소중한 이에게 전하고 싶은 메시지가 있나요?<br />TimeRocket과 함께 잊지 못할 여행을 시작하세요.</p>
-          <Link to="/signup" className="cta-button">
+          <Link to={ROUTES.SIGNUP} className="cta-button">
             무료로 시작하기
           </Link>
         </div>
@@ -189,17 +250,6 @@ const HomePage = () => {
   
   // 회원용 홈 화면 (프로필 + 로켓)
   const UserHomePage = () => {
-    if (isLoading) {
-      return (
-        <div className="loading-container">
-          <div className="loading-rocket">
-            <img src="/src/assets/rocket.png" alt="로딩중" className="rotating-rocket" />
-          </div>
-          <p>로켓 준비중...</p>
-        </div>
-      );
-    }
-    
     return (
       <div className="user-home">
         <div className="user-home-container">
@@ -243,7 +293,7 @@ const HomePage = () => {
                     </p>
                     
                     <div className="rocket-actions">
-                      <Link to={`/rockets/${mainRocket.id}`} className="view-btn">
+                      <Link to={ROUTES.ROCKET_DETAIL(mainRocket.id || mainRocket.chestId)} className="view-btn">
                         {mainRocket.isLock ? '로켓 정보 보기' : '로켓 내용 보기'}
                       </Link>
                     </div>
@@ -254,7 +304,7 @@ const HomePage = () => {
                   <img src="/src/assets/rocket.png" alt="로켓" className="empty-rocket-img" />
                   <h3>아직 로켓이 없습니다</h3>
                   <p>첫 번째 로켓을 만들어 시간여행을 시작해 보세요!</p>
-                  <Link to="/rocket" className="create-btn">
+                  <Link to={ROUTES.ROCKET_CREATE} className="create-btn">
                     새 로켓 만들기
                   </Link>
                 </div>
@@ -265,7 +315,7 @@ const HomePage = () => {
                 <div className="recent-rockets-grid">
                   {recentRockets.length > 0 ? (
                     recentRockets.map(rocket => (
-                      <Link to={`/rocket/${rocket.id}`} key={rocket.id} className="recent-rocket-card">
+                      <Link to={ROUTES.ROCKET_DETAIL(rocket.id || rocket.chestId)} key={rocket.id || rocket.chestId} className="recent-rocket-card">
                         <div className="recent-rocket-preview">
                           <img src={getRocketDesignImage(rocket.design)} alt={rocket.rocketName} />
                           {rocket.isLock && <div className="lock-indicator"><LockIcon /></div>}
@@ -282,7 +332,8 @@ const HomePage = () => {
                 </div>
                 
                 <div className="view-all-link">
-                  <Link to="/rocket/storage">모든 로켓 보기</Link>
+                  {/* userId를 전달하도록 수정 */}
+                  <Link to={ROUTES.ROCKET_STORAGE(userId)}>모든 로켓 보기</Link>
                 </div>
               </div>
             </div>
@@ -364,13 +415,14 @@ const HomePage = () => {
               </div>
               
               <div className="profile-actions">
-                <Link to="/rocket" className="profile-action-btn primary">
+                <Link to={ROUTES.ROCKET_CREATE} className="profile-action-btn primary">
                   새 로켓 만들기
                 </Link>
-                <Link to="/rockets/storage" className="profile-action-btn secondary">
+                {/* userId를 전달하도록 수정 */}
+                <Link to={ROUTES.ROCKET_STORAGE(userId)} className="profile-action-btn secondary">
                   로켓 보관함
                 </Link>
-                <Link to="/rockets/showcase" className="profile-action-btn secondary">
+                <Link to={ROUTES.ROCKET_SHOWCASE} className="profile-action-btn secondary">
                   로켓 진열장
                 </Link>
               </div>
@@ -384,9 +436,14 @@ const HomePage = () => {
   return (
     <div className="home-page">
       <SpaceBackground />
-      {isLoggedIn ? <UserHomePage /> : <GuestHomePage />}
+      {isLoading ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>데이터를 불러오는 중...</p>
+        </div>
+      ) : isLoggedIn ? <UserHomePage /> : <GuestHomePage />}
     </div>
   );
 };
 
-export default HomePage;
+export default Home;

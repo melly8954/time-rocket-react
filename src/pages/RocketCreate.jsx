@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { fetchUserProfile } from "../utils/profile";
 import DesignSelector, { designs } from "../components/ui/DesignSelector";
-import "../style/Rocket.css";
+import "../style/RocketCreate.css";
 
-function Rocket() {
+function RocketCreate() {
     const navigate = useNavigate();
     const [currentDesignIdx, setCurrentDesignIdx] = useState(0);
     const [userData, setUserData] = useState({ userId: null, email: "" });
@@ -93,6 +93,15 @@ function Rocket() {
 
     return (
         <div className="rocket-form-container">
+
+            <div className="nebula"></div>
+            <div className="galaxy"></div>
+            <div className="planetarium"></div>
+            <div className="space-dust"></div>
+            <div className="meteor meteor-1"></div>
+            <div className="meteor meteor-2"></div>
+            <div className="meteor meteor-3"></div>
+
             <form className="rocket-form" onSubmit={handleSubmit}>
                 <div className="form-header">
                     <label htmlFor="rocketName">로켓 이름</label>
@@ -195,4 +204,4 @@ function Rocket() {
     );
 }
 
-export default Rocket;
+export default RocketCreate;

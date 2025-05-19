@@ -31,7 +31,7 @@ const Header = () => {
         </div>
 
         <div className={styles.iconMenu}>
-          <Link to="/rocket" className={styles.link} onClick={(e) => handleMenuClick(e, '/rocket')}>
+          <Link to="/rockets/create" className={styles.link} onClick={(e) => handleMenuClick(e, '/rocket')}>
             <RocketIcon className={styles.icon} />
             <span className={styles.iconLabel}>로켓</span>
           </Link>
