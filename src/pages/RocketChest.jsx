@@ -85,6 +85,9 @@ const RocketChest = () => {
     return () => clearInterval(interval);
   }, [userId, currentPage, activeTab, receivedSubTab, sortOrder, isSearchMode, searchTerm]);
 
+  // idKey 분기 (sent/received)
+  const idKey = activeTab === 'sent' ? 'rocketSentId' : 'chestId';
+
   const fetchRockets = async () => {
     if (isFetchingRef.current) return; // 가드
     isFetchingRef.current = true;
@@ -97,8 +100,8 @@ const RocketChest = () => {
       const params = {
         page: currentPage,
         size: 10,
-        sort: 'chestId',  // 기본 정렬 필드
-        order: sortOrder, // 정렬 방향 적용
+        sort: activeTab === 'sent' ? 'rocketSentId' : 'chestId',
+        order: sortOrder,
         rocketName: searchTerm.trim() || undefined
       };
 
@@ -127,22 +130,22 @@ const RocketChest = () => {
         requestParams.receiverType = receiverType;
       }
 
-      // API 요청 보내기
+      // API 요청
       const response = await api.get(`${API_PATHS.CHESTS_USERS}/${userId}`, {
-        params: {
-          ...params,
-          type,
-          receiverType
-        }
+        params: requestParams
       });
 
       console.log(`${activeTab} 응답:`, response);
 
       // 응답 구조 처리
       if (response.data && response.data.data) {
-        setRockets(response.data.data.chests || []);
+        if (activeTab === 'sent') {
+          setRockets(response.data.data.rockets || []);
+        } else {
+          setRockets(response.data.data.chests || []);
+        }
         setTotalPages(response.data.data.totalPages || 0);
-        setTotalRockets(response.data.data.totalElements || 0); // 추가
+        setTotalRockets(response.data.data.totalElements || 0);
       } else {
         setRockets([]);
       }
@@ -163,11 +166,17 @@ const RocketChest = () => {
   };
 
   // 로켓 상세 정보 조회 (수정됨)
-  const fetchRocketDetail = async (chestId) => {
+  const fetchRocketDetail = async (rocket) => {
     try {
       setRocketDetailLoading(true);
-
-      const response = await api.get(`${API_PATHS.CHESTS_USERS}/${userId}/details/${chestId}`);
+      // sent/received에 따라 id와 API 경로 분기
+      const detailId = rocket[idKey];
+      const url =
+        activeTab === 'sent'
+          ? `${API_PATHS.CHESTS_USERS}/${userId}/sent-details/${detailId}` // 백엔드에 맞게 경로 조정
+          : `${API_PATHS.CHESTS_USERS}/${userId}/details/${detailId}`;
+      console.log(detailId);
+      const response = await api.get(url);
       if (!response.data || !response.data.data) {
         throw new Error('데이터 형식이 올바르지 않습니다.');
       }
@@ -398,26 +407,25 @@ const RocketChest = () => {
 
   // 로켓 클릭 처리 (수정됨)
   const handleRocketClick = async (rocket) => {
-    const chestId = rocket.chestId;
-
+    const detailId = rocket[idKey];
+    console.log('rocket:', rocket);
     if (isDeleteMode) {
-      // 보낸 로켓함이면 잠금 여부와 무관하게 삭제 체크 가능
+      // 삭제 체크 분기 (sent/received)
       if (activeTab === 'sent') {
-        if (rocketsToDelete.includes(chestId)) {
-          setRocketsToDelete(rocketsToDelete.filter(id => id !== chestId));
+        if (rocketsToDelete.includes(detailId)) {
+          setRocketsToDelete(rocketsToDelete.filter(id => id !== detailId));
         } else {
-          setRocketsToDelete([...rocketsToDelete, chestId]);
+          setRocketsToDelete([...rocketsToDelete, detailId]);
         }
         return;
       }
-
       // 받은/모임 로켓함: 잠금이 풀려야만 삭제 체크 가능
       const { isUnlocked } = calculateTimeRemaining(rocket.lockExpiredAt);
       if (isUnlocked) {
-        if (rocketsToDelete.includes(chestId)) {
-          setRocketsToDelete(rocketsToDelete.filter(id => id !== chestId));
+        if (rocketsToDelete.includes(detailId)) {
+          setRocketsToDelete(rocketsToDelete.filter(id => id !== detailId));
         } else {
-          setRocketsToDelete([...rocketsToDelete, chestId]);
+          setRocketsToDelete([...rocketsToDelete, detailId]);
         }
       }
       return;
@@ -425,43 +433,28 @@ const RocketChest = () => {
 
     // 상세 정보 가져오기
     try {
-      console.log('클릭한 로켓 기본 정보:', rocket);
-
-      // 먼저 모달을 열고 로딩 상태 표시
       setSelectedRocket({
         ...rocket,
         loading: true
       });
       setIsModalOpen(true);
 
-      // 상세 정보 로드 
-      const detailData = await fetchRocketDetail(chestId);
-      console.log('로드된 상세 정보:', detailData);
-
-      // 상세 정보가 로드되면 선택한 로켓 정보 업데이트
-      setSelectedRocket(prev => {
-        const updated = {
-          ...prev,
-          ...detailData,
-          loading: false,
-          // 필수 필드 확실하게 처리
-          content: detailData.content || prev.content || '',
-          files: detailData.files || detailData.rocketFiles || [],
-          rocketFiles: detailData.files || detailData.rocketFiles || []
-        };
-        console.log('업데이트된 로켓 정보:', updated);
-        return updated;
-      });
+      // 상세 정보 로드
+      const detailData = await fetchRocketDetail(rocket);
+      setSelectedRocket(prev => ({
+        ...prev,
+        ...detailData,
+        loading: false,
+        content: detailData.content || prev.content || '',
+        files: detailData.files || detailData.rocketFiles || [],
+        rocketFiles: detailData.files || detailData.rocketFiles || []
+      }));
     } catch (err) {
-      console.error("로켓 상세 정보 가져오기 실패", err);
-
-      // 에러 상태 설정
       setSelectedRocket(prevRocket => ({
         ...prevRocket,
         loading: false,
         loadError: true
       }));
-
       alert("로켓 정보를 가져오는데 실패했습니다.");
     }
   };
