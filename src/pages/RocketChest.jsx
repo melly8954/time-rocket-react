@@ -27,11 +27,12 @@ const RocketChest = () => {
 
   // UI 상태
   const [activeTab, setActiveTab] = useState('received');
+  const isSentTab = activeTab === 'sent';
   // 받은 로켓함의 하위 탭 상태 추가
   const [receivedSubTab, setReceivedSubTab] = useState('self'); // 'self' 또는 'other'
   const [sortOrder, setSortOrder] = useState('desc'); // 기본값을 desc로 설정 (최신순)
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [sentRockets, setSentRockets] = useState([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [rocketsToDelete, setRocketsToDelete] = useState([]);
@@ -326,6 +327,26 @@ const RocketChest = () => {
       console.error('로켓 삭제 실패:', err);
       alert(err.response.data.message);
     }
+  };
+
+  // sent 목록에서 선택된 로켓만 UI상에서 제거하는 함수
+  const removeSentRocketsFromUI = () => {
+    if (rocketsToDelete.length === 0) {
+      alert('삭제할 로켓을 선택해주세요.');
+      return;
+    }
+
+    if (!window.confirm(`선택한 ${rocketsToDelete.length}개의 로켓을 UI에서만 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    // rocketsToDelete 는 로켓의 id 또는 식별자 배열이라고 가정
+    setSentRockets(prev =>
+      prev.filter(rocket => !rocketsToDelete.includes(rocket.id))
+    );
+
+    setRocketsToDelete([]);
+    alert('선택한 로켓이 UI에서 삭제되었습니다.');
   };
 
   // 남은 시간 계산 함수
@@ -656,26 +677,55 @@ const RocketChest = () => {
 
           {isDeleteMode ? (
             <>
-              <button
-                className={`control-button delete ${rocketsToDelete.length > 0 ? 'active' : ''}`}
-                onClick={() => {
-                  if (rocketsToDelete.length > 0) {
-                    deleteSelectedRockets();
-                  }
-                }}
-                disabled={rocketsToDelete.length === 0}
-              >
-                삭제하기
-              </button>
-              <button
-                className="control-button cancel"
-                onClick={() => {
-                  setIsDeleteMode(false);
-                  setRocketsToDelete([]);
-                }}
-              >
-                취소
-              </button>
+              {/* 보낸 로켓함(sent)일 때 */}
+              {isSentTab ? (
+                <>
+                  <button
+                    className={`control-button delete ${rocketsToDelete.length > 0 ? 'active' : ''}`}
+                    onClick={() => {
+                      if (rocketsToDelete.length > 0) {
+                        removeSentRocketsFromUI();
+                      }
+                    }}
+                    disabled={rocketsToDelete.length === 0}
+                  >
+                    UI에서 삭제하기
+                  </button>
+                  <button
+                    className="control-button cancel"
+                    onClick={() => {
+                      setIsDeleteMode(false);
+                      setRocketsToDelete([]);
+                    }}
+                  >
+                    취소
+                  </button>
+                </>
+              ) : (
+                // 수신함(self)이나 다른 보관함에서는 기존 deleteSelectedRockets 사용
+                <>
+                  <button
+                    className={`control-button delete ${rocketsToDelete.length > 0 ? 'active' : ''}`}
+                    onClick={() => {
+                      if (rocketsToDelete.length > 0) {
+                        deleteSelectedRockets();
+                      }
+                    }}
+                    disabled={rocketsToDelete.length === 0}
+                  >
+                    삭제하기
+                  </button>
+                  <button
+                    className="control-button cancel"
+                    onClick={() => {
+                      setIsDeleteMode(false);
+                      setRocketsToDelete([]);
+                    }}
+                  >
+                    취소
+                  </button>
+                </>
+              )}
             </>
           ) : (
             <button
