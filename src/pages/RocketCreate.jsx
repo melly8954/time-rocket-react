@@ -194,7 +194,7 @@ function RocketCreate() {
             const rocketData = {
                 rocketName: form.rocketName,
                 design: form.design,
-                lockExpiredAt: form.lockExpiredAt ? new Date(form.lockExpiredAt).toISOString() : null,
+                lockExpiredAt: form.lockExpiredAt ? form.lockExpiredAt : null,
                 receiverType: form.receiverType,
                 receiverEmail: form.receiverEmail,
                 content: form.content
