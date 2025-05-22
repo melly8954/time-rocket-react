@@ -187,116 +187,89 @@ const RocketChest = () => {
     try {
       setRocketDetailLoading(true);
 
-      console.log(`상세 정보 요청 URL: ${API_PATHS.CHESTS_USERS}/${userId}/details/${chestId}`);
       const response = await api.get(`${API_PATHS.CHESTS_USERS}/${userId}/details/${chestId}`);
-
-      console.log('로켓 상세 정보 응답:', response.data);
-
-      // 응답 구조 확인
       if (!response.data || !response.data.data) {
         throw new Error('데이터 형식이 올바르지 않습니다.');
       }
 
       const detailData = response.data.data;
-
-      // API 응답의 모든 필드를 로깅하여 구조 확인
-      console.log('상세 정보 필드들:', Object.keys(detailData));
-
-      // 파일 데이터 처리 - 여러 가능한 이름으로 접근 시도
       const files = detailData.rocketFiles || detailData.files || [];
-      console.log('첨부 파일:', files);
-
-      // 잠금 상태 확인
-      const { isUnlocked } = calculateTimeRemaining(detailData.lockExpiredAt);
-
-      // 서버의 잠금 상태와 클라이언트의 계산 결과가 다를 경우
-      if (isUnlocked && detailData.isLocked) {
-        // 잠금 해제 시간이 지났으나 서버의 isLocked가 여전히 true인 경우
-        try {
-          // 자동으로 잠금 해제 시도
-          await unlockRocket(detailData.rocketId);
-          // 성공 시 isLocked 값 업데이트
-          detailData.isLocked = false;
-        } catch (unlockErr) {
-          console.error('자동 잠금 해제 실패:', unlockErr);
-          // 실패해도 계속 진행 (UI에서는 잠금 해제된 것으로 표시)
-        }
-      }
 
       setRocketDetailLoading(false);
 
       return {
         ...detailData,
-        files: files,
+        files,
         content: detailData.content || '',
-        rocketFiles: files, // 중복으로 추가하여 어느 쪽으로 접근해도 파일을 볼 수 있게 함
-        isLocked: !isUnlocked // 클라이언트 측에서 계산한 값 사용
+        rocketFiles: files,
+        // 잠금 상태는 서버 응답값 그대로 사용
+        isLocked: detailData.isLocked
       };
     } catch (err) {
       console.error('로켓 상세 정보 조회 실패:', err);
-      console.error('오류 세부 정보:', err.response || err);
       setRocketDetailLoading(false);
       throw err;
     }
   };
 
-  // 로켓 공개 여부 토글 (완전히 수정됨)
+  const handleUnlockManually = async (rocketId) => {
+    try {
+      const response = await api.patch(`/rockets/${rocketId}/unlocked-rocket`);
+      if (response.status === 200) {
+        alert('로켓이 성공적으로 잠금 해제되었습니다.');
+
+        // 상태 업데이트
+        setSelectedRocket(prev => ({
+          ...prev,
+          isLocked: false
+        }));
+
+        // 목록에도 반영
+        setRockets(prev =>
+          prev.map(r => r.rocketId === rocketId ? { ...r, isLocked: false } : r)
+        );
+      }
+    } catch (err) {
+      console.error('잠금 해제 실패:', err);
+      alert('잠금 해제에 실패했습니다.');
+    }
+  };
+  // 로켓 공개 여부 토글 
   const toggleRocketVisibility = async (chestId) => {
     try {
-      console.log(`로켓 공개 상태 변경 요청 - chestId: ${chestId}`);
-
-      // 선택한 로켓 찾기
       const currentRocket = rockets.find(r => r.chestId === chestId) ||
-        selectedRocket ||
-        rocketToDisplay;
+        selectedRocket || rocketToDisplay;
 
       if (!currentRocket) {
         alert('로켓 정보를 찾을 수 없습니다.');
         return false;
       }
 
-      // 프론트엔드에서 클라이언트 측 잠금 상태 확인
-      const { isUnlocked } = calculateTimeRemaining(currentRocket.lockExpiredAt);
-
-      if (!isUnlocked) {
-        alert('이 로켓은 아직 잠금 상태입니다. 잠금 해제 시간이 지나야 진열장에 추가할 수 있습니다.');
+      // 수동 잠금 해제를 사용하므로 클라이언트에서 잠금 상태만 확인
+      if (currentRocket.isLocked) {
+        alert('이 로켓은 잠금 상태입니다. 먼저 잠금을 해제해주세요.');
         return false;
       }
 
-      // 서버에 잠금 해제 요청
-      const unlockResult = await unlockRocket(currentRocket.rocketId);
-
-      if (unlockResult && unlockResult.locked) {
-        alert(unlockResult.message || '로켓 잠금 해제에 실패했습니다.');
-        return false;
-      }
-
-      // 잠금 해제에 성공하거나 이미 해제된 상태라면 공개 상태 변경 진행
       const response = await api.patch(`${API_PATHS.CHESTS}/${chestId}/visibility`);
 
-      console.log('공개 여부 변경 응답:', response);
-
       if (response.data && response.status === 200) {
-        // 현재 상태의 반대로 설정 (백엔드는 토글 방식)
         const newIsPublic = !currentRocket.isPublic;
 
-        // 상태 업데이트
         setRockets(prevRockets => prevRockets.map(rocket =>
           rocket.chestId === chestId
             ? { ...rocket, isPublic: newIsPublic }
             : rocket
         ));
 
-        // 선택된 로켓이 있고, 그것이 이 로켓인 경우 상태 업데이트
-        if (selectedRocket && selectedRocket.chestId === chestId) {
+        if (selectedRocket?.chestId === chestId) {
           setSelectedRocket(prev => ({
             ...prev,
             isPublic: newIsPublic
           }));
         }
 
-        // 진열장에 추가하려는 로켓이 있고, 그것이 이 로켓인 경우 상태 업데이트
-        if (rocketToDisplay && rocketToDisplay.chestId === chestId) {
+        if (rocketToDisplay?.chestId === chestId) {
           setRocketToDisplay(prev => ({
             ...prev,
             isPublic: newIsPublic
@@ -305,7 +278,6 @@ const RocketChest = () => {
 
         alert(newIsPublic ? '로켓이 진열장에 추가되었습니다.' : '로켓이 진열장에서 제거되었습니다.');
 
-        // 공개 상태로 변경된 경우 진열장 페이지로 이동
         if (newIsPublic) {
           setTimeout(() => {
             navigate('/display');
@@ -318,14 +290,7 @@ const RocketChest = () => {
       return false;
     } catch (err) {
       console.error('로켓 공개 설정 변경 실패:', err);
-      console.error('오류 세부 정보:', err.response || err);
-
-      let errorMessage = '로켓 공개 설정을 변경하는데 실패했습니다.';
-      if (err.response && err.response.data && err.response.data.message) {
-        errorMessage = err.response.data.message;
-      }
-
-      alert(errorMessage);
+      alert('로켓 공개 설정을 변경하는데 실패했습니다.');
       return false;
     }
   };
@@ -449,7 +414,7 @@ const RocketChest = () => {
     }
   };
 
-  // 남은 시간 계산 함수 (자동 잠금 해제 기능 추가)
+  // 남은 시간 계산 함수
   const calculateTimeRemaining = async (unlockDate, rocketId) => {
     if (!unlockDate) {
       return { isUnlocked: true, timeString: '오픈 가능' };
@@ -460,15 +425,6 @@ const RocketChest = () => {
     const diff = targetDate - now;
 
     if (diff <= 0 || isNaN(diff)) {
-      // 여기서 잠금 해제 상태가 확인되면 자동으로 API 호출
-      if (rocketId) {
-        try {
-          // 백그라운드에서 비동기적으로 실행하고 오류는 무시
-          unlockRocket(rocketId).catch(err => console.log('자동 잠금 해제 시도 중 오류:', err));
-        } catch (error) {
-          console.log('자동 잠금 해제 시도 중 오류:', error);
-        }
-      }
       return { isUnlocked: true, timeString: '오픈 가능' };
     }
 
@@ -912,9 +868,9 @@ const RocketChest = () => {
                 </p>
 
                 {(() => {
-                  const { isUnlocked, timeString } = calculateTimeRemaining(selectedRocket.lockExpiredAt);
+                  const locked = selectedRocket?.isLocked; // 수동 잠금 여부로 판단
 
-                  return isUnlocked ? (
+                  return !locked ? (
                     selectedRocket.loading ? (
                       <div className="loading-content">
                         <div className="loading-spinner-sm"></div>
@@ -941,15 +897,9 @@ const RocketChest = () => {
                           </div>
                         </div>
 
-                        {/* 파일 목록 출력 - files와 rocketFiles 둘 다 확인 */}
+                        {/* 파일 목록 출력 */}
                         {(() => {
-                          // 파일 데이터를 얻기 위한 여러 경로 시도
-                          const filesList = selectedRocket.files ||
-                            selectedRocket.rocketFiles ||
-                            [];
-
-                          console.log('모달에 표시할 파일 목록:', filesList);
-
+                          const filesList = selectedRocket.files || selectedRocket.rocketFiles || [];
                           return filesList.length > 0 ? (
                             <div className="rocket-attachments">
                               <h3>첨부 파일 ({filesList.length}개)</h3>
@@ -992,15 +942,20 @@ const RocketChest = () => {
                   ) : (
                     <div className="rocket-locked">
                       <div className="lock-icon"></div>
-                      <p>이 로켓은 아직 잠겨 있습니다.</p>
-                      <p className="time-remaining">
-                        <strong>잠금 해제까지 남은 시간:</strong><br />
-                        {timeString}
-                      </p>
-                      <p className="unlock-date">
-                        <strong>잠금 해제일:</strong><br />
-                        {formatDate(selectedRocket.lockExpiredAt)}
-                      </p>
+                      <p>이 로켓은 현재 잠겨 있습니다.</p>
+
+                      {/* 남은 시간 계산 및 표시 */}
+                      {(() => {
+                        const { timeString } = calculateTimeRemaining(selectedRocket.unlockDate);
+                        return <p>남은 시간: {timeString}</p>;
+                      })()}
+
+                      <button
+                        className="unlock-button"
+                        onClick={() => handleUnlockManually(selectedRocket.rocketId)}
+                      >
+                        🔓 잠금 해제
+                      </button>
                     </div>
                   );
                 })()}
