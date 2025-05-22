@@ -9,6 +9,7 @@ const useAuthStore = create(
       rememberMe: false,
       userId: null,
       nickname: "",
+      isAuthChecked: false,
 
       setIsLoggedIn: (status) => set({ isLoggedIn: status }),
       setAccessToken: (token) => set({ accessToken: token }),
@@ -16,6 +17,7 @@ const useAuthStore = create(
       setUserId: (id) => set({ userId: id }),
       setNickname: (name) => set({ nickname: name }),
       setEmail: (email) => set({ email: email }),
+      setIsAuthChecked: (value) => set({ isAuthChecked: value }),
     }),
     {
       name: 'userId', // localStorage에 저장될 키

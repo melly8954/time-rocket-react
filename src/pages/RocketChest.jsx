@@ -288,8 +288,8 @@ const RocketChest = () => {
       await toggleRocketVisibility(selectedRocket.chestId);
 
     } catch (error) {
-      console.error('진열장 추가 중 오류:', error);
-      alert('진열장 추가 중 오류가 발생했습니다.');
+      const errorMessage = error.response?.data?.message || "서버 오류 발생";
+      alert(errorMessage);
     }
   };
 
