@@ -591,3 +591,207 @@
   opacity: 0.5;
   z-index: 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 스텝 인디케이터 스타일 */
+.steps-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.step-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: #ddd;
+  transition: background-color 0.3s ease;
+}
+
+.step-dot.active {
+  background-color: #614CAF; /* 색상 변경: 초록색 -> 보라색 */
+}
+
+.step-line {
+  height: 3px;
+  width: 50px;
+  background-color: #ddd;
+  margin: 0 5px;
+  transition: background-color 0.3s ease;
+}
+
+.step-line.active {
+  background-color: #614CAF; /* 색상 변경 */
+}
+
+/* 폼 스텝 스타일 */
+.form-step {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 네비게이션 버튼 스타일 */
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-button {
+  background-color: #614CAF; /* 색상 변경 */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.nav-button:hover:not(.disabled) {
+  background-color: #513C9E; /* 어두운 보라색으로 변경 */
+  transform: scale(1.1);
+}
+
+.nav-button.disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.step-indicator {
+  font-size: 16px;
+  color: white;
+  font-weight: bold;
+}
+
+/* 파일 업로드 스타일 */
+.file-upload-area {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.btn-file-upload {
+  background-color: #614CAF; /* 색상 변경 */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 15px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.btn-file-upload:hover {
+  background-color: #513C9E; /* 어두운 보라색으로 변경 */
+}
+
+.file-list {
+  margin-top: 10px;
+}
+
+.file-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.file-name {
+  flex-grow: 1;
+  margin-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  color: #ddd;
+  margin-right: 10px;
+  font-size: 12px;
+}
+
+.btn-remove-file {
+  background: none;
+  border: none;
+  color: red;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 5px;
+}
+
+.no-files {
+  color: #bbb;
+  font-style: italic;
+  text-align: center;
+  margin: 10px 0;
+}
+
+/* 폼 헤더 스타일 개선 */
+.form-header {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+/* 제출 버튼 스타일 */
+.btn-submit {
+  background-color: #614CAF; /* 색상 변경 */
+}
+
+.btn-submit:hover {
+  background-color: #513C9E; /* 어두운 보라색으로 변경 */
+}
+
+.btn-submit.submitting {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* 임시 저장 및 불러오기 버튼 스타일 업데이트 */
+.btn-green {
+  background-color: #614CAF; /* 색상 변경 */
+}
+
+.btn-green:hover {
+  background-color: #513C9E; /* 어두운 보라색으로 변경 */
+}

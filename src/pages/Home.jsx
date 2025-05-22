@@ -85,17 +85,18 @@ const Home = () => {
         }
         
         try {
-          // 로켓 데이터 API 호출
+          // 로켓 데이터 API 호출 - URL과 파라미터에서 userId 중복 제거
           const rocketsParams = {
-            userId: userId,
-            page: 1,
+            page: 1, 
             size: 4,
             sort: 'sentAt',
             order: 'desc'
           };
           
+          // userId는 URL에만 포함되도록 수정
           const rocketsResponse = await api.get(`${API_PATHS.CHESTS}/${userId}`, { params: rocketsParams });
           console.log('API 응답 (rocketsResponse):', rocketsResponse);
+
           
           // API 응답 구조에 맞게 처리
           if (rocketsResponse.data && rocketsResponse.data.data) {
