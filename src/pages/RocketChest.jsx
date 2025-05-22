@@ -217,6 +217,7 @@ const RocketChest = () => {
         setRockets(prev =>
           prev.map(r => r.rocketId === rocketId ? { ...r, isLocked: false } : r)
         );
+        fetchRockets();
       }
     } catch (err) {
       console.error('잠금 해제 실패:', err);
@@ -293,20 +294,25 @@ const RocketChest = () => {
   };
 
   // 선택한 로켓 삭제
-  const deleteSingleRocket = async (chestId) => {
+  const deleteSingleRocket = async (tabIdKey) => {
     if (!window.confirm('해당 로켓을 삭제하시겠습니까?')) {
       return;
     }
+    console.log("key는" + tabIdKey);
     try {
-      // DELETE 요청으로 변경 - 실제 DB 삭제 수행
-      const response = await api.patch(`${API_PATHS.CHESTS}/${chestId}/deleted-flag`);
-      console.log(`로켓 ${chestId} 삭제 응답:`, response);
+      const url =
+        activeTab === 'sent'
+          ? `${API_PATHS.CHESTS}/sent/${tabIdKey}/deleted-flag` // 보낸함
+          : `${API_PATHS.CHESTS}/${tabIdKey}/deleted-flag`;     // 받은함
+      console.log("log는" + url);
+      const response = await api.patch(url);
+      console.log(`로켓 ${tabIdKey} 삭제 응답:`, response);
       fetchRockets();
       setIsModalOpen(false);
       alert('로켓이 성공적으로 삭제되었습니다.');
     } catch (err) {
       console.error('로켓 삭제 실패:', err);
-      alert(err.response.data.message);
+      alert(err?.response?.data?.message || '로켓 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -322,40 +328,22 @@ const RocketChest = () => {
     }
 
     try {
-      // 각각 개별적으로 DELETE 요청 보내기
-      const deletePromises = rocketsToDelete.map(chestId =>
-        api.patch(`${API_PATHS.CHESTS}/${chestId}/deleted-flag`)
-      );
+      const deletePromises = rocketsToDelete.map(rocketId => {
+        const url =
+          activeTab === 'sent'
+            ? `${API_PATHS.CHESTS}/sent/${rocketId}/deleted-flag`
+            : `${API_PATHS.CHESTS}/${rocketId}/deleted-flag`;
+        return api.patch(url);
+      });
 
       await Promise.all(deletePromises);
       fetchRockets();
-      // 삭제 성공 후 선택 목록 초기화
       setRocketsToDelete([]);
       alert('선택한 로켓이 성공적으로 삭제되었습니다.');
     } catch (err) {
       console.error('로켓 삭제 실패:', err);
-      alert(err.response.data.message);
+      alert(err?.response?.data?.message || '로켓 삭제 중 오류가 발생했습니다.');
     }
-  };
-
-  // sent 목록에서 선택된 로켓만 UI상에서 제거하는 함수
-  const removeSentRocketsFromUI = () => {
-    if (rocketsToDelete.length === 0) {
-      alert('삭제할 로켓을 선택해주세요.');
-      return;
-    }
-
-    if (!window.confirm(`선택한 ${rocketsToDelete.length}개의 로켓을 UI에서만 삭제하시겠습니까?`)) {
-      return;
-    }
-
-    // rocketsToDelete 는 로켓의 id 또는 식별자 배열이라고 가정
-    setSentRockets(prev =>
-      prev.filter(rocket => !rocketsToDelete.includes(rocket.id))
-    );
-
-    setRocketsToDelete([]);
-    alert('선택한 로켓이 UI에서 삭제되었습니다.');
   };
 
   // 남은 시간 계산 함수
@@ -438,7 +426,6 @@ const RocketChest = () => {
         loading: true
       });
       setIsModalOpen(true);
-
       // 상세 정보 로드
       const detailData = await fetchRocketDetail(rocket);
       setSelectedRocket(prev => ({
@@ -677,12 +664,12 @@ const RocketChest = () => {
                     className={`control-button delete ${rocketsToDelete.length > 0 ? 'active' : ''}`}
                     onClick={() => {
                       if (rocketsToDelete.length > 0) {
-                        removeSentRocketsFromUI();
+                        deleteSelectedRockets();
                       }
                     }}
                     disabled={rocketsToDelete.length === 0}
                   >
-                    UI에서 삭제하기
+                  삭제하기
                   </button>
                   <button
                     className="control-button cancel"
@@ -695,7 +682,6 @@ const RocketChest = () => {
                   </button>
                 </>
               ) : (
-                // 수신함(self)이나 다른 보관함에서는 기존 deleteSelectedRockets 사용
                 <>
                   <button
                     className={`control-button delete ${rocketsToDelete.length > 0 ? 'active' : ''}`}
@@ -919,7 +905,7 @@ const RocketChest = () => {
                         <div className="rocket-actions">
                           <button
                             className="delete-button"
-                            onClick={() => deleteSingleRocket(selectedRocket.chestId)}
+                            onClick={() => deleteSingleRocket(selectedRocket.rocketSentId)}
                           >
                             로켓 삭제
                           </button>
@@ -978,9 +964,9 @@ const RocketChest = () => {
 
                           <button
                             className="delete-button"
-                            onClick={() => deleteSingleRocket(selectedRocket.chestId)}
+                            onClick={() => deleteSingleRocket(selectedRocket[idKey])}
                           >
-                            로켓 삭제
+                            로켓 삭제 
                           </button>
                         </div>
                       </>

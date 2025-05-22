@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../authStore';
+import { fetchUserProfile } from '../../utils/profile';
 import rocketImg from '../../assets/rocket.png';
 import { WebIcon, RocketIcon, PeopleIcon } from '../ui/Icons';
 import styles from '../../style/Header.module.css';
@@ -8,7 +9,23 @@ import styles from '../../style/Header.module.css';
 const Header = () => {
   const { isLoggedIn, nickname } = useAuthStore();
   const navigate = useNavigate();
+  const [userId, setUserId] = useState(null);
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const user = await fetchUserProfile();
+        if (!user || typeof user.userId !== "number") {
+          throw new Error("userId가 올바르지 않습니다.");
+        }
+        setUserId(user.userId);
+      } catch (err) {
+        setUserId(null);
+        // 에러 처리 (예: 로그인 페이지로 이동)
+      }
+    };
+    loadProfile();
+  }, []);
   // 인증이 필요한 메뉴 클릭 시 실행되는 함수
   const handleMenuClick = (e, target) => {
     if (!isLoggedIn) {
@@ -33,7 +50,23 @@ const Header = () => {
         <div className={styles.iconMenu}>
           <Link to="/rockets/create" className={styles.link} onClick={(e) => handleMenuClick(e, '/rocket')}>
             <RocketIcon className={styles.icon} />
-            <span className={styles.iconLabel}>로켓</span>
+            <span className={styles.iconLabel}>로켓 전송</span>
+          </Link>
+          <Link
+            to={`/chests/${userId}`}
+            className={styles.link}
+            onClick={(e) => handleMenuClick(e, `/chests/${userId}`)}
+          >
+            <RocketIcon className={styles.icon} />
+            <span className={styles.iconLabel}>로켓 보관함</span>
+          </Link>
+          <Link
+            to={`/display`}
+            className={styles.link}
+            onClick={(e) => handleMenuClick(e, `/chests/${userId}`)}
+          >
+            <RocketIcon className={styles.icon} />
+            <span className={styles.iconLabel}>로켓 진열장</span>
           </Link>
           <Link to="/friends" className={styles.link} onClick={(e) => handleMenuClick(e, '/friends')}>
             <PeopleIcon className={styles.icon} />
