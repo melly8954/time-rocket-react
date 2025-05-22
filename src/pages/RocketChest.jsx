@@ -21,6 +21,7 @@ const RocketChest = () => {
 
   // 로켓 데이터 상태
   const [rockets, setRockets] = useState([]);
+  const [totalRockets, setTotalRockets] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -119,6 +120,7 @@ const RocketChest = () => {
         if (response.data && response.data.data) {
           setRockets(response.data.data.chests || []);
           setTotalPages(response.data.data.totalPages || 0);
+          setTotalRockets(response.data.data.totalElements || 0); // 추가
         } else {
           setRockets([]);
         }
@@ -777,14 +779,14 @@ const RocketChest = () => {
       {isSearchMode && (
         <div className="search-results-info">
           <p>
-            검색어: "{searchTerm}" - {rockets.length}개의 로켓을 찾았습니다
+            검색어: "{searchTerm}" - {totalRockets}개의 로켓을 찾았습니다
             {rockets.length === 0 && ' (해당하는 로켓은 존재하지 않습니다)'}
           </p>
         </div>
       )}
 
       <div className="rockets-count">
-        총 {currentRockets.length}개의 로켓이 있습니다
+        총 {totalRockets}개의 로켓이 있습니다
       </div>
 
       {isLoading ? (
