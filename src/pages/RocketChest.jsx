@@ -669,7 +669,7 @@ const RocketChest = () => {
                     }}
                     disabled={rocketsToDelete.length === 0}
                   >
-                  삭제하기
+                    삭제하기
                   </button>
                   <button
                     className="control-button cancel"
@@ -741,7 +741,10 @@ const RocketChest = () => {
       ) : currentRockets.length > 0 ? (
         <div className="rockets-grid">
           {currentRockets.map((rocket) => {
-            const chestId = rocket.chestId;
+            // sent/received에 따라 idKey를 동적으로 선택
+            const idKey = activeTab === 'sent' ? 'rocketSentId' : 'chestId';
+            const itemId = rocket[idKey];
+
 
             // sent 탭이면 잠금 상태 계산 생략
             const isSentTab = activeTab === 'sent';
@@ -751,11 +754,12 @@ const RocketChest = () => {
               ? { isUnlocked: true, timeString: '' }
               : calculateTimeRemaining(rocket.lockExpiredAt, rocket.isLock);
 
-            const isSelected = rocketsToDelete.includes(chestId);
+            // rocketsToDelete에도 itemId로 체크
+            const isSelected = rocketsToDelete.includes(itemId);
 
             return (
               <div
-                key={chestId}
+                key={itemId}
                 className={`rocket-item ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`}
                 onClick={() => handleRocketClick(rocket)}
                 onContextMenu={(e) => isDeleteMode ? null : handleAddToDisplay(e, rocket)}
@@ -767,7 +771,7 @@ const RocketChest = () => {
                     onError={(e) => { e.target.src = '/src/assets/rocket.png' }}
                   />
                   {rocket.isPublic && <div className="public-badge">공개</div>}
-                  {isDeleteMode && isUnlocked && (
+                  {isDeleteMode && (isSentTab || isUnlocked) && (
                     <div className="delete-checkbox">
                       {isSelected ? '✓' : ''}
                     </div>
@@ -966,7 +970,7 @@ const RocketChest = () => {
                             className="delete-button"
                             onClick={() => deleteSingleRocket(selectedRocket[idKey])}
                           >
-                            로켓 삭제 
+                            로켓 삭제
                           </button>
                         </div>
                       </>
