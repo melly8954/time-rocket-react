@@ -42,8 +42,19 @@ const RocketChest = () => {
   const [rocketDetailLoading, setRocketDetailLoading] = useState(false);
 
   // 페이지네이션 상태
-  const [currentPage, setCurrentPage] = useState(1); // 페이지 번호는 1부터 시작 (백엔드)
   const [totalPages, setTotalPages] = useState(0);
+  const [currentPageByTab, setCurrentPageByTab] = useState({
+    sent: 1,
+    received: {
+      self: 1,
+      other: 1,
+    },
+  });
+
+  // 현재 페이지 계산 (탭 + 하위탭 반영)
+  const currentPage = activeTab === 'received'
+    ? currentPageByTab.received[receivedSubTab] || 1
+    : currentPageByTab[activeTab] || 1;
 
   // 시간 갱신을 위한 타이머
   const [, setTimer] = useState(0);
@@ -63,83 +74,6 @@ const RocketChest = () => {
   useEffect(() => {
     if (!userId) return;
 
-    const fetchRockets = async () => {
-      if (isFetchingRef.current) return; // 가드
-      isFetchingRef.current = true;
-
-      setIsLoading(true);
-      try {
-        console.log("API 요청 시작 - 사용자 ID:", userId);
-
-        // 백엔드 API 요청 형식에 맞게 파라미터 설정
-        const params = {
-          page: currentPage,
-          size: 10,
-          sort: 'chestId',  // 기본 정렬 필드
-          order: sortOrder, // 정렬 방향 적용
-          rocketName: searchTerm.trim() || undefined
-        };
-
-        // 탭과 하위 탭에 따른 type/receiverType 설정
-        let type = 'received';
-        let receiverType;
-
-        if (activeTab === 'received') {
-          type = 'received';
-          receiverType = receivedSubTab; // self or other
-        } else if (activeTab === 'sent') {
-          type = 'sent';
-          // sent는 receiverType 없음
-        } else if (activeTab === 'group') {
-          type = 'received';
-          receiverType = 'group';
-        }
-
-        // 요청 파라미터 조립
-        const requestParams = {
-          ...params,
-          type,
-        };
-
-        if (receiverType !== undefined) {
-          requestParams.receiverType = receiverType;
-        }
-
-        // API 요청 보내기
-        const response = await api.get(`${API_PATHS.CHESTS_USERS}/${userId}`, {
-          params: {
-            ...params,
-            type,
-            receiverType
-          }
-        });
-
-        console.log(`${activeTab} 응답:`, response);
-
-        // 응답 구조 처리
-        if (response.data && response.data.data) {
-          setRockets(response.data.data.chests || []);
-          setTotalPages(response.data.data.totalPages || 0);
-          setTotalRockets(response.data.data.totalElements || 0); // 추가
-        } else {
-          setRockets([]);
-        }
-
-        setIsLoading(false);
-      } catch (err) {
-        console.error('로켓 데이터 로드 실패:', err);
-        if (err.response && err.response.status === 404) {
-          // 404는 데이터가 없는 경우로 처리
-          setRockets([]);
-        } else {
-          setError('로켓 데이터를 불러오는데 실패했습니다.');
-        }
-      } finally {
-        isFetchingRef.current = false;  // 반드시 해제
-        setIsLoading(false);            // 로딩 상태도 해제
-      }
-    };
-
     fetchRockets();
 
     // 1초마다 시간 업데이트 (남은 시간 계산을 위해)
@@ -150,35 +84,80 @@ const RocketChest = () => {
     return () => clearInterval(interval);
   }, [userId, currentPage, activeTab, receivedSubTab, sortOrder, isSearchMode, searchTerm]);
 
-  // 로켓 잠금 해제 함수 추가
-  const unlockRocket = async (rocketId) => {
+  const fetchRockets = async () => {
+    if (isFetchingRef.current) return; // 가드
+    isFetchingRef.current = true;
+
+    setIsLoading(true);
     try {
-      console.log(`로켓 잠금 해제 요청 - rocketId: ${rocketId}`);
+      console.log("API 요청 시작 - 사용자 ID:", userId);
 
-      // 백엔드의 unlockRocket API 호출
-      const response = await api.patch(`${API_PATHS.ROCKETS}/${rocketId}/unlock`);
+      // 백엔드 API 요청 형식에 맞게 파라미터 설정
+      const params = {
+        page: currentPage,
+        size: 10,
+        sort: 'chestId',  // 기본 정렬 필드
+        order: sortOrder, // 정렬 방향 적용
+        rocketName: searchTerm.trim() || undefined
+      };
 
-      console.log('로켓 잠금 해제 응답:', response);
+      // 탭과 하위 탭에 따른 type/receiverType 설정
+      let type = 'received';
+      let receiverType;
 
-      if (response.data && response.status === 200) {
-        return true;
+      if (activeTab === 'received') {
+        type = 'received';
+        receiverType = receivedSubTab; // self or other
+      } else if (activeTab === 'sent') {
+        type = 'sent';
+        // sent는 receiverType 없음
+      } else if (activeTab === 'group') {
+        type = 'received';
+        receiverType = 'group';
       }
-      return false;
+
+      // 요청 파라미터 조립
+      const requestParams = {
+        ...params,
+        type,
+      };
+
+      if (receiverType !== undefined) {
+        requestParams.receiverType = receiverType;
+      }
+
+      // API 요청 보내기
+      const response = await api.get(`${API_PATHS.CHESTS_USERS}/${userId}`, {
+        params: {
+          ...params,
+          type,
+          receiverType
+        }
+      });
+
+      console.log(`${activeTab} 응답:`, response);
+
+      // 응답 구조 처리
+      if (response.data && response.data.data) {
+        setRockets(response.data.data.chests || []);
+        setTotalPages(response.data.data.totalPages || 0);
+        setTotalRockets(response.data.data.totalElements || 0); // 추가
+      } else {
+        setRockets([]);
+      }
+
+      setIsLoading(false);
     } catch (err) {
-      console.error('로켓 잠금 해제 실패:', err);
-      console.error('오류 세부 정보:', err.response || err);
-
-      let errorMessage = '로켓 잠금 해제에 실패했습니다.';
-      if (err.response && err.response.data && err.response.data.message) {
-        errorMessage = err.response.data.message;
+      console.error('로켓 데이터 로드 실패:', err);
+      if (err.response && err.response.status === 404) {
+        // 404는 데이터가 없는 경우로 처리
+        setRockets([]);
+      } else {
+        setError('로켓 데이터를 불러오는데 실패했습니다.');
       }
-
-      // 잠금 해제일이 아직 지나지 않은 경우
-      if (errorMessage.includes('잠금 해제일이 아직 지나지 않았습니다')) {
-        return { locked: true, message: '아직 잠금 해제일이 지나지 않았습니다.' };
-      }
-
-      return { locked: true, message: errorMessage };
+    } finally {
+      isFetchingRef.current = false;  // 반드시 해제
+      setIsLoading(false);            // 로딩 상태도 해제
     }
   };
 
@@ -231,147 +210,93 @@ const RocketChest = () => {
       }
     } catch (err) {
       console.error('잠금 해제 실패:', err);
-      alert('잠금 해제에 실패했습니다.');
+      alert(err.response.data.message);
     }
   };
-  // 로켓 공개 여부 토글 
+
+  // toggleRocketVisibility: 공개 여부 토글, 서버에서 변경 후 최신 상태 받아서 상태 갱신
   const toggleRocketVisibility = async (chestId) => {
     try {
-      const currentRocket = rockets.find(r => r.chestId === chestId) ||
-        selectedRocket || rocketToDisplay;
-
+      const currentRocket = rockets.find(r => r.chestId === chestId) || selectedRocket || rocketToDisplay;
       if (!currentRocket) {
         alert('로켓 정보를 찾을 수 없습니다.');
         return false;
       }
 
-      // 수동 잠금 해제를 사용하므로 클라이언트에서 잠금 상태만 확인
       if (currentRocket.isLocked) {
         alert('이 로켓은 잠금 상태입니다. 먼저 잠금을 해제해주세요.');
         return false;
       }
 
       const response = await api.patch(`${API_PATHS.CHESTS}/${chestId}/visibility`);
+      fetchRockets();
+      if (response.status === 200) {
+        // 서버에서 공개 여부를 직접 알려주진 않는다고 가정 -> toggle이니까 반전값 사용
+        const updatedIsPublic = !currentRocket.isPublic;
 
-      if (response.data && response.status === 200) {
-        const newIsPublic = !currentRocket.isPublic;
-
-        setRockets(prevRockets => prevRockets.map(rocket =>
-          rocket.chestId === chestId
-            ? { ...rocket, isPublic: newIsPublic }
-            : rocket
+        // 상태 한번만 갱신
+        setRockets(prev => prev.map(r =>
+          r.chestId === chestId ? { ...r, isPublic: updatedIsPublic } : r
         ));
 
-        if (selectedRocket?.chestId === chestId) {
-          setSelectedRocket(prev => ({
-            ...prev,
-            isPublic: newIsPublic
-          }));
-        }
+        // 선택된 로켓들도 필요하다면 한꺼번에 갱신
+        setSelectedRocket(prev => prev?.chestId === chestId ? { ...prev, isPublic: updatedIsPublic } : prev);
+        setRocketToDisplay(prev => prev?.chestId === chestId ? { ...prev, isPublic: updatedIsPublic } : prev);
 
-        if (rocketToDisplay?.chestId === chestId) {
-          setRocketToDisplay(prev => ({
-            ...prev,
-            isPublic: newIsPublic
-          }));
-        }
+        alert(updatedIsPublic ? '로켓이 진열장에 추가되었습니다.' : '로켓이 진열장에서 제거되었습니다.');
 
-        alert(newIsPublic ? '로켓이 진열장에 추가되었습니다.' : '로켓이 진열장에서 제거되었습니다.');
-
-        if (newIsPublic) {
-          setTimeout(() => {
-            navigate('/display');
-          }, 1000);
-        }
-
-        return true;
+        return updatedIsPublic;
       }
 
+      alert('로켓 공개 상태 변경에 실패했습니다.');
       return false;
-    } catch (err) {
-      console.error('로켓 공개 설정 변경 실패:', err);
-      alert('로켓 공개 설정을 변경하는데 실패했습니다.');
+    } catch (error) {
+      console.error('로켓 공개 설정 변경 실패:', error);
+      alert(err.response.data.message);
       return false;
     }
   };
 
-  // 모달 내 진열장 추가 버튼 클릭 핸들러
+  // 진열장 추가 버튼 핸들러 (잠금 해제 + 공개 상태 토글)
   const handleDisplayButton = async () => {
-    // 이미 공개 상태인 경우 진열장에서 제거
-    if (selectedRocket.isPublic) {
-      await toggleRocketVisibility(selectedRocket.chestId);
+    if (!selectedRocket) {
+      alert('선택된 로켓이 없습니다.');
       return;
     }
 
-    // 잠금 상태 확인
-    const { isUnlocked } = calculateTimeRemaining(selectedRocket.lockExpiredAt);
+    // 잠금 여부 확인
+    const { isUnlocked } = calculateTimeRemaining(selectedRocket.lockExpiredAt, selectedRocket.rocketId);
 
     if (!isUnlocked) {
       alert('이 로켓은 아직 잠금 상태입니다. 잠금 해제 시간이 지나야 진열장에 추가할 수 있습니다.');
       return;
     }
 
-    // 잠금 해제 및 공개 상태 변경
     try {
-      // 먼저 잠금 해제 시도
-      const unlockResult = await unlockRocket(selectedRocket.rocketId);
-
-      if (unlockResult && unlockResult.locked) {
-        alert(unlockResult.message || '로켓 잠금 해제에 실패했습니다.');
-        return;
-      }
-
-      // 공개 상태로 변경
+      // 공개 여부 토글 (true면 공개, false면 비공개)
       await toggleRocketVisibility(selectedRocket.chestId);
 
     } catch (error) {
-      console.error('진열장 추가 과정 오류:', error);
+      console.error('진열장 추가 중 오류:', error);
       alert('진열장 추가 중 오류가 발생했습니다.');
     }
   };
 
-  // UI에서 공개 여부 토글 버튼 클릭 처리
-  const handleToggleVisibility = async (e, chestId) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // toggleRocketVisibility 함수 호출
-    await toggleRocketVisibility(chestId);
-  };
-
   // 선택한 로켓 삭제
   const deleteSingleRocket = async (chestId) => {
-    if (!window.confirm('이 로켓을 삭제하시겠습니까? 삭제된 데이터는 복구할 수 없습니다.')) {
+    if (!window.confirm('해당 로켓을 삭제하시겠습니까?')) {
       return;
     }
-
     try {
       // DELETE 요청으로 변경 - 실제 DB 삭제 수행
-      const response = await api.delete(`${API_PATHS.CHESTS}/${chestId}`, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
+      const response = await api.patch(`${API_PATHS.CHESTS}/${chestId}/deleted-flag`);
       console.log(`로켓 ${chestId} 삭제 응답:`, response);
-
-      // UI에서도 제거 (DB에서도 실제로 삭제됨)
-      setRockets(prevRockets => prevRockets.filter(rocket => rocket.chestId !== chestId));
+      fetchRockets();
       setIsModalOpen(false);
       alert('로켓이 성공적으로 삭제되었습니다.');
     } catch (err) {
       console.error('로켓 삭제 실패:', err);
-
-      // 외래 키 제약조건 오류 처리
-      if (err.response && err.response.status === 500 &&
-        err.response.data && err.response.data.message &&
-        err.response.data.message.includes('foreign key constraint')) {
-
-        // 외래 키 제약조건 문제 해결을 위한 대안적 방법 제시
-        alert('이 로켓은 다른 테이블에서 참조하고 있어 삭제할 수 없습니다. 먼저 관련된 항목을 삭제해주세요.');
-      } else {
-        alert(`로켓 삭제에 실패했습니다: ${err.response?.data?.message || '서버 오류'}`);
-      }
+      alert(err.response.data.message);
     }
   };
 
@@ -382,46 +307,37 @@ const RocketChest = () => {
       return;
     }
 
-    if (!window.confirm(`선택한 ${rocketsToDelete.length}개의 로켓을 삭제하시겠습니까? 삭제된 데이터는 복구할 수 없습니다.`)) {
+    if (!window.confirm(`선택한 ${rocketsToDelete.length}개의 로켓을 삭제하시겠습니까?`)) {
       return;
     }
 
     try {
       // 각각 개별적으로 DELETE 요청 보내기
       const deletePromises = rocketsToDelete.map(chestId =>
-        api.delete(`${API_PATHS.CHESTS}/${chestId}`)
+        api.patch(`${API_PATHS.CHESTS}/${chestId}/deleted-flag`)
       );
 
       await Promise.all(deletePromises);
-
-      // UI에서 삭제된 로켓 제거
-      setRockets(rockets.filter(rocket => !rocketsToDelete.includes(rocket.chestId)));
+      fetchRockets();
+      // 삭제 성공 후 선택 목록 초기화
       setRocketsToDelete([]);
-      setIsDeleteMode(false);
-
       alert('선택한 로켓이 성공적으로 삭제되었습니다.');
     } catch (err) {
       console.error('로켓 삭제 실패:', err);
-
-      if (err.response && err.response.status === 500 &&
-        err.response.data && err.response.data.message &&
-        err.response.data.message.includes('foreign key constraint')) {
-
-        alert('일부 로켓은 다른 테이블에서 참조하고 있어 삭제할 수 없습니다. 먼저 관련된 항목을 삭제해주세요.');
-      } else {
-        alert(`로켓 삭제에 실패했습니다: ${err.response?.data?.message || '서버 오류'}`);
-      }
+      alert(err.response.data.message);
     }
   };
 
   // 남은 시간 계산 함수
-  const calculateTimeRemaining = async (unlockDate, rocketId) => {
-    if (!unlockDate) {
-      return { isUnlocked: true, timeString: '오픈 가능' };
+  const calculateTimeRemaining = (lockExpiredAt, isLock) => {
+    const lock = Number(isLock);
+
+    if (lock === 0) {
+      return { isUnlocked: true, timeString: '오픈 완료' };
     }
 
     const now = new Date();
-    const targetDate = new Date(unlockDate);
+    const targetDate = new Date(lockExpiredAt);
     const diff = targetDate - now;
 
     if (diff <= 0 || isNaN(diff)) {
@@ -464,7 +380,17 @@ const RocketChest = () => {
     const chestId = rocket.chestId;
 
     if (isDeleteMode) {
-      // 삭제 모드일 때 오픈 가능한 로켓만 선택 가능
+      // 보낸 로켓함이면 잠금 여부와 무관하게 삭제 체크 가능
+      if (activeTab === 'sent') {
+        if (rocketsToDelete.includes(chestId)) {
+          setRocketsToDelete(rocketsToDelete.filter(id => id !== chestId));
+        } else {
+          setRocketsToDelete([...rocketsToDelete, chestId]);
+        }
+        return;
+      }
+
+      // 받은/모임 로켓함: 잠금이 풀려야만 삭제 체크 가능
       const { isUnlocked } = calculateTimeRemaining(rocket.lockExpiredAt);
       if (isUnlocked) {
         if (rocketsToDelete.includes(chestId)) {
@@ -574,9 +500,21 @@ const RocketChest = () => {
 
   // 페이지 변경 핸들러
   const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+    if (activeTab === 'received') {
+      setCurrentPageByTab(prev => ({
+        ...prev,
+        received: {
+          ...prev.received,
+          [receivedSubTab]: pageNumber,
+        },
+      }));
+    } else {
+      setCurrentPageByTab(prev => ({
+        ...prev,
+        [activeTab]: pageNumber,
+      }));
+    }
   };
-
   // 파일 다운로드 처리
   const handleFileDownload = (fileId, fileName) => {
     // 새 탭에서 다운로드 API 호출 (브라우저가 자동으로 다운로드 처리)
@@ -716,19 +654,40 @@ const RocketChest = () => {
             </select>
           </div>
 
-          <button
-            className={`control-button delete ${isDeleteMode ? 'active' : ''}`}
-            onClick={() => {
-              if (isDeleteMode && rocketsToDelete.length > 0) {
-                deleteSelectedRockets();
-              } else {
-                setIsDeleteMode(!isDeleteMode);
+          {isDeleteMode ? (
+            <>
+              <button
+                className={`control-button delete ${rocketsToDelete.length > 0 ? 'active' : ''}`}
+                onClick={() => {
+                  if (rocketsToDelete.length > 0) {
+                    deleteSelectedRockets();
+                  }
+                }}
+                disabled={rocketsToDelete.length === 0}
+              >
+                삭제하기
+              </button>
+              <button
+                className="control-button cancel"
+                onClick={() => {
+                  setIsDeleteMode(false);
+                  setRocketsToDelete([]);
+                }}
+              >
+                취소
+              </button>
+            </>
+          ) : (
+            <button
+              className="control-button delete"
+              onClick={() => {
+                setIsDeleteMode(true);
                 setRocketsToDelete([]);
-              }
-            }}
-          >
-            {isDeleteMode ? (rocketsToDelete.length > 0 ? '삭제하기' : '취소') : '삭제하기'}
-          </button>
+              }}
+            >
+              삭제하기
+            </button>
+          )}
         </div>
       </div>
 
@@ -754,7 +713,15 @@ const RocketChest = () => {
         <div className="rockets-grid">
           {currentRockets.map((rocket) => {
             const chestId = rocket.chestId;
-            const { isUnlocked, timeString } = calculateTimeRemaining(rocket.lockExpiredAt);
+
+            // sent 탭이면 잠금 상태 계산 생략
+            const isSentTab = activeTab === 'sent';
+
+            // sent 탭이 아니면 잠금 상태 계산
+            const { isUnlocked = true, timeString = '' } = isSentTab
+              ? { isUnlocked: true, timeString: '' }
+              : calculateTimeRemaining(rocket.lockExpiredAt, rocket.isLock);
+
             const isSelected = rocketsToDelete.includes(chestId);
 
             return (
@@ -817,15 +784,17 @@ const RocketChest = () => {
             이전
           </button>
 
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              className={`pagination-btn ${currentPage === i + 1 ? 'active' : ''}`}
-              onClick={() => handlePageChange(i + 1)}
-            >
-              {i + 1}
-            </button>
-          )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))
+            .map(pageNum => (
+              <button
+                key={pageNum}
+                className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                onClick={() => handlePageChange(pageNum)}
+              >
+                {pageNum}
+              </button>
+            ))}
 
           <button
             className="pagination-btn"
@@ -864,12 +833,58 @@ const RocketChest = () => {
                   <strong>받는 사람:</strong> {selectedRocket.receiverEmail || '알 수 없음'}
                 </p>
                 <p className="rocket-sent-at">
-                  <strong>받은 시간:</strong> {formatDate(selectedRocket.sentAt || selectedRocket.createdAt)}
+                  <strong>
+                    {activeTab === 'sent' ? '보낸 시간:' : '받은 시간:'}
+                  </strong>
+                  {formatDate(selectedRocket.sentAt || selectedRocket.createdAt)}
                 </p>
 
                 {(() => {
+                  if (activeTab === 'sent') {
+                    return (
+                      <>
+                        <div className="rocket-message">
+                          <h3>메시지</h3>
+                          <div className="message-content">
+                            {selectedRocket.content || '내용이 없습니다.'}
+                          </div>
+                        </div>
+                        {/* 파일 목록 출력 */}
+                        {(() => {
+                          const filesList = selectedRocket.files || selectedRocket.rocketFiles || [];
+                          return filesList.length > 0 ? (
+                            <div className="rocket-attachments">
+                              <h3>첨부 파일 ({filesList.length}개)</h3>
+                              <ul className="files-list">
+                                {filesList.map((file, index) => (
+                                  <li key={index} className="file-item">
+                                    <span className="file-name">{file.originalName || file.name || `파일 ${index + 1}`}</span>
+                                    <button
+                                      className="download-button"
+                                      onClick={() => handleFileDownload(file.fileId || file.id, file.originalName || file.name)}
+                                    >
+                                      다운로드
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : (
+                            <p className="no-attachments">첨부 파일이 없습니다.</p>
+                          );
+                        })()}
+                        <div className="rocket-actions">
+                          <button
+                            className="delete-button"
+                            onClick={() => deleteSingleRocket(selectedRocket.chestId)}
+                          >
+                            로켓 삭제
+                          </button>
+                        </div>
+                      </>
+                    );
+                  }
                   const locked = selectedRocket?.isLocked; // 수동 잠금 여부로 판단
-
                   return !locked ? (
                     selectedRocket.loading ? (
                       <div className="loading-content">
@@ -878,18 +893,6 @@ const RocketChest = () => {
                       </div>
                     ) : (
                       <>
-                        {/* 공개 상태 토글 버튼 */}
-                        <div className="visibility-toggle">
-                          <span>공개 상태: </span>
-                          <button
-                            className={`toggle-button ${selectedRocket.isPublic ? 'public' : 'private'}`}
-                            onClick={handleDisplayButton}
-                          >
-                            {selectedRocket.isPublic ? '공개' : '비공개'}
-                          </button>
-                          <small>(진열장에 추가하려면 공개 상태로 설정해야 합니다)</small>
-                        </div>
-
                         <div className="rocket-message">
                           <h3>메시지</h3>
                           <div className="message-content">
@@ -946,7 +949,10 @@ const RocketChest = () => {
 
                       {/* 남은 시간 계산 및 표시 */}
                       {(() => {
-                        const { timeString } = calculateTimeRemaining(selectedRocket.unlockDate);
+                        if (selectedRocket.isLock === 0) {
+                          return <p>남은 시간: 오픈 가능</p>;
+                        }
+                        const { timeString } = calculateTimeRemaining(selectedRocket.lockExpiredAt, selectedRocket.isLock);
                         return <p>남은 시간: {timeString}</p>;
                       })()}
 
