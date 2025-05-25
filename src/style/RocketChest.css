@@ -1,4 +1,4 @@
-Copy:root {
+:root {
   --primary-color: #7128ff;
   --secondary-color: #00d2ff;
   --accent-pink: #ff1b8d;
@@ -652,7 +652,8 @@ Copy:root {
   text-align: center;
   padding: 30px 15px;
   border-radius: 8px;
-  background: #f5f5f5;
+  background: #3b3b3b;
+  opacity: 80%;
   border: 1px dashed #ddd;
   height: 300px;
   display: flex;
@@ -804,4 +805,202 @@ Copy:root {
   .rocket-image img {
     max-height: 70px;
   }
+}
+
+
+
+Copy
+/* 로딩 스피너 (작은 사이즈) */
+.loading-spinner-sm {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #3498db;
+  border-radius: 50%;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+
+/* 첨부 파일 목록 */
+.files-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 5px;
+}
+
+.file-item:last-child {
+  border-bottom: none;
+}
+
+.file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 10px;
+  flex: 1;
+}
+
+.download-button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.download-button:hover {
+  background-color: #45a049;
+}
+
+.no-attachments {
+  color: #777;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* 애니메이션 */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 메시지 콘텐츠 스타일 */
+.message-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background-color: #f8f8f8;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  margin: 10px 0;
+}
+
+
+
+
+
+
+
+
+
+
+.add-to-display-modal {
+  max-width: 600px;
+}
+
+.display-position-selector {
+  padding: 20px;
+}
+
+.display-position-selector p {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.display-position-selector .rocket-name {
+  font-weight: bold;
+  color: #5a8ed6;
+}
+
+.position-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.position-button {
+  background: linear-gradient(to bottom, #3a6ca8, #2c5489);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 15px 10px;
+  text-align: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.position-button:hover {
+  background: linear-gradient(to bottom, #5a8ed6, #3a6ca8);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* 로켓 상세 모달의 버튼 영역 스타일 */
+.rocket-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.display-button {
+  background: linear-gradient(to bottom, #3a6ca8, #2c5489);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  flex: 1;
+  margin-right: 10px;
+  transition: all 0.2s ease;
+}
+
+.display-button:hover {
+  background: linear-gradient(to bottom, #5a8ed6, #3a6ca8);
+  transform: translateY(-2px);
+}
+
+/* 컨텍스트 메뉴 방지를 위한 스타일 */
+.rocket-item {
+  position: relative;
+}
+
+.rocket-item::after {
+  content: '우클릭: 진열장으로 이동';
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.rocket-item:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.rocket-item.locked::after {
+  content: '잠금 해제 후 진열 가능';
 }

@@ -5,10 +5,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [
     react({
-      jsxImportSource: 'react', 
+      jsxImportSource: 'react',
     }),
   ],
   server: {
+    historyApiFallback: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8081',
