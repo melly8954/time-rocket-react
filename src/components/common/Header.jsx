@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../authStore';
 import { fetchUserProfile } from '../../utils/profile';
 import rocketImg from '../../assets/rocket.png';
-import { WebIcon, RocketIcon, PeopleIcon } from '../ui/Icons';
+import { WebIcon, RocketIcon, PeopleIcon, BoxIcon, StarsIcon } from '../ui/Icons';
 import styles from '../../style/Header.module.css';
 
 const Header = () => {
@@ -57,7 +57,7 @@ const Header = () => {
             className={styles.link}
             onClick={(e) => handleMenuClick(e, `/chests/${userId}`)}
           >
-            <RocketIcon className={styles.icon} />
+            <BoxIcon className={styles.icon} />
             <span className={styles.iconLabel}>로켓 보관함</span>
           </Link>
           <Link
@@ -65,7 +65,7 @@ const Header = () => {
             className={styles.link}
             onClick={(e) => handleMenuClick(e, `/chests/${userId}`)}
           >
-            <RocketIcon className={styles.icon} />
+            <StarsIcon className={styles.icon} />
             <span className={styles.iconLabel}>로켓 진열장</span>
           </Link>
           <Link to="/friends" className={styles.link} onClick={(e) => handleMenuClick(e, '/friends')}>
