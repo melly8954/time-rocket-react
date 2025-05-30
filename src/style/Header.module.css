@@ -140,12 +140,18 @@
   font-size: 1rem;
   transition: all 0.3s ease;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: var(--spacing-xs) 0;
 }
 
 .link::after {
   content: '';
   position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   bottom: -2px;
   left: 0;
   width: 0;
