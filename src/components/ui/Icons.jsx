@@ -462,3 +462,62 @@ export const CloseIcon = () => (
     <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+export const BoxIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 64 64"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="4.5"
+    strokeLinejoin="round"
+    strokeLinecap="round"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* 박스 본체 */}
+    <polygon fill="none" points="32 36 8 26 8 50 32 60 56 50 56 26 32 36"/>
+    {/* 왼쪽 뚜껑 */}
+    <polygon fill="none" points="32 4 8 14 32 24 56 14 32 4"/>
+    {/* 오른쪽 뚜껑 */}
+    <polyline fill="none" points="8 14 8 26 32 36 56 26 56 14"/>
+    {/* 박스 중심선 */}
+    <line x1="32" y1="24" x2="32" y2="60"/>
+  </svg>
+);
+
+export const StarsIcon = () => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 64 64"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinejoin="round"
+    strokeLinecap="round"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* 큰 별 (중앙, 살짝 작게) */}
+    <polygon
+      points="32,14 37,27 52,27 40,36 45,50 32,41 19,50 24,36 12,27 27,27"
+      stroke="currentColor"
+      strokeWidth="4"
+      fill="none"
+    />
+    {/* 작은 별 (오른쪽 아래, 더 크게 & 각도 조정) */}
+    <polygon
+      points="49,45 51,50 56,50 52,53 54,58 49,55 44,58 46,53 42,50 47,50"
+      stroke="currentColor"
+      strokeWidth="3"
+      fill="none"
+    />
+    {/* 작은 별 (왼쪽 위, 균형 맞춤) */}
+    <polygon
+      points="18,10 19,13 22,13 20,15 21,18 18,16 15,18 16,15 14,13 17,13"
+      stroke="currentColor"
+      strokeWidth="3"
+      fill="none"
+    />
+  </svg>
+);

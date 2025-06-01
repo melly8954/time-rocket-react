@@ -24,6 +24,8 @@ function App() {
     setAccessToken,
     setUserId,
     setNickname,
+    setIsAuthChecked,
+    isAuthChecked
   } = useAuthStore();
 
   useEffect(() => {
@@ -44,6 +46,8 @@ function App() {
         setIsLoggedIn(false);
         setAccessToken(null);
         setNickname("");
+      } finally {
+        setIsAuthChecked(true); // ✅ 무조건 체크 완료됨을 표시
       }
     };
 
@@ -56,6 +60,10 @@ function App() {
     setNavigator(navigate); // navigate를 전역으로 설정
   }, [navigate]);
 
+  if (!isAuthChecked) {
+    return null; // 로딩 중엔 아무것도 렌더링하지 않음
+  }
+  
   return (
     <>
       <SpaceBackground />
@@ -67,17 +75,17 @@ function App() {
         <Route path="/password-reset" element={<PasswordReset />} />
         <Route path="/oauth/redirect" element={<OAuthRedirect />} />
         <Route path="/logout" element={<Logout />} />
-        
+
         {/* 로켓 관련 라우트 */}
         <Route path="/rockets/create" element={<RocketCreate />} />
-        
+
         {/* 보관함(Chest) 관련 라우트 - API 명세에 맞춤 */}
         <Route path="/chests" element={<RocketChest />} />
         <Route path="/chests/:id" element={<RocketChest />} />
-        
+
         {/* 진열장 페이지 */}
         <Route path="/display" element={<Display />} />
-        
+
         <Route path="/community" element={<div>커뮤니티 페이지</div>} />
         <Route path="/mypage" element={<Mypage />} />
         <Route path="/password-change/:userId" element={<PasswordChange />} />
