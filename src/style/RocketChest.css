@@ -978,33 +978,9 @@ Copy
   position: relative;
 }
 
-.rocket-item::after {
-  content: '우클릭: 진열장으로 이동';
-  position: absolute;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(10px);
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  z-index: 100;
-  white-space: nowrap;
-}
-
-.rocket-item:hover::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
 .rocket-item.locked::after {
   content: '잠금 해제 후 진열 가능';
 }
-
 
 .unlock-date-hint {
   font-size: 0.8rem;
@@ -1022,4 +998,31 @@ Copy
 .unlocked-text {
   font-weight: bold;
   color: #4caf50;
+}
+
+/* 보낸함에서는 컨텍스트 메뉴 힌트 비활성화 */
+.rocket-item:not(.contextmenu-enabled):hover .context-menu-hint {
+  display: none;
+}
+
+/* 컨텍스트 메뉴 힌트 (우클릭 가능 시에만 표시) */
+.context-menu-hint {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.rocket-item.contextmenu-enabled.unlocked:hover .context-menu-hint {
+  opacity: 1;
 }
