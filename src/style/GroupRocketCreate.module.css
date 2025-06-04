@@ -1,0 +1,915 @@
+.groupRocketCreateContainer {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 20px;
+}
+
+/* 헤더 */
+.header {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 30px;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+}
+
+.headerInfo {
+  flex: 1;
+}
+
+.headerInfo h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 5px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerInfo span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  font-size: 14px;
+}
+
+/* 메인 레이아웃 */
+.mainLayout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 30px;
+  margin-bottom: 30px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.leftSection {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.rightSection {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* 카드 공통 스타일 */
+.messageCard,
+.designCard,
+.configCard,
+.chatCard {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+}
+
+.messageCard:hover,
+.designCard:hover,
+.configCard:hover,
+.chatCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.cardHeader {
+  margin-bottom: 20px;
+}
+
+.cardHeader h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 5px 0;
+}
+
+.cardHeader p {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 메시지 에디터 */
+.messageEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.messagePreview {
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.messagePreview:focus-within {
+  border-color: #4facfe;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+
+.previewHeader {
+  padding: 15px 20px;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4facfe 0%, #00c4f7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.userName {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.timeStamp {
+  font-size: 12px;
+  color: #666;
+}
+
+.messageInput {
+  width: 100%;
+  border: none;
+  padding: 20px;
+  font-size: 15px;
+  line-height: 1.5;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  background: transparent;
+}
+
+.messageInput::placeholder {
+  color: #adb5bd;
+}
+
+.inputFooter {
+  padding: 12px 20px;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #e9ecef;
+}
+
+.charCount {
+  font-size: 12px;
+  color: #666;
+}
+
+/* 디자인 선택 */
+.designGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.designOption {
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafafa;
+  position: relative;
+}
+
+.designOption:hover {
+  border-color: #4facfe;
+  background: #f8fbff;
+  transform: translateY(-2px);
+}
+
+.designOption.selected {
+  border-color: #4facfe;
+  background: #f8fbff;
+  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.2);
+}
+
+.designImageWrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.designImage {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.selectedBadge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #4facfe;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.designLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 설정 폼 */
+.configForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.fieldInput {
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  background: #fafafa;
+}
+
+.fieldInput:focus {
+  border-color: #4facfe;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+
+.fieldInput.error {
+  border-color: #dc3545;
+}
+
+.fieldHint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* 채팅 */
+.chatCard {
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 15px;
+}
+
+.chatTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.chatStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  background: #ffc107;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.chatContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chatMessages {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.chatMessage {
+  max-width: 85%;
+}
+
+.systemMessage {
+  align-self: flex-start;
+}
+
+.userMessage {
+  align-self: flex-end;
+}
+
+.messageHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.sender {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+}
+
+.time {
+  font-size: 10px;
+  color: #999;
+}
+
+.messageContent {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.systemMessage .messageContent {
+  background: #f8f9fa;
+  color: #333;
+  border-radius: 12px 12px 12px 4px;
+}
+
+.userMessage .messageContent {
+  background: #4facfe;
+  color: white;
+  border-radius: 12px 12px 4px 12px;
+}
+
+.chatInputForm {
+  margin-top: auto;
+}
+
+.chatInputGroup {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 20px;
+  padding: 5px;
+  border: 2px solid #e9ecef;
+  transition: border-color 0.2s ease;
+}
+
+.chatInputGroup:focus-within {
+  border-color: #4facfe;
+}
+
+.chatInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 15px;
+  font-size: 14px;
+  outline: none;
+}
+
+.sendButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #4facfe;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sendButton:hover {
+  background: #2196f3;
+  transform: scale(1.05);
+}
+
+Copy
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 발사 섹션 */
+.launchSection {
+  display: flex;
+  justify-content: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.launchButton {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 18px 40px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+  justify-content: center;
+}
+
+.launchButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.launchButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.launchIcon {
+  font-size: 18px;
+}
+
+.launchText {
+  font-size: 16px;
+}
+
+/* 에러 텍스트 */
+.errorText {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #dc3545;
+}
+
+/* 로딩 상태 */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4facfe;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.errorContainer h2 {
+  color: #dc3545;
+  margin-bottom: 15px;
+}
+
+.errorContainer .backButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  margin-top: 20px;
+}
+
+/* 스크롤바 스타일링 */
+.chatMessages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chatMessages::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.chatMessages::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.chatMessages::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+  .mainLayout {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  
+  .rightSection {
+    order: -1;
+  }
+  
+  .designGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .chatCard {
+    height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .groupRocketCreateContainer {
+    padding: 15px;
+  }
+  
+  .header {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+    padding: 20px;
+  }
+  
+  .headerInfo h1 {
+    font-size: 1.3rem;
+    justify-content: center;
+  }
+  
+  .mainLayout {
+    gap: 20px;
+  }
+  
+  .messageCard,
+  .designCard,
+  .configCard,
+  .chatCard {
+    padding: 20px;
+  }
+  
+  .designGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .designOption {
+    padding: 15px;
+  }
+  
+  .designImage {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .chatCard {
+    height: 280px;
+  }
+  
+  .launchButton {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .headerInfo h1 {
+    font-size: 1.2rem;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .messageCard,
+  .designCard,
+  .configCard,
+  .chatCard {
+    padding: 16px;
+  }
+  
+  .cardHeader h3 {
+    font-size: 1.1rem;
+  }
+  
+  .designGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .designOption {
+    padding: 12px;
+  }
+  
+  .designImage {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .messageInput,
+  .fieldInput,
+  .chatInput {
+    font-size: 16px; /* iOS 줌 방지 */
+  }
+  
+  .launchButton {
+    padding: 16px 30px;
+    font-size: 15px;
+  }
+}
+
+/* 포커스 상태 개선 */
+.designOption:focus {
+  outline: 2px solid #4facfe;
+  outline-offset: 2px;
+}
+
+.launchButton:focus {
+  outline: 2px solid rgba(255, 107, 107, 0.5);
+  outline-offset: 2px;
+}
+
+.backButton:focus {
+  outline: 2px solid #495057;
+  outline-offset: 2px;
+}
+
+/* 애니메이션 */
+.messageCard,
+.designCard,
+.configCard,
+.chatCard {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chatMessage {
+  animation: slideInMessage 0.3s ease-out;
+}
+
+@keyframes slideInMessage {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 선택 효과 */
+.designOption.selected {
+  animation: selectedPulse 0.3s ease-out;
+}
+
+@keyframes selectedPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 호버 효과 미세 조정 */
+.messageCard:hover,
+.designCard:hover,
+.configCard:hover,
+.chatCard:hover {
+  transform: translateY(-3px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.designOption:hover {
+  transform: translateY(-3px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 다크모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .groupRocketCreateContainer {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  }
+  
+  .header,
+  .messageCard,
+  .designCard,
+  .configCard,
+  .chatCard {
+    background: #2d3748;
+    color: white;
+    border-color: #4a5568;
+  }
+  
+  .cardHeader h3 {
+    color: white;
+  }
+  
+  .cardHeader p {
+    color: #a0aec0;
+  }
+  
+  .messagePreview,
+  .chatInputGroup {
+    background: #4a5568;
+    border-color: #5a6475;
+  }
+  
+  .previewHeader,
+  .inputFooter {
+    background: #5a6475;
+    border-color: #6b7785;
+  }
+  
+  .messageInput,
+  .fieldInput,
+  .chatInput {
+    background: #4a5568;
+    color: white;
+    border-color: #5a6475;
+  }
+  
+  .messageInput::placeholder,
+  .chatInput::placeholder {
+    color: #9ca3af;
+  }
+  
+  .fieldInput:focus,
+  .messageInput:focus {
+    border-color: #4facfe;
+    background: #5a6475;
+  }
+  
+  .designOption {
+    background: #4a5568;
+    border-color: #5a6475;
+  }
+  
+  .designOption:hover,
+  .designOption.selected {
+    background: #5a6475;
+    border-color: #4facfe;
+  }
+  
+  .systemMessage .messageContent {
+    background: #4a5568;
+    color: #cbd5e0;
+  }
+  
+  .fieldHint,
+  .charCount {
+    color: #a0aec0;
+  }
+  
+  .errorText {
+    background: rgba(220, 53, 69, 0.2);
+    color: #fc8181;
+  }
+}
+
+/* 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 고해상도 디스플레이 최적화 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .designImage {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* 프린트 스타일 */
+@media print {
+  .groupRocketCreateContainer {
+    background: white;
+    color: black;
+  }
+  
+  .header {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+  
+  .backButton,
+  .launchButton,
+  .sendButton,
+  .chatCard {
+    display: none;
+  }
+}

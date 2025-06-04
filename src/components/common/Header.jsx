@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../authStore';
 import { fetchUserProfile } from '../../utils/profile';
 import rocketImg from '../../assets/rocket.png';
-import { WebIcon, RocketIcon, PeopleIcon, BoxIcon, StarsIcon } from '../ui/Icons';
+import { WebIcon, RocketIcon, PeopleIcon, GroupIcon, BoxIcon, StarsIcon } from '../ui/Icons';
 import styles from '../../style/Header.module.css';
 
 const Header = () => {
@@ -55,7 +55,7 @@ const Header = () => {
           <Link
             to={`/chests/${userId}`}
             className={styles.link}
-            onClick={(e) => handleMenuClick(e, `/chests/${userId}`)}
+            onClick={(e) => handleMenuClick(e, `/chests`)}
           >
             <BoxIcon className={styles.icon} />
             <span className={styles.iconLabel}>로켓 보관함</span>
@@ -67,6 +67,14 @@ const Header = () => {
           >
             <StarsIcon className={styles.icon} />
             <span className={styles.iconLabel}>로켓 진열장</span>
+          </Link>
+          <Link
+            to="/groups"
+            className={styles.link}
+            onClick={(e) => handleMenuClick(e, '/groups')}
+          >
+            <PeopleIcon className={`${styles.icon} ${styles.groupIcon}`} />
+            <span className={styles.iconLabel}>모임</span>
           </Link>
           <Link to="/friends" className={styles.link} onClick={(e) => handleMenuClick(e, '/friends')}>
             <PeopleIcon className={styles.icon} />

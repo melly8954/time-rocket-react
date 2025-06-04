@@ -17,6 +17,12 @@ import PasswordChange from "./pages/PasswordChange";
 import RocketCreate from "./pages/RocketCreate";
 import RocketChest from './pages/RocketChest';
 import Display from './pages/Display';
+import Groups from './pages/Groups';
+import GroupChest from './pages/GroupChest';
+import GroupDetail from './pages/GroupDetail';
+import CreateGroup from './pages/CreateGroup';
+import GroupRocketCreate from './pages/GroupRocketCreate'; 
+
 function App() {
   const didRun = useRef(false);
   const {
@@ -82,6 +88,13 @@ function App() {
         {/* 보관함(Chest) 관련 라우트 - API 명세에 맞춤 */}
         <Route path="/chests" element={<RocketChest />} />
         <Route path="/chests/:id" element={<RocketChest />} />
+
+        {/* 모임 관련 라우트 */}
+        <Route path="/groups" element={<Groups />} />
+        <Route path="/groups/:groupId" element={<GroupDetail />} />
+        <Route path="/groups/create" element={<CreateGroup />} />
+        <Route path="/groups/:groupId/rockets/create" element={<GroupRocketCreate />} />
+        <Route path="/group-rocket-chest" element={<GroupChest />} />
 
         {/* 진열장 페이지 */}
         <Route path="/display" element={<Display />} />

@@ -1,0 +1,792 @@
+.groupChestContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* 헤더 영역 */
+.groupChestHeader {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+}
+
+.groupChestHeader h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.description {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* 컨트롤 영역 */
+.groupChestControls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.searchBar {
+  flex: 1;
+  max-width: 400px;
+}
+
+.searchBar form {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.searchBar input {
+  width: 100%;
+  padding: 12px 45px 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 25px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.searchBar input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.searchButton, 
+.clearSearch {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.searchButton:hover, 
+.clearSearch:hover {
+  color: #667eea;
+}
+
+.clearSearch {
+  right: 40px;
+}
+
+.controlButtons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.sortControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sortControls label {
+  font-weight: 500;
+  color: #333;
+}
+
+.sortControls select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* 검색 결과 정보 */
+.searchResultsInfo {
+  background: #f8f9fa;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #667eea;
+}
+
+.searchResultsInfo p {
+  margin: 0;
+  color: #495057;
+  font-size: 14px;
+}
+
+/* 로켓 카운트 */
+.rocketsCount {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 로켓 그리드 */
+.rocketsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+/* 그룹 로켓 아이템 */
+.groupRocketItem {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.groupRocketItem:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  border-color: #667eea;
+}
+
+.groupRocketItem.unlocked {
+  border-color: #28a745;
+}
+
+.groupRocketItem.locked {
+  border-color: #ffc107;
+}
+
+.rocketImage {
+  position: relative;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.rocketImage img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.publicBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #28a745;
+  color: white;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.groupBadge {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  background: #667eea;
+  color: white;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rocketDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rocketName {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  text-align: center;
+}
+
+.groupInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  justify-content: center;
+}
+
+.rocketTime {
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.rocketTime.unlocked {
+  background: rgba(40, 167, 69, 0.1);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.rocketTime.lockedTime {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.unlockedContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.unlockedText {
+  font-weight: 600;
+  color: #28a745;
+  font-size: 16px;
+}
+
+.countdownContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.unlockDateHint {
+  font-size: 12px;
+  color: #888;
+  font-weight: 400;
+}
+
+/* 로딩 상태 */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loadingSpinnerSm {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+/* 빈 상태 */
+.emptyStorage {
+  text-align: center;
+  padding: 80px 20px;
+  color: #666;
+}
+
+.emptyStorage h2 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.emptyStorage p {
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+}
+
+.joinGroupBtn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.joinGroupBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* 오류 상태 */
+.groupChestError {
+  text-align: center;
+  padding: 60px 20px;
+  color: #dc3545;
+}
+
+.groupChestError h2 {
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+}
+
+.groupChestError button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+
+.paginationBtn {
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #333;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.paginationBtn:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #667eea;
+}
+
+.paginationBtn.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.paginationBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 모달 */
+.rocketModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.rocketModal {
+  background: white;
+  border-radius: 16px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 30px;
+}
+
+.groupRocketModal {
+  border: 2px solid #667eea;
+}
+
+.closeModal {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.closeModal:hover {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.rocketModal h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 1.8rem;
+}
+
+.rocketModalContent {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.rocketModalImage {
+  flex: 0 0 120px;
+  text-align: center;
+  position: relative;
+}
+
+.rocketModalImage img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.groupModalBadge {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  background: #667eea;
+  color: white;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rocketModalDetails {
+  flex: 1;
+  min-width: 300px;
+}
+
+.rocketModalDetails p {
+  margin-bottom: 15px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.rocketModalDetails strong {
+  color: #333;
+  font-weight: 600;
+}
+
+/* 그룹 로켓 컨텐츠 */
+.groupRocketContents {
+  margin: 25px 0;
+}
+
+.groupRocketContents h3 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 8px;
+}
+
+.groupContentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.groupContentItem {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 15px;
+  border-left: 4px solid #667eea;
+  transition: all 0.3s ease;
+}
+
+.groupContentItem:hover {
+  background: #e9ecef;
+  transform: translateX(4px);
+}
+
+.contentHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.authorName {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.contentMessage {
+  color: #333;
+  line-height: 1.6;
+  font-size: 15px;
+  white-space: pre-wrap;
+}
+
+.noContents {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 30px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+/* 파일 첨부 */
+.rocketAttachments {
+  margin: 25px 0;
+}
+
+.rocketAttachments h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.filesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.fileItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background 0.3s ease;
+}
+
+.fileItem:hover {
+  background: #e9ecef;
+}
+
+.fileName {
+  font-size: 14px;
+  color: #333;
+  flex: 1;
+  margin-right: 15px;
+}
+
+.downloadButton {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.downloadButton:hover {
+  background: #5a6fd8;
+}
+
+.noAttachments {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+/* 잠금 상태 */
+.rocketLocked {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.lockIcon {
+  width: 64px;
+  height: 64px;
+  background: #ffc107;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.lockIcon::before {
+  content: '🔒';
+}
+
+.countdown {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ff9800;
+  margin: 15px 0;
+  font-family: 'Courier New', monospace;
+}
+
+.waitingMessage {
+  color: #888;
+  font-style: italic;
+}
+
+.autoUnlockNotice {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.autoUnlockNotice p {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* 로딩 컨텐츠 */
+.loadingContent {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .groupChestContainer {
+    padding: 15px;
+  }
+  
+  .groupChestHeader h1 {
+    font-size: 2rem;
+  }
+  
+  .description {
+    font-size: 1rem;
+  }
+  
+  .groupChestControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .searchBar {
+    max-width: none;
+  }
+  
+  .controlButtons {
+    justify-content: center;
+  }
+  
+  .rocketsGrid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .rocketModalContent {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .rocketModalImage {
+    flex: none;
+  }
+  
+  .rocketModal {
+    padding: 20px;
+    margin: 10px;
+  }
+  
+  .pagination {
+    gap: 4px;
+  }
+  
+  .paginationBtn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .groupChestHeader {
+    padding: 15px;
+  }
+  
+  .groupChestHeader h1 {
+    font-size: 1.8rem;
+  }
+  
+  .description {
+    font-size: 0.9rem;
+  }
+  
+  .groupRocketItem {
+    padding: 15px;
+  }
+  
+  .rocketName {
+    font-size: 1.1rem;
+  }
+  
+  .rocketModal {
+    padding: 15px;
+    margin: 5px;
+  }
+  
+  .rocketModalContent {
+    gap: 15px;
+  }
+}
