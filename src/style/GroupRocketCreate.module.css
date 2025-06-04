@@ -1608,3 +1608,73 @@
     max-height: 150px;
   }
 }
+
+/* 멤버가 없을 때 표시하는 스타일 */
+.noMembers {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px dashed #dee2e6;
+}
+
+.noMembers p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* 에러 상태 개선 */
+.participantsList:empty::after {
+  content: '멤버 정보를 불러오는 중...';
+  display: block;
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+/* 로딩 상태 표시 */
+.participantsCard.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.participantsCard.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #4facfe;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* 안전한 배열 처리를 위한 추가 스타일 */
+.errorState {
+  padding: 20px;
+  text-align: center;
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 10px;
+  margin: 10px 0;
+}
+
+.retryButton {
+  background: #4facfe;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.retryButton:hover {
+  background: #2196f3;
+}
