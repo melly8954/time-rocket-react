@@ -1,0 +1,797 @@
+:root {
+  --primary-gradient: linear-gradient(135deg, #7128ff 0%, #00d2ff 100%);
+  --secondary-gradient: linear-gradient(135deg, #ff1b8d 0%, #9200ff 100%);
+  --button-gradient: linear-gradient(135deg, #ff1b8d 0%, #9200ff 100%);
+  --glass-bg: rgba(26, 23, 62, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --text-white: #ffffff;
+  --text-silver: #e0e0e0;
+  --text-gray: #9aa0b9;
+  --transition-smooth: all 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
+  --input-bg: rgba(15, 14, 35, 0.5);
+  --input-border: rgba(255, 255, 255, 0.1);
+  --input-focus: rgba(0, 210, 255, 0.5);
+  --neon-glow: 0 0 15px rgba(0, 210, 255, 0.7);
+}
+
+/* 로켓 폼 컨테이너 */
+.rocket-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0c0b26 0%, #1a1150 50%, #3d1a6c 100%);
+  padding: 40px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 로켓 폼 */
+.rocket-form {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  max-width: 750px;
+  padding: 35px 40px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--card-shadow);
+  gap: 22px;
+  z-index: 1;
+  color: var(--text-white);
+}
+
+/* 우주 느낌의 오버레이 효과 */
+.rocket-form::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(135deg, rgba(0, 210, 255, 0.05) 0%, transparent 50%, rgba(146, 0, 255, 0.05) 100%),
+    radial-gradient(ellipse at top right, rgba(255, 27, 141, 0.1) 0%, transparent 60%);
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 폼 내 제목 및 라벨 스타일 */
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.rocket-form label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-silver);
+  margin-bottom: 8px;
+  display: block;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
+  position: relative;
+  padding-left: 8px;
+}
+
+.rocket-form label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 70%;
+  background: var(--primary-gradient);
+  border-radius: 3px;
+}
+
+/* 텍스트 입력 필드 */
+.rocket-form input[type="text"],
+.rocket-form input[type="email"],
+.rocket-form input[type="datetime-local"] {
+  width: 95.5%;
+  padding: 14px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  color: var(--text-white);
+  font-size: 1rem;
+  transition: var(--transition-smooth);
+}
+
+.rocket-form input[type="text"]:focus,
+.rocket-form input[type="email"]:focus,
+.rocket-form input[type="datetime-local"]:focus,
+.rocket-form textarea:focus {
+  outline: none;
+  border-color: var(--input-focus);
+  box-shadow: var(--neon-glow);
+  background: rgba(15, 14, 35, 0.7);
+}
+
+/* 날짜 선택 필드 스타일 */
+.rocket-form input[type="datetime-local"] {
+  width: 93%;
+  color: var(--text-silver);
+  appearance: none;
+  position: relative;
+  padding-right: 35px;
+}
+
+/* 텍스트 영역 */
+.rocket-form textarea {
+  width: 95.5%;
+  min-height: 220px;
+  padding: 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  color: var(--text-white);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: vertical;
+  transition: var(--transition-smooth);
+}
+
+/* 플레이스홀더 스타일 */
+.rocket-form input::placeholder,
+.rocket-form textarea::placeholder {
+  color: rgba(154, 160, 185, 0.5);
+}
+
+/* 라디오 버튼 그룹 */
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 10px 0 15px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: normal;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.radio-group label::before {
+  display: none;
+}
+
+.radio-group input[type="radio"] {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 10px;
+  background: rgba(10, 10, 25, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.radio-group input[type="radio"]:checked {
+  border-color: transparent;
+  background: var(--secondary-gradient);
+  box-shadow: 0 0 10px rgba(255, 27, 141, 0.5);
+}
+
+.radio-group input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+}
+
+/* 버튼 스타일 */
+.btn-submit {
+  padding: 16px 28px;
+  background: var(--button-gradient);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: 0 5px 15px rgba(146, 0, 255, 0.3);
+  margin-top: 10px;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.5px;
+}
+
+/* 버튼 내부 광선 효과 */
+.btn-submit::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.btn-submit:hover::before {
+  opacity: 1;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.4;
+  }
+}
+
+.btn-submit:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(146, 0, 255, 0.5);
+}
+
+.btn-submit:active {
+  transform: translateY(-2px);
+}
+
+.btn-submit:disabled {
+  background: linear-gradient(135deg, #8e486c, #573a76);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 임시 저장 및 불러오기 버튼 */
+.rocket-temp-btn-group {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+}
+
+.btn-green {
+  background: linear-gradient(135deg, #000985, #8b08be);
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-green:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(86, 29, 178, 0.656);
+}
+
+.btn-green::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-green:hover::after {
+  opacity: 1;
+}
+
+/* 콘텐츠 입력 필드 주변 효과 */
+.rocket-form textarea {
+  position: relative;
+  background-image: 
+    linear-gradient(0deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center;
+}
+
+/* DesignSelector 컴포넌트 스타일 */
+.rocket-form > div:nth-of-type(1) {
+  margin: 5px 0 15px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .rocket-form {
+    padding: 30px 22px;
+    gap: 16px;
+  }
+  
+  .rocket-form label {
+    font-size: 1rem;
+  }
+  
+  .btn-submit {
+    padding: 14px 20px;
+    font-size: 1rem;
+  }
+  
+  .rocket-temp-btn-group {
+    position: static;
+    margin-bottom: 10px;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .radio-group {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .rocket-form input[type="text"],
+  .rocket-form input[type="email"],
+  .rocket-form input[type="datetime-local"],
+  .rocket-form textarea {
+    padding: 12px 14px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 다양한 크기와 밝기의 별들 */
+.rocket-form-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.9) 1px, transparent 1px),
+    radial-gradient(circle at 25% 45%, rgba(255, 255, 255, 0.6) 1px, transparent 2px),
+    radial-gradient(circle at 35% 15%, rgba(255, 255, 255, 0.7) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 2px, transparent 2px),
+    radial-gradient(circle at 65% 80%, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
+    radial-gradient(circle at 75% 30%, rgba(255, 255, 255, 0.7) 1px, transparent 2px),
+    radial-gradient(circle at 90% 65%, rgba(255, 255, 255, 0.9) 1px, transparent 1px),
+    /* 컬러풀한 별 추가 */
+    radial-gradient(circle at 20% 60%, rgba(0, 210, 255, 0.8) 1px, transparent 2px),
+    radial-gradient(circle at 40% 30%, rgba(255, 27, 141, 0.7) 1px, transparent 2px),
+    radial-gradient(circle at 60% 10%, rgba(180, 0, 255, 0.7) 1px, transparent 2px),
+    radial-gradient(circle at 80% 40%, rgba(255, 247, 0, 0.6) 1px, transparent 2px),
+    /* 큰 별들 추가 */
+    radial-gradient(circle at 15% 70%, rgba(255, 255, 255, 0.9) 2px, transparent 3px),
+    radial-gradient(circle at 45% 5%, rgba(255, 255, 255, 0.8) 2px, transparent 3px),
+    radial-gradient(circle at 70% 90%, rgba(255, 255, 255, 0.9) 2px, transparent 3px),
+    radial-gradient(circle at 92% 25%, rgba(255, 255, 255, 0.8) 2px, transparent 3px);
+  background-size: 
+    250px 250px, 200px 200px, 300px 300px, 350px 350px, 
+    280px 280px, 230px 230px, 180px 180px, 
+    400px 400px, 380px 380px, 350px 350px, 420px 420px,
+    500px 500px, 550px 550px, 480px 480px, 520px 520px;
+  animation: starTwinkle 320s infinite linear;
+  z-index: 0;
+}
+
+/* 추가 별 반짝임 효과 */
+.rocket-form-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
+    radial-gradient(circle at 30% 65%, rgba(255, 255, 255, 0.7) 1px, transparent 1px),
+    radial-gradient(circle at 55% 35%, rgba(255, 255, 255, 0.9) 1px, transparent 1px),
+    radial-gradient(circle at 72% 82%, rgba(255, 255, 255, 0.6) 1px, transparent 1px),
+    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.7) 1px, transparent 1px);
+  background-size: 220px 220px, 270px 270px, 320px 320px, 290px 290px, 240px 240px;
+  opacity: 0;
+  animation: starTwinkleDifferent 15s infinite ease-in-out;
+  z-index: 0;
+}
+
+@keyframes starTwinkleDifferent {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* 별빛 성운 효과 */
+.rocket-form-container .nebula {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(111, 0, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(0, 210, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 90%, rgba(255, 27, 141, 0.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 10%, rgba(255, 102, 0, 0.15) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, rgba(76, 0, 255, 0.1) 0%, transparent 60%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 원거리 은하 효과 */
+.rocket-form-container .galaxy {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  mask-image: radial-gradient(ellipse at center, transparent 40%, black 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, transparent 40%, black 70%);
+   opacity: 0.3;
+  transform: scale(1.);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 유성 효과 */
+.meteor {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.8) 10%, transparent);
+  transform: rotate(45deg);
+  animation-name: meteor-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 0 0 5px 1px rgba(255, 255, 255, 0.3);
+  opacity: 0;
+}
+
+.meteor-1 {
+  top: 10%;
+  left: 10%;
+  width: 150px;
+  height: 1px;
+  animation-duration: 6s;
+  animation-delay: 2s;
+}
+
+.meteor-2 {
+  top: 20%;
+  left: 70%;
+  width: 100px;
+  height: 1px;
+  animation-duration: 5s;
+  animation-delay: 4s;
+}
+
+.meteor-3 {
+  top: 70%;
+  left: 20%;
+  width: 120px;
+  height: 1px;
+  animation-duration: 7s;
+  animation-delay: 6s;
+}
+
+@keyframes meteor-fall {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(45deg) scale(0.5);
+  }
+  5% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 1;
+    transform: translate(300px, 300px) rotate(45deg) scale(1);
+  }
+  30%, 100% {
+    opacity: 0;
+    transform: translate(450px, 450px) rotate(45deg) scale(0.5);
+  }
+}
+
+/* 플라네타리움 효과 */
+.rocket-form-container .planetarium {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  background: 
+    radial-gradient(1px 1px at 25% 15%, white, transparent),
+    radial-gradient(1px 1px at 35% 45%, white, transparent),
+    radial-gradient(2px 2px at 55% 25%, white, transparent),
+    radial-gradient(1px 1px at 65% 65%, white, transparent),
+    radial-gradient(1px 1px at 85% 35%, white, transparent),
+    radial-gradient(2px 2px at 15% 85%, white, transparent),
+    radial-gradient(1px 1px at 95% 75%, white, transparent);
+  background-size: 300px 300px;
+  background-repeat: repeat;
+  animation: spaceRotate 600s linear infinite;
+}
+
+@keyframes spaceRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 우주 먼지 효과 */
+.space-dust {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000"><g fill="rgba(255,255,255,0.1)"><circle cx="100" cy="100" r="0.8"/><circle cx="200" cy="150" r="0.6"/><circle cx="350" cy="120" r="0.7"/><circle cx="500" cy="300" r="0.9"/><circle cx="700" cy="180" r="0.7"/><circle cx="850" cy="250" r="0.8"/><circle cx="150" cy="350" r="0.7"/><circle cx="300" cy="400" r="0.8"/><circle cx="450" cy="450" r="0.6"/><circle cx="600" cy="520" r="0.8"/><circle cx="750" cy="380" r="0.5"/><circle cx="900" cy="470" r="0.7"/><circle cx="130" cy="580" r="0.8"/><circle cx="270" cy="630" r="0.7"/><circle cx="420" cy="670" r="0.9"/><circle cx="580" cy="550" r="0.6"/><circle cx="740" cy="690" r="0.7"/><circle cx="880" cy="750" r="0.8"/><circle cx="170" cy="850" r="0.7"/><circle cx="320" cy="780" r="0.6"/><circle cx="470" cy="890" r="0.8"/><circle cx="610" cy="830" r="0.7"/><circle cx="760" cy="920" r="0.6"/><circle cx="880" cy="850" r="0.8"/></g></svg>');
+  opacity: 0.5;
+  z-index: 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 스텝 인디케이터 스타일 */
+.steps-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.step-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: #ddd;
+  transition: background-color 0.3s ease;
+}
+
+.step-dot.active {
+  background-color: #614CAF; /* 색상 변경: 초록색 -> 보라색 */
+}
+
+.step-line {
+  height: 3px;
+  width: 50px;
+  background-color: #ddd;
+  margin: 0 5px;
+  transition: background-color 0.3s ease;
+}
+
+.step-line.active {
+  background-color: #614CAF; /* 색상 변경 */
+}
+
+/* 폼 스텝 스타일 */
+.form-step {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 네비게이션 버튼 스타일 */
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-button {
+  background-color: #614CAF; /* 색상 변경 */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.nav-button:hover:not(.disabled) {
+  background-color: #513C9E; /* 어두운 보라색으로 변경 */
+  transform: scale(1.1);
+}
+
+.nav-button.disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.step-indicator {
+  font-size: 16px;
+  color: white;
+  font-weight: bold;
+}
+
+/* 파일 업로드 스타일 */
+.file-upload-area {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.btn-file-upload {
+  background-color: #614CAF; /* 색상 변경 */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 15px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.btn-file-upload:hover {
+  background-color: #513C9E; /* 어두운 보라색으로 변경 */
+}
+
+.file-list {
+  margin-top: 10px;
+}
+
+.file-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.file-name {
+  flex-grow: 1;
+  margin-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  color: #ddd;
+  margin-right: 10px;
+  font-size: 12px;
+}
+
+.btn-remove-file {
+  background: none;
+  border: none;
+  color: red;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 5px;
+}
+
+.no-files {
+  color: #bbb;
+  font-style: italic;
+  text-align: center;
+  margin: 10px 0;
+}
+
+/* 폼 헤더 스타일 개선 */
+.form-header {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+/* 제출 버튼 스타일 */
+.btn-submit {
+  background-color: #614CAF; /* 색상 변경 */
+}
+
+.btn-submit:hover {
+  background-color: #513C9E; /* 어두운 보라색으로 변경 */
+}
+
+.btn-submit.submitting {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* 임시 저장 및 불러오기 버튼 스타일 업데이트 */
+.btn-green {
+  background-color: #614CAF; /* 색상 변경 */
+}
+
+.btn-green:hover {
+  background-color: #513C9E; /* 어두운 보라색으로 변경 */
+}

@@ -1,0 +1,170 @@
+/* src/styles/animations.css */
+/* 로켓 애니메이션 */
+@keyframes rocketHover {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.rocket-animation {
+  animation: rocketHover 3s ease-in-out infinite;
+  position: relative;
+}
+
+/* 로켓 불꽃 애니메이션 */
+@keyframes flameFlicker {
+  0% { 
+    height: 30px;
+    opacity: 0.8;
+    background-position: center top;
+  }
+  50% { 
+    height: 40px;
+    opacity: 1;
+    background-position: center center;
+  }
+  100% { 
+    height: 30px;
+    opacity: 0.8;
+    background-position: center top;
+  }
+}
+
+.rocket-flames {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 30px;
+  background: linear-gradient(to bottom, #ff9500, #ff5e3a);
+  border-radius: 0 0 20px 20px;
+  animation: flameFlicker 0.5s ease-in-out infinite;
+  filter: blur(2px);
+}
+
+/* 별 반짝임 애니메이션 */
+@keyframes starTwinkle {
+  0%, 100% { 
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 0 5px 1px white;
+  animation: starTwinkle var(--twinkle-duration, 2s) ease-in-out infinite;
+  animation-delay: var(--twinkle-delay, 0s);
+}
+
+/* 버튼 호버 효과 */
+@keyframes buttonGlow {
+  0% {
+    box-shadow: 0 0 5px 0px rgba(132, 80, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px 5px rgba(132, 80, 255, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 5px 0px rgba(132, 80, 255, 0.5);
+  }
+}
+
+.glow-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.glow-button:hover {
+  animation: buttonGlow 1.5s infinite;
+}
+
+.glow-button::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+  transform: rotate(45deg);
+  transition: all 0.5s ease;
+}
+
+.glow-button:hover::after {
+  left: 100%;
+  top: 100%;
+}
+
+/* 오로라 효과 */
+@keyframes auroraFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.aurora-bg {
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: auroraFlow 15s ease infinite;
+    opacity: 0.3;
+    filter: blur(30px);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
+  
+  /* 페이지 전환 애니메이션 */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .page-transition {
+    animation: fadeIn 0.8s ease;
+  }
+  
+  /* 행성 회전 애니메이션 */
+  @keyframes planetRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .planet-rotate {
+    animation: planetRotate 120s linear infinite;
+  }
+  
+  /* 로딩 애니메이션 */
+  @keyframes loading {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-left-color: #7e57c2;
+    border-radius: 50%;
+    animation: loading 1s linear infinite;
+  }

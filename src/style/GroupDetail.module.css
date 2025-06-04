@@ -1,0 +1,512 @@
+.groupDetailContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* 헤더 */
+.groupDetailHeader {
+  margin-bottom: 20px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 2px solid #4facfe;
+  color: #4facfe;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.backButton:hover {
+  background: #4facfe;
+  color: white;
+}
+
+/* 그룹 정보 */
+.groupInfo {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  position: relative;
+  overflow: hidden;
+}
+
+.groupBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  overflow: hidden;
+  opacity: 0.7;
+  z-index: 1;
+}
+
+.groupBackground img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.groupContent {
+  position: relative;
+  z-index: 2;
+}
+
+.groupTheme {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.themeEmoji {
+  font-size: 24px;
+}
+
+.themeName {
+  background: #f8f9fa;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.privateIcon {
+  color: #ffc107;
+  font-size: 20px;
+  margin-left: 10px;
+}
+
+.groupName {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 15px;
+  line-height: 1.2;
+}
+
+.groupDescription {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.groupStats {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8f9fa;
+  padding: 15px 20px;
+  border-radius: 15px;
+}
+
+.statIcon {
+  font-size: 20px;
+  color: #4facfe;
+}
+
+.stat span:first-of-type {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.statLabel {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 액션 버튼 */
+.groupActions {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.joinButton {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.joinButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
+}
+
+.joinButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.createRocketButton {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.createRocketButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+}
+
+.leaveButton {
+  background: transparent;
+  color: #dc3545;
+  border: 2px solid #dc3545;
+  padding: 15px 30px;
+  border-radius: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.leaveButton:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.settingsButton {
+  background: transparent;
+  color: #6c757d;
+  border: 2px solid #6c757d;
+  padding: 15px 30px;
+  border-radius: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settingsButton:hover {
+  background: #6c757d;
+  color: white;
+}
+
+/* 멤버 섹션 */
+.membersSection {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.membersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* 멤버 카드 */
+.memberCard {
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.memberCard:hover {
+  background: #e9ecef;
+  border-color: #4facfe;
+}
+
+.memberCard.kicked {
+  opacity: 0.6;
+  background: #f8d7da;
+  border-color: #dc3545;
+}
+
+.memberInfo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+}
+
+.memberAvatar {
+  width: 50px;
+  height: 50px;
+  background: #4facfe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+}
+
+.memberDetails {
+  flex: 1;
+}
+
+.memberName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 5px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.leaderBadge {
+  color: #ffd700;
+  font-size: 16px;
+}
+
+.memberStatus {
+  font-size: 13px;
+}
+
+.readyStatus {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.waitingStatus {
+  color: #ffc107;
+  font-weight: 500;
+}
+
+.kickedStatus {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.kickButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.kickButton:hover {
+  background: #c82333;
+}
+
+/* 비밀번호 모달 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.passwordModal {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.passwordModal h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.passwordInput {
+  width: 92%;
+  padding: 15px;
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s ease;
+  margin-bottom: 20px;
+}
+
+.passwordInput:focus {
+  border-color: #4facfe;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+}
+
+.cancelButton,
+.joinButton {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancelButton {
+  background: transparent;
+  color: #6c757d;
+  border: 2px solid #6c757d;
+}
+
+.cancelButton:hover {
+  background: #6c757d;
+  color: white;
+}
+
+.modalActions .joinButton {
+  background: #4facfe;
+  color: white;
+  border: 2px solid #4facfe;
+}
+
+.modalActions .joinButton:hover {
+  background: #3d8bfe;
+}
+
+.modalActions .joinButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* 로딩 및 에러 */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4facfe;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.errorContainer h2 {
+  color: #dc3545;
+  margin-bottom: 15px;
+}
+
+.errorContainer .backButton {
+  margin-top: 20px;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .groupDetailContainer {
+    padding: 15px;
+  }
+  
+  .groupInfo {
+    padding: 25px 20px;
+  }
+  
+  .groupName {
+    font-size: 2rem;
+  }
+  
+  .groupActions {
+    flex-direction: column;
+  }
+  
+  .groupActions button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .membersGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .memberCard {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .memberInfo {
+    flex-direction: column;
+    text-align: center;
+  }
+}

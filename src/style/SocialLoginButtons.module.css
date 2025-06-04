@@ -1,0 +1,161 @@
+/* src/components/ui/SocialLoginButtons.module.css */
+.container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 15px;
+}
+
+.socialButtonWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.socialButton {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(20, 18, 40, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* 버튼 내부 반짝임 효과 */
+.socialButton::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* 버튼 배경 효과 */
+.socialButton::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 70% 30%,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+  z-index: 0;
+}
+
+.socialButton:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.3),
+    0 0 15px rgba(114, 137, 218, 0.3);
+}
+
+.socialButton:hover::before {
+  opacity: 1;
+  animation: rotateGradient 4s linear infinite;
+}
+
+@keyframes rotateGradient {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.socialButton:active {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.3s ease;
+}
+
+.googleIcon {
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.4));
+}
+
+.naverIcon {
+  filter: drop-shadow(0 0 2px rgba(3, 199, 90, 0.4));
+}
+
+.socialButton:hover .icon {
+  transform: scale(1.15);
+}
+
+/* 구글 버튼 특화 스타일 */
+.googleButton {
+  background: linear-gradient(135deg, rgba(20, 18, 40, 0.9), rgba(30, 28, 60, 0.9));
+}
+
+.googleButton:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.3),
+    0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+/* 네이버 버튼 특화 스타일 */
+.naverButton {
+  background: linear-gradient(135deg, rgba(20, 18, 40, 0.9), rgba(30, 28, 60, 0.9));
+}
+
+.naverButton:hover {
+  border-color: rgba(3, 199, 90, 0.3);
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.3),
+    0 0 15px rgba(3, 199, 90, 0.2);
+}
+
+/* 버튼 레이블 */
+.buttonLabel {
+  font-size: 0.8rem;
+  color: rgba(224, 224, 224, 0.8);
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.socialButtonWrapper:hover .buttonLabel {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 0 8px rgba(114, 137, 218, 0.5);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 480px) {
+  .container {
+    gap: 20px;
+  }
+  
+  .socialButton {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .buttonLabel {
+    font-size: 0.75rem;
+  }
+}

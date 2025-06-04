@@ -1,0 +1,1003 @@
+.space-container {
+  width: 100%;
+  min-height: 100vh;
+  background-image: url('/src/assets/deep-space.jpg'); /* 우주 배경으로 변경 */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  padding: 30px 20px;
+  color: #e0e6ff;
+  position: relative;
+  overflow: hidden;
+}
+
+.space-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(8, 15, 40, 0.5);
+  z-index: 0;
+}
+
+.space-header {
+  position: relative;
+  text-align: center;
+  padding: 40px 0;
+  margin-bottom: 40px;
+  z-index: 1;
+}
+
+.space-header h1 {
+  font-family: 'Orbitron', sans-serif; /* 우주/미래적 폰트로 변경 */
+  font-size: 3.5rem;
+  color: #8cc7ff;
+  margin: 0 0 15px;
+  text-shadow: 0 0 15px rgba(140, 199, 255, 0.8);
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.space-header p {
+  font-size: 1.3rem;
+  color: #a4c2ff;
+  font-style: italic;
+  margin: 0;
+}
+
+.space-interior {
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 60px 40px;
+  border-radius: 10px;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* 움직이는 별 배경 */
+.galaxy-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+}
+
+.stars, .twinkling, .clouds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.stars {
+  background: url('/src/assets/stars.png') repeat top center;
+  z-index: 0;
+}
+
+.twinkling {
+  background: url('/src/assets/twinkling.png') repeat top center;
+  z-index: 1;
+  animation: move-twink-back 200s linear infinite;
+}
+
+.clouds {
+  background: url('/src/assets/clouds.png') repeat top center;
+  z-index: 2;
+  opacity: 0.4;
+  animation: move-clouds-back 200s linear infinite;
+}
+
+@keyframes move-twink-back {
+  from {background-position: 0 0;}
+  to {background-position: -10000px 5000px;}
+}
+
+@keyframes move-clouds-back {
+  from {background-position: 0 0;}
+  to {background-position: 10000px 0;}
+}
+
+.display-orbit {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 30px;
+  position: relative;
+  z-index: 2;
+}
+
+.display-platform {
+  position: relative;
+  aspect-ratio: 1/1.2;
+  background: rgba(16, 24, 56, 0.6);
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 0 20px rgba(140, 199, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.display-platform::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(140, 199, 255, 0.5);
+  border-radius: 8px;
+  box-shadow: inset 0 0 10px rgba(140, 199, 255, 0.2);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.display-platform.drag-over {
+  transform: translateY(-10px);
+  box-shadow: 0 0 30px rgba(140, 199, 255, 0.8);
+}
+
+.display-platform.dragging {
+  opacity: 0.6;
+}
+
+.display-platform.empty {
+  background: rgba(16, 24, 56, 0.3);
+  box-shadow: 0 0 10px rgba(140, 199, 255, 0.1);
+}
+
+.display-item {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: floating 6s ease-in-out infinite;
+}
+
+@keyframes floating {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+.item-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70%;
+  height: 70%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(140, 199, 255, 0.4) 0%, transparent 70%);
+  z-index: -1;
+  animation: pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.8; }
+}
+
+.item-image {
+  width: 80%;
+  height: 70%;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 8px rgba(140, 199, 255, 0.8));
+}
+
+.display-platform:hover .item-image {
+  transform: translateY(-5px) scale(1.05);
+}
+
+.item-nameplate {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  background: linear-gradient(90deg, rgba(20, 40, 100, 0.8), rgba(60, 100, 200, 0.8), rgba(20, 40, 100, 0.8));
+  padding: 8px 12px;
+  border-radius: 5px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(140, 199, 255, 0.5);
+  z-index: 2;
+}
+
+.item-nameplate span {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  color: #e0e6ff;
+  font-weight: 600;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 0 5px rgba(140, 199, 255, 0.8);
+}
+
+.empty-platform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-style: italic;
+  color: rgba(140, 199, 255, 0.6);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* 가이드 영역 */
+.space-guide {
+  max-width: 900px;
+  margin: 40px auto;
+  position: relative;
+  z-index: 1;
+}
+
+.guide-content {
+  background: rgba(16, 24, 56, 0.7);
+  padding: 25px;
+  border-radius: 8px;
+  border: 1px solid rgba(140, 199, 255, 0.5);
+  box-shadow: 0 0 20px rgba(140, 199, 255, 0.3);
+}
+
+.guide-content h3 {
+  font-family: 'Orbitron', sans-serif;
+  color: #8cc7ff;
+  font-size: 1.5rem;
+  margin: 0 0 15px;
+  text-align: center;
+  position: relative;
+}
+
+.guide-content h3::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #8cc7ff, transparent);
+}
+
+.guide-content p {
+  color: #e0e6ff;
+  font-size: 1.1rem;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.highlight {
+  color: #a4c2ff;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(140, 199, 255, 0.8);
+}
+
+/* 로딩 상태 */
+.space-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+  position: relative;
+  z-index: 1;
+}
+
+.space-loading-icon {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(140, 199, 255, 0.3);
+  border-radius: 50%;
+  border-top: 4px solid #8cc7ff;
+  animation: spin 1.5s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.space-loading p {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.3rem;
+  color: #8cc7ff;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(140, 199, 255, 0.8);
+}
+
+/* 에러 메시지 */
+.space-error {
+  max-width: 600px;
+  margin: 20px auto;
+  background: rgba(200, 50, 50, 0.2);
+  border: 1px solid rgba(255, 100, 100, 0.5);
+  padding: 15px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.space-error p {
+  color: #ff9999;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.space-error button {
+  background: rgba(255, 100, 100, 0.8);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* 로그인 안내 */
+.space-container.not-logged {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-message {
+  background: rgba(16, 24, 56, 0.8);
+  padding: 40px;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 500px;
+  border: 1px solid rgba(140, 199, 255, 0.5);
+  box-shadow: 0 0 30px rgba(140, 199, 255, 0.4);
+  position: relative;
+  z-index: 1;
+}
+
+.login-message h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.2rem;
+  color: #8cc7ff;
+  margin: 0 0 20px;
+  text-shadow: 0 0 10px rgba(140, 199, 255, 0.8);
+}
+
+.login-message p {
+  color: #e0e6ff;
+  font-size: 1.1rem;
+  margin: 0 0 30px;
+}
+
+.space-btn {
+  background: linear-gradient(to right, #3a6ca8, #5a8ed6);
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(140, 199, 255, 0.5);
+}
+
+.space-btn:hover {
+  background: linear-gradient(to right, #5a8ed6, #7aa5e0);
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px rgba(140, 199, 255, 0.8);
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(8, 15, 40, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.rocket-detail-modal.space-theme {
+  width: 90%;
+  max-width: 900px;
+  max-height: 90vh;
+  background: rgba(16, 24, 56, 0.95);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 40px rgba(140, 199, 255, 0.4);
+  animation: modal-appear 0.4s ease-out;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(140, 199, 255, 0.3);
+}
+
+@keyframes modal-appear {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  color: #e0e6ff;
+  font-size: 2rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  transform: rotate(90deg);
+  color: #8cc7ff;
+  text-shadow: 0 0 10px rgba(140, 199, 255, 0.8);
+}
+
+.modal-header {
+  background: linear-gradient(90deg, rgba(32, 52, 100, 0.8), rgba(72, 112, 212, 0.8));
+  padding: 25px;
+  position: relative;
+  text-align: center;
+}
+
+.modal-header h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.2rem;
+  color: #e0e6ff;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 0 10px rgba(140, 199, 255, 0.8);
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: auto;
+}
+
+@media (min-width: 768px) {
+  .modal-content {
+    flex-direction: row;
+  }
+}
+
+.rocket-showcase {
+  flex: 0 0 auto;
+  padding: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(16, 24, 56, 0.7);
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .rocket-showcase {
+    flex: 0 0 40%;
+    border-right: 1px solid rgba(140, 199, 255, 0.3);
+  }
+}
+
+.rocket-showcase img {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 15px rgba(140, 199, 255, 0.5));
+  z-index: 2;
+  animation: floating-rocket 6s ease-in-out infinite;
+}
+
+@keyframes floating-rocket {
+  0% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(1deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(8px) rotate(-1deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+.rocket-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(ellipse at center, rgba(140, 199, 255, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 1;
+  animation: rocket-glow-pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes rocket-glow-pulse {
+  0% { opacity: 0.4; width: 150px; height: 150px; }
+  100% { opacity: 0.8; width: 180px; height: 180px; }
+}
+
+.rocket-info {
+  flex: 1;
+  padding: 30px;
+  background: rgba(24, 32, 64, 0.7);
+  color: #e0e6ff;
+}
+
+.info-row {
+  display: flex;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(140, 199, 255, 0.3);
+}
+
+.info-label {
+  flex: 0 0 120px;
+  font-family: 'Orbitron', sans-serif;
+  color: #8cc7ff;
+  font-weight: 600;
+}
+
+.info-value {
+  flex: 1;
+  color: #e0e6ff;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(140, 199, 255, 0.3);
+  border-radius: 50%;
+  border-top: 3px solid #8cc7ff;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+.loading-state p {
+  color: #8cc7ff;
+  font-style: italic;
+}
+
+.error-state {
+  background: rgba(200, 50, 50, 0.2);
+  border: 1px solid rgba(255, 100, 100, 0.3);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  margin-top: 15px;
+}
+
+.error-state p {
+  color: #ff9999;
+  margin: 0 0 15px;
+}
+
+.error-state button {
+  background: rgba(255, 100, 100, 0.8);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.locked-content {
+  background: rgba(24, 32, 64, 0.8);
+  padding: 30px;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 15px;
+  border: 1px solid rgba(140, 199, 255, 0.3);
+}
+
+.lock-icon {
+  width: 60px;
+  height: 60px;
+  background-image: url('/src/assets/space-lock-icon.png'); /* 우주 테마 자물쇠 아이콘 */
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  margin: 0 auto 15px;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 5px rgba(140, 199, 255, 0.8));
+}
+
+.locked-content p {
+  color: #8cc7ff;
+  font-size: 1.2rem;
+  margin: 0 0 10px;
+}
+
+.unlock-date {
+  color: #a4c2ff !important;
+  font-size: 1rem !important;
+  font-style: italic;
+}
+
+.message-section,
+.attachments-section {
+  margin-top: 25px;
+}
+
+.message-section h3,
+.attachments-section h3 {
+  font-family: 'Orbitron', sans-serif;
+  color: #8cc7ff;
+  font-size: 1.3rem;
+  margin: 0 0 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(140, 199, 255, 0.3);
+}
+
+.message-content {
+  background: rgba(16, 24, 56, 0.7);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(140, 199, 255, 0.3);
+  color: #e0e6ff;
+  font-size: 1rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  min-height: 120px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.file-list {
+  margin-top: 15px;
+}
+
+.file-item {
+  background: rgba(16, 24, 56, 0.7);
+  padding: 12px 15px;
+  border-radius: 6px;
+  border: 1px solid rgba(140, 199, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.file-item:last-child {
+  margin-bottom: 0;
+}
+
+.file-name {
+  flex: 1;
+  color: #e0e6ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 15px;
+}
+
+.download-btn {
+  flex: 0 0 auto;
+  background: linear-gradient(to right, #3a6ca8, #5a8ed6);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 15px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.download-btn:hover {
+  background: linear-gradient(to right, #5a8ed6, #7aa5e0);
+  transform: translateY(-2px);
+  box-shadow: 0 0 10px rgba(140, 199, 255, 0.5);
+}
+
+/* 성공 애니메이션 */
+.success-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center, rgba(140, 199, 255, 0.7) 0%, transparent 70%);
+  border-radius: 8px;
+  z-index: 10;
+  animation: glow-fade 1s forwards;
+}
+
+@keyframes glow-fade {
+  0% { opacity: 1; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+
+/* 드래그 미리보기 */
+.rocket-drag-preview {
+  position: fixed;
+  top: -1000px;
+  left: -1000px;
+  background: linear-gradient(to right, #3a6ca8, #5a8ed6);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  pointer-events: none;
+  z-index: 2000;
+  box-shadow: 0 0 15px rgba(140, 199, 255, 0.5);
+}
+
+/* 반응형 */
+@media (max-width: 1200px) {
+  .display-orbit {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .display-orbit {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .space-header h1 {
+    font-size: 2.2rem;
+  }
+  
+  .space-interior {
+    padding: 40px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .display-orbit {
+    grid-template-columns: repeat(1, 1fr);
+  }
+  
+  .space-header h1 {
+    font-size: 1.8rem;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 우주 배경 CSS 대체 코드 */
+.space-container {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #0b0d17 0%, #1c1e3d 50%, #0b0d17 100%);
+  padding: 30px 20px;
+  color: #e0e6ff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 별 배경 CSS 생성 */
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: transparent;
+  z-index: 0;
+}
+
+.stars:before, .stars:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.stars:before {
+  background-image: radial-gradient(white 1px, transparent 1px), 
+                   radial-gradient(white 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: 0 0, 25px 25px;
+  animation: startwinkle 3s ease-in-out infinite alternate;
+}
+
+.stars:after {
+  background-image: radial-gradient(white 1px, transparent 1px), 
+                   radial-gradient(white 1px, transparent 1px);
+  background-size: 100px 100px;
+  background-position: 0 0, 50px 50px;
+  animation: startwinkle 5s ease-in-out infinite alternate;
+}
+
+@keyframes startwinkle {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.5; }
+}
+
+/* 깜빡이는 별 효과 CSS */
+.twinkling {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+}
+
+.twinkling:before, .twinkling:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.twinkling:before {
+  background-image: radial-gradient(white 2px, transparent 2px);
+  background-size: 200px 200px;
+  opacity: 0;
+  animation: twinkle-before 7s linear infinite;
+}
+
+.twinkling:after {
+  background-image: radial-gradient(white 1.5px, transparent 1.5px);
+  background-size: 300px 300px;
+  opacity: 0;
+  animation: twinkle-after 9s linear infinite;
+}
+
+@keyframes twinkle-before {
+  0% { opacity: 0; transform: translateX(0); }
+  30% { opacity: 0.7; }
+  70% { opacity: 0.3; }
+  100% { opacity: 0; transform: translateX(-500px) translateY(100px); }
+}
+
+@keyframes twinkle-after {
+  0% { opacity: 0; transform: translateX(0); }
+  50% { opacity: 0.5; }
+  100% { opacity: 0; transform: translateX(-500px) translateY(-100px); }
+}
+
+/* 구름/성운 효과 CSS - clouds.png 이미지가 있다고 가정 */
+.clouds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: url('/src/assets/clouds.png') repeat top center;
+  z-index: 2;
+  opacity: 0.4;
+  animation: move-clouds-back 200s linear infinite;
+}
+
+@keyframes move-clouds-back {
+  from {background-position: 0 0;}
+  to {background-position: 10000px 0;}
+}
+
+/* 우주 자물쇠 아이콘 CSS */
+.lock-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 15px;
+  opacity: 0.8;
+  position: relative;
+  border-radius: 8px;
+  background: rgba(140, 199, 255, 0.2);
+  border: 2px solid rgba(140, 199, 255, 0.5);
+  box-shadow: 0 0 15px rgba(140, 199, 255, 0.4);
+}
+
+.lock-icon:before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 14px;
+  border: 2px solid rgba(140, 199, 255, 0.7);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.lock-icon:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -30%);
+  width: 8px;
+  height: 8px;
+  background: rgba(140, 199, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(140, 199, 255, 0.8);
+  animation: lockglow 2s infinite alternate;
+}
+
+@keyframes lockglow {
+  0% { box-shadow: 0 0 5px rgba(140, 199, 255, 0.5); }
+  100% { box-shadow: 0 0 15px rgba(140, 199, 255, 0.9); }
+}
+
+/* 로켓 글로우 효과 증가 */
+.rocket-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(140, 199, 255, 0.4) 0%, rgba(95, 160, 250, 0.2) 40%, transparent 70%);
+  z-index: 1;
+  animation: rocket-glow-pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes rocket-glow-pulse {
+  0% { opacity: 0.4; width: 150px; height: 150px; }
+  100% { opacity: 0.8; width: 180px; height: 180px; }
+}
