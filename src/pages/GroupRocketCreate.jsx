@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
-
+import api from '../utils/api';
+import useAuthStore from '../authStore';
 
 const GroupRocketCreate = () => {
   const { groupId } = useParams();
@@ -12,10 +13,29 @@ const GroupRocketCreate = () => {
   const [newMessage, setNewMessage] = useState('');
   const stompClientRef = useRef(null); // 선언 필수!
   const messageEndRef = useRef(null);
+  const myNickname = useAuthStore((state) => state.nickname);
 
+  // 히스토리 불러오기 함수
+  const fetchChatHistory = async (beforeMessageId = Number.MAX_SAFE_INTEGER) => {
+    try {
+      const res = await api.get(`/groups/${groupId}/chats/history`, {
+        params: { beforeMessageId, size: 5 }
+      });
+      // res.data.data 가 GroupChatHistoryResponse { messages: [], hasNext: bool } 라고 가정
+      const { messages: historyMessages } = res.data.data;
+
+      // 과거 메시지를 앞쪽에 붙임 (오래된 메시지 -> 배열 앞쪽)
+      setMessages(prev => [...historyMessages.reverse(), ...prev]);
+    } catch (error) {
+      console.error('히스토리 로드 실패:', error);
+    }
+  };
 
   useEffect(() => {
     if (!accessToken) return;
+
+    // 초기 히스토리 조회 (가장 최신 메시지부터)
+    fetchChatHistory();
 
     const socket = new SockJS('http://localhost:8081/ws');
     console.log("소켓 연결 완료");
@@ -61,24 +81,20 @@ const GroupRocketCreate = () => {
     };
   }, [accessToken, groupId]);
 
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
-    // 메시지 서버로 전송
     stompClientRef.current?.publish({
       destination: `/app/group/${groupId}/chat`,
-      body: JSON.stringify({
-        message: newMessage
-      }),
+      body: JSON.stringify({ message: newMessage }),
     });
 
     setNewMessage('');
-
-    // 스크롤 맨 아래로 이동
-    setTimeout(() => {
-      messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 0);
   };
 
   const handleExitGroup = () => {
@@ -98,10 +114,22 @@ const GroupRocketCreate = () => {
 
   const formatTimestamp = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+
+    // 오전/오후
+    const period = hours < 12 ? '오전' : '오후';
+    const displayHour = hours % 12 || 12; // 0시는 12시로 표시
+
+    // 두 자리수 보장
+    const paddedMonth = month.toString().padStart(2, '0');
+    const paddedDay = day.toString().padStart(2, '0');
+    const paddedMinute = minutes.toString().padStart(2, '0');
+
+    return `${paddedMonth}월 ${paddedDay}일 ${period} ${displayHour}:${paddedMinute}`;
   };
   return (
     <div style={styles.container}>
@@ -109,25 +137,48 @@ const GroupRocketCreate = () => {
       <button onClick={handleExitGroup} style={styles.exitButton}>나가기</button>
       <div style={styles.chatBox}>
         <div style={styles.messages}>
-          {messages.map((msg, index) => (
-            <div key={index} style={styles.message}>
-              {!msg.message?.trim() ? (
-                <em>{msg.nickname}님이 입장하셨습니다.</em>
-              ) : (
-                <>
-                  <div style={styles.header}>
-                    <strong>{msg.nickname}</strong>
-                    {msg.sentAt && (
-                      <span style={styles.timestamp}>
-                        {formatTimestamp(msg.sentAt)}
-                      </span>
-                    )}
-                  </div>
-                  <div>{msg.message}</div>
-                </>
-              )}
-            </div>
-          ))}
+          {messages.map((msg, index) => {
+            const isMine = msg.nickname === myNickname;
+            const isEnterOrExitMessage = !msg.message?.trim();
+
+            return (
+              <div
+                key={index}
+                style={{
+                  ...styles.message,
+                  textAlign: isEnterOrExitMessage ? 'center' : isMine ? 'right' : 'left',
+                  backgroundColor: isEnterOrExitMessage ? '#eee' : isMine ? '#dcf8c6' : '#ffffff',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  margin: '5px 0',
+                  alignSelf: isEnterOrExitMessage ? 'center' : isMine ? 'flex-end' : 'flex-start',
+                  fontStyle: isEnterOrExitMessage ? 'italic' : 'normal',
+                  color: isEnterOrExitMessage ? '#888' : 'inherit',
+                }}
+              >
+                {isEnterOrExitMessage ? (
+                  <em>
+                    {msg.nickname}님이 입장하셨습니다.
+                  </em>
+                ) : (
+                  <>
+                    <div style={styles.header}>
+                      <strong>
+                        {msg.nickname}
+                        {isMine && ' (나)'}
+                      </strong>{' '}
+                      {msg.sentAt && (
+                        <span style={styles.timestamp}>
+                          {formatTimestamp(msg.sentAt)}
+                        </span>
+                      )}
+                    </div>
+                    <div>{msg.message}</div>
+                  </>
+                )}
+              </div>
+            );
+          })}
           <div ref={messageEndRef} />
         </div>
 
@@ -164,6 +215,8 @@ const styles = {
     height: '300px',
     overflowY: 'auto',
     marginBottom: '10px',
+    display: 'flex',
+    flexDirection: 'column',
   },
   message: {
     padding: '5px 0',
@@ -187,5 +240,9 @@ const styles = {
     color: '#fff',
     cursor: 'pointer',
   },
+  timestamp: {
+    color: '#888', // 회색
+    fontSize: '0.85em',
+  }
 };
 export default GroupRocketCreate;
