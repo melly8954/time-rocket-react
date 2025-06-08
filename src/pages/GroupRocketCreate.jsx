@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
 import api from '../utils/api';
 import useAuthStore from '../authStore';
 
@@ -13,10 +11,11 @@ const GroupRocketCreate = () => {
   const [newMessage, setNewMessage] = useState('');
   const [hasMore, setHasMore] = useState(true);   // 더 불러올 메시지 있는지 여부
   const [loading, setLoading] = useState(false);  // 이전 메시지 불러오는 중 중복방지
-  const stompClientRef = useRef(null);
   const messageEndRef = useRef(null);
   const messageContainerRef = useRef(null);
   const myNickname = useAuthStore(state => state.nickname);
+  const stompClient = useAuthStore((state) => state.stompClient);
+  const subscriptionRef = useRef(null);
 
   // 히스토리 불러오기 함수
   const fetchChatHistory = async (beforeMessageId = Number.MAX_SAFE_INTEGER) => {
@@ -48,53 +47,42 @@ const GroupRocketCreate = () => {
 
   useEffect(() => {
     if (!accessToken) return;
+    if (!stompClient || !stompClient.connected) return;
+    if (!groupId) return;
 
     // 초기 히스토리 조회 (가장 최신 메시지부터)
     fetchChatHistory();
 
-    const socket = new SockJS('http://localhost:8081/ws');
-    console.log("소켓 연결 완료");
-    const stompClient = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      debug: (str) => console.log(str),
-      onConnect: () => {
-        console.log('STOMP 연결됨');
-        stompClient.subscribe(`/topic/group/${groupId}`, (message) => {
-          const payload = JSON.parse(message.body);
-          console.log('받은 메시지:', payload);
-          setMessages((prev) => [...prev, payload]);
-        });
-        console.log(`Subscribed to /topic/group/${groupId}`);
-
-        stompClient.publish({
-          destination: `/app/group/${groupId}/enter`,
-          body: '',
-        });
-        console.log('Enter 메시지 발송');
-      },
-      onDisconnect: () => console.log('STOMP 연결 해제됨'),
+    // 구독
+    subscriptionRef.current = stompClient.subscribe(`/topic/group/${groupId}`, (message) => {
+      const payload = JSON.parse(message.body);
+      console.log('받은 메시지:', payload);
+      setMessages((prev) => [...prev, payload]);
     });
+    console.log(`Subscribed to /topic/group/${groupId}`);
 
-    stompClient.activate();
-    stompClientRef.current = stompClient;
+    // 입장 메시지 발송
+    stompClient.publish({
+      destination: `/app/group/${groupId}/enter`,
+      body: '',
+    });
+    console.log('Enter 메시지 발송');
 
     return () => {
-      if (stompClientRef.current && stompClientRef.current.connected) {
-        // 퇴장 메시지 전송
-        stompClientRef.current.publish({
+      if (stompClient && stompClient.connected) {
+        // 구독 해제
+        subscriptionRef.current?.unsubscribe();
+        console.log(`Unsubscribed from /topic/group/${groupId}`);
+
+        // 퇴장 메시지 발송
+        stompClient.publish({
           destination: `/app/group/${groupId}/exit`,
           body: '',
         });
         console.log('Exit 메시지 발송');
-
-        // 연결 해제
-        stompClientRef.current.deactivate();
       }
     };
-  }, [accessToken, groupId]);
+  }, [stompClient, groupId]);
 
   // 스크롤 위치 복원
   const handleScroll = () => {
@@ -122,8 +110,9 @@ const GroupRocketCreate = () => {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
+    console.log('보내는 메시지:', newMessage);
 
-    stompClientRef.current?.publish({
+    stompClient.publish({
       destination: `/app/group/${groupId}/chat`,
       body: JSON.stringify({ message: newMessage }),
     });
@@ -132,15 +121,13 @@ const GroupRocketCreate = () => {
   };
 
   const handleExitGroup = () => {
-    if (stompClientRef.current && stompClientRef.current.connected) {
-      stompClientRef.current.publish({
+    if (stompClient && stompClient.connected) {
+      subscriptionRef.current?.unsubscribe();
+
+      stompClient.publish({
         destination: `/app/group/${groupId}/exit`,
         body: '',
       });
-      console.log('Exit 메시지 수동 발송');
-
-      stompClientRef.current.deactivate();
-      stompClientRef.current = null;
     }
 
     navigate(`/groups/` + groupId); // 나간 뒤 그룹 목록이나 홈으로 이동
