@@ -14,7 +14,7 @@ const GroupRocketCreate = () => {
   const stompClientRef = useRef(null); // 선언 필수!
   const messageEndRef = useRef(null);
   const myNickname = useAuthStore((state) => state.nickname);
-
+  const messageContainerRef = useRef(null);
   // 히스토리 불러오기 함수
   const fetchChatHistory = async (beforeMessageId = Number.MAX_SAFE_INTEGER) => {
     try {
@@ -112,6 +112,24 @@ const GroupRocketCreate = () => {
     navigate(`/groups/` + groupId); // 나간 뒤 그룹 목록이나 홈으로 이동
   };
 
+  const handleScroll = () => {
+    const container = messageContainerRef.current;
+    if (!container) return;
+
+    if (container.scrollTop === 0 && messages.length > 0) {
+      const firstMessageId = messages[0]?.id || Number.MAX_SAFE_INTEGER;
+
+      const prevScrollHeight = container.scrollHeight;
+
+      fetchChatHistory(firstMessageId).then(() => {
+        setTimeout(() => {
+          const newScrollHeight = container.scrollHeight;
+          container.scrollTop = newScrollHeight - prevScrollHeight;
+        }, 0);
+      });
+    }
+  };
+
   const formatTimestamp = (dateString) => {
     const date = new Date(dateString);
 
@@ -136,7 +154,11 @@ const GroupRocketCreate = () => {
       <h2>실시간 채팅</h2>
       <button onClick={handleExitGroup} style={styles.exitButton}>나가기</button>
       <div style={styles.chatBox}>
-        <div style={styles.messages}>
+        <div
+          style={styles.messages}
+          onScroll={handleScroll}        // 스크롤 이벤트 핸들러 추가
+          ref={messageContainerRef}      // ref 추가
+        >
           {messages.map((msg, index) => {
             const isMine = msg.nickname === myNickname;
             const isEnterOrExitMessage = !msg.message?.trim();
