@@ -69,6 +69,7 @@ const GroupRocketCreate = () => {
     console.log('Enter 메시지 발송');
 
     return () => {
+      // 컴포넌트 언마운트
       if (stompClient && stompClient.connected) {
         // 구독 해제
         subscriptionRef.current?.unsubscribe();
@@ -121,15 +122,6 @@ const GroupRocketCreate = () => {
   };
 
   const handleExitGroup = () => {
-    if (stompClient && stompClient.connected) {
-      subscriptionRef.current?.unsubscribe();
-
-      stompClient.publish({
-        destination: `/app/group/${groupId}/exit`,
-        body: '',
-      });
-    }
-
     navigate(`/groups/` + groupId); // 나간 뒤 그룹 목록이나 홈으로 이동
   };
 
