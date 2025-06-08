@@ -96,7 +96,7 @@ const RocketItem = ({ rocket, idKey, isSentTab, onClick, onContextMenu, isSelect
   const targetDate = new Date(expireTime);
   const diff = targetDate - now;
   
-  if (diff <= 0) {
+  if (diff > 0) {
      // 아직 시간이 남은 경우 - 모든 로켓은 잠금 상태로 표시
       setIsUnlocked(false);
       
@@ -124,9 +124,18 @@ const RocketItem = ({ rocket, idKey, isSentTab, onClick, onContextMenu, isSelect
   // 우클릭 이벤트 처리 (동일)
   const handleContextMenu = (e) => {
     e.preventDefault();
-    if (!isSentTab && isUnlocked && onContextMenu) {
+    // 보낸함에서는 우클릭 처리를 하지 않음
+    if (isSentTab) return;
+    // 받은함에서만 onContextMenu 호출
+    if (isUnlocked && onContextMenu) {
       onContextMenu(e, rocket);
     }
+  };
+
+  // 커서 스타일을 결정하는 함수 추가
+  const getCursorStyle = () => {
+    if (isSentTab) return 'pointer'; // 보낸함에서는 일반 커서만
+    return isUnlocked ? 'context-menu' : 'pointer'; // 받은함에서는 잠금해제된 경우 컨텍스트 메뉴 커서
   };
 
   // 간단한 날짜 포맷팅
@@ -146,9 +155,10 @@ const RocketItem = ({ rocket, idKey, isSentTab, onClick, onContextMenu, isSelect
 
   return (
   <div 
-    className={`rocket-item ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`} 
+    className={`rocket-item ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''} ${isSentTab ? '' : 'contextmenu-enabled'}`} 
     onClick={() => onClick(rocket)}
     onContextMenu={handleContextMenu}
+    style={{ cursor: getCursorStyle() }} // 커서 스타일 적용
   >
     <div className="rocket-image">
       <img 
@@ -189,6 +199,11 @@ const RocketItem = ({ rocket, idKey, isSentTab, onClick, onContextMenu, isSelect
         )}
       </div>
     </div>
+
+      {/* 우클릭 힌트는 보낸함에서는 표시하지 않음 */}
+      {!isSentTab && isUnlocked && (
+        <div className="context-menu-hint">우클릭으로 진열장에 추가/제거</div>
+      )}
   </div>
   )}
 

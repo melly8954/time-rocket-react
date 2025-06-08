@@ -521,3 +521,71 @@ export const StarsIcon = () => (
     />
   </svg>
 );
+
+export const GroupIcon = ({ className, style }) => (
+  <svg 
+    className={className} 
+    style={style} 
+    fill="currentColor" 
+    viewBox="0 0 24 24" 
+    width="24" 
+    height="24"
+  >
+    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h3v4h2v-4h3l-1-5H7V7H5v2H1l1 5h2v4zM18 23h-2v-4h-5l.23-2.19c.52-.47 1.18-.81 1.91-.81H16c1.1 0 2-.9 2-2V12c0-1.1-.9-2-2-2h-3.06c-.65 0-1.25.42-1.47 1.01L9 14v2H7v-2.5L8.5 10H6c-.83 0-1.5.67-1.5 1.5V15c0 .83.67 1.5 1.5 1.5h1v6.5h2V23h3v-4h5v4z"/>
+  </svg>
+);
+
+export const CrownIcon = ({ className, style }) => (
+  <svg className={className} style={style} fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+    <path d="M5 16L3 9l5.5 3.5L12 8l3.5 4.5L21 9l-2 7H5zm2.7-2h8.6l.9-3.4-3.1 2-2.1-2.7L12 12l-.1-2.1-2.1 2.7-3.1-2L7.7 14z"/>
+  </svg>
+);
+
+export const BackIcon = ({ className, style }) => (
+  <svg className={className} style={style} fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2z"/>
+  </svg>
+);
+
+export const ExitIcon = ({ className, style }) => (
+  <svg className={className} style={style} fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+    <path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+  </svg>
+);
+
+export const ImageIcon = ({ className, style }) => (
+  <svg className={className} style={style} fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+    <path d="M21,19V5c0-1.1-0.9-2-2-2H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14C20.1,21,21,20.1,21,19z M8.5,13.5l2.5,3.01L14.5,12l4.5,6H5l3.5-4.5z"/>
+  </svg>
+);
+
+export const FileIcon = ({ className, style }) => (
+  <svg 
+    className={className} 
+    style={style} 
+    fill="currentColor" 
+    viewBox="0 0 24 24" 
+    width="24" 
+    height="24"
+  >
+    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+  </svg>
+);
+
+export const SendIcon = ({ className }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 20 20">
+    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+  </svg>
+);
+
+export const ChatIcon = ({ className }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 20 20">
+    <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+  </svg>
+);
+
+export const KickIcon = ({ className }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 20 20">
+    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+  </svg>
+);
