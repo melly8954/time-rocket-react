@@ -46,9 +46,7 @@ const GroupRocketCreate = () => {
   };
 
   useEffect(() => {
-    if (!accessToken) return;
-    if (!stompClient || !stompClient.connected) return;
-    if (!groupId) return;
+    if (!stompClient || !stompClient.connected || !groupId || !accessToken) return;
 
     // 초기 히스토리 조회 (가장 최신 메시지부터)
     fetchChatHistory();
@@ -83,7 +81,7 @@ const GroupRocketCreate = () => {
         console.log('Exit 메시지 발송');
       }
     };
-  }, [stompClient, groupId]);
+  }, [stompClient?.connected, groupId, accessToken]);
 
   // 스크롤 위치 복원
   const handleScroll = () => {
