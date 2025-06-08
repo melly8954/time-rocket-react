@@ -74,7 +74,7 @@ function App() {
   if (!isAuthChecked) {
     return null; // 로딩 중엔 아무것도 렌더링하지 않음
   }
-
+  
   return (
     <>
       <SpaceBackground />
