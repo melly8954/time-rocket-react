@@ -116,9 +116,7 @@ const GroupRocketCreate = () => {
   };
 
   useEffect(() => {
-    if (messages.length <= 6) {
-      messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
+    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSendMessage = (e) => {
