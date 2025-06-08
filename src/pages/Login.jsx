@@ -4,8 +4,7 @@ import useAuthStore from "../authStore"; // zustand store 가져오기
 import axios from "axios";
 import SocialLoginButtons from "../components/ui/SocialLoginButtons";
 import styles from '../style/Login.module.css'; // 스타일 적용
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
+import { connectSocket } from "../utils/socket";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,22 +19,6 @@ const Login = () => {
   const handleLoginInput = (e) => {
     const { id, value } = e.target;
     setUserData((prev) => ({ ...prev, [id]: value }));
-  };
-
-  const connectSocket = (token) => {
-    const socket = new SockJS("http://localhost:8081/ws");
-    const stompClient = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: { Authorization: `Bearer ${token}` },
-      debug: (str) => console.log(str),
-      onConnect: () => {
-        console.log("STOMP 연결됨");
-      },
-      onDisconnect: () => console.log("STOMP 연결 해제됨"),
-    });
-
-    stompClient.activate();
-    setStompClient(stompClient);
   };
 
   const handleLoginBtn = async () => {
