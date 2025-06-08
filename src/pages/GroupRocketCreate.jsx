@@ -20,10 +20,11 @@ import {
 const GroupRocketCreate = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
+  const accessToken = localStorage.getItem('accessToken');
   const { userId, isLoggedIn } = useAuthStore();
   const fileInputRef = useRef(null);
   const chatEndRef = useRef(null);
-  
+
   // 상태 관리
   const [group, setGroup] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -37,7 +38,7 @@ const GroupRocketCreate = () => {
   const [files, setFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  
+
   // 채팅 관련 상태
   const [chatMessages, setChatMessages] = useState([
     {
@@ -48,28 +49,39 @@ const GroupRocketCreate = () => {
       isSystem: true
     }
   ]);
+  // psw
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [hasMore, setHasMore] = useState(true);   // 더 불러올 메시지 있는지 여부
+  const [loading, setLoading] = useState(false);  // 이전 메시지 불러오는 중 중복방지
+  const messageEndRef = useRef(null);
+  const messageContainerRef = useRef(null);
+  const myNickname = useAuthStore(state => state.nickname);
+  const stompClient = useAuthStore((state) => state.stompClient);
+  const subscriptionRef = useRef(null);
+
+
 
   // 로켓 디자인 옵션
   const DESIGN_OPTIONS = [
-    { 
-      value: '/src/assets/rocket_design1.svg', 
-      label: '클래식', 
+    {
+      value: '/src/assets/rocket_design1.svg',
+      label: '클래식',
       preview: '/src/assets/rocket_design1.svg'
     },
-    { 
-      value: '/src/assets/rocket_design2.svg', 
-      label: '모던', 
+    {
+      value: '/src/assets/rocket_design2.svg',
+      label: '모던',
       preview: '/src/assets/rocket_design2.svg'
     },
-    { 
-      value: '/src/assets/rocket_design3.svg', 
-      label: '컬러풀', 
+    {
+      value: '/src/assets/rocket_design3.svg',
+      label: '컬러풀',
       preview: '/src/assets/rocket_design3.svg'
     },
-    { 
-      value: '/src/assets/rocket_design4.svg', 
-      label: '우주선', 
+    {
+      value: '/src/assets/rocket_design4.svg',
+      label: '우주선',
       preview: '/src/assets/rocket_design4.svg'
     }
   ];
@@ -91,7 +103,6 @@ const GroupRocketCreate = () => {
     if (groupId) {
       fetchGroupInfo();
       fetchMembers();
-      fetchChatMessages();
     }
   }, [isLoggedIn, groupId]);
 
@@ -111,7 +122,7 @@ const GroupRocketCreate = () => {
         const groupData = response.data.data;
         setGroup(groupData);
         setIsOwner(groupData.ownerId === userId);
-        
+
         setFormData(prev => ({
           ...prev,
           rocketName: `${groupData.groupName} 로켓`,
@@ -156,28 +167,6 @@ const GroupRocketCreate = () => {
     }
   };
 
-  // 채팅 메시지 조회
-  const fetchChatMessages = async () => {
-    try {
-      const response = await api.get(`/groups/${groupId}/rocket-chat`);
-      if (response.data?.data && Array.isArray(response.data.data)) {
-        setChatMessages(response.data.data);
-      }
-    } catch (err) {
-      console.error('채팅 메시지 조회 실패:', err);
-      // 백엔드가 없어도 기본 메시지 유지
-      setChatMessages([
-        {
-          id: 1,
-          sender: '시스템',
-          message: '모든 참가자가 메시지를 작성하면 로켓을 발사할 수 있습니다! 🚀',
-          timestamp: new Date().toISOString(),
-          isSystem: true
-        }
-      ]);
-    }
-  };
-
   // 내 상태 계산
   const getMyStatus = () => {
     if (!formData.content.trim()) {
@@ -199,18 +188,18 @@ const GroupRocketCreate = () => {
         hasMessage: !!formData.content.trim(),
         hasFiles: files.length > 0
       });
-      
+
       // 로컬에서도 내 상태 업데이트
-      setMembers(prev => prev.map(member => 
-        member.userId === userId 
+      setMembers(prev => prev.map(member =>
+        member.userId === userId
           ? { ...member, status: status }
           : member
       ));
     } catch (err) {
       console.error('상태 업데이트 실패:', err);
       // API 실패해도 로컬에서는 업데이트
-      setMembers(prev => prev.map(member => 
-        member.userId === userId 
+      setMembers(prev => prev.map(member =>
+        member.userId === userId
           ? { ...member, status: getMyStatus() }
           : member
       ));
@@ -251,7 +240,7 @@ const GroupRocketCreate = () => {
       ...prev,
       [name]: value
     }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -263,18 +252,18 @@ const GroupRocketCreate = () => {
   // 파일 선택 핸들러
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    
+
     if (selectedFiles.length > 5) {
       alert('최대 5개의 파일만 업로드 가능합니다.');
       return;
     }
-    
+
     const oversizedFiles = selectedFiles.filter(file => file.size > 10 * 1024 * 1024);
     if (oversizedFiles.length > 0) {
       alert('각 파일은 10MB 이하여야 합니다.');
       return;
     }
-    
+
     setFiles(selectedFiles);
   };
 
@@ -286,14 +275,14 @@ const GroupRocketCreate = () => {
   // 멤버 추방 (방장만 가능)
   const handleKickMember = async (memberId) => {
     if (!isOwner) return;
-    
+
     if (window.confirm('정말로 이 멤버를 추방하시겠습니까?')) {
       try {
         await api.delete(`/groups/${groupId}/members/${memberId}`);
-        
+
         // 로컬에서 멤버 제거
         setMembers(prev => prev.filter(member => member.userId !== memberId));
-        
+
         // 채팅에 시스템 메시지 추가 (API 실패해도 로컬에 추가)
         const systemMessage = {
           id: Date.now(),
@@ -321,59 +310,10 @@ const GroupRocketCreate = () => {
     }
   };
 
-  // 채팅 메시지 전송
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    const userMessage = {
-      id: Date.now(),
-      sender: userId,
-      message: newMessage.trim(),
-      timestamp: new Date().toISOString(),
-      isSystem: false
-    };
-
-    // 로컬에 즉시 추가
-    setChatMessages(prev => [...prev, userMessage]);
-    setNewMessage('');
-
-    try {
-      // API로 메시지 전송
-      await api.post(`/groups/${groupId}/rocket-chat`, {
-        sender: userId,
-        message: newMessage.trim(),
-        isSystem: false
-      });
-    } catch (err) {
-      console.error('메시지 전송 실패:', err);
-      // API 실패해도 로컬 메시지는 유지
-      
-      // 임시 자동 응답 (백엔드 없을 때)
-      setTimeout(() => {
-        const responses = [
-          '메시지 확인했습니다! 💬',
-          '모든 분들이 참여해주세요! 🙌',
-          '로켓 발사까지 조금만 더! 🚀'
-        ];
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        
-        const autoReply = {
-          id: Date.now() + 1,
-          sender: '시스템',
-          message: randomResponse,
-          timestamp: new Date().toISOString(),
-          isSystem: true
-        };
-        setChatMessages(prev => [...prev, autoReply]);
-      }, 1000);
-    }
-  };
-
   // 로켓 생성 및 전송
   const handleRocketSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!isOwner) {
       alert('방장만 로켓을 발사할 수 있습니다.');
       return;
@@ -383,7 +323,7 @@ const GroupRocketCreate = () => {
       alert('모든 참가자가 작업을 완료해야 로켓을 발사할 수 있습니다.');
       return;
     }
-    
+
     const newErrors = {};
     if (!formData.rocketName.trim()) {
       newErrors.rocketName = '로켓 이름을 입력해주세요.';
@@ -400,40 +340,40 @@ const GroupRocketCreate = () => {
         newErrors.lockExpiredAt = '미래 시간을 선택해주세요.';
       }
     }
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
+
     try {
       setIsLoading(true);
-      
+
       // FormData 생성 (파일 업로드 포함)
       const formDataToSend = new FormData();
       formDataToSend.append('rocketName', formData.rocketName.trim());
       formDataToSend.append('design', formData.design);
       formDataToSend.append('lockExpiredAt', formData.lockExpiredAt);
       formDataToSend.append('content', formData.content);
-      
+
       // 파일 추가
       files.forEach((file, index) => {
         formDataToSend.append(`files`, file);
       });
-      
+
       await api.post(`/groups/${groupId}/rockets`, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       alert('모임 로켓이 성공적으로 발사되었습니다! 🚀');
       navigate(`/groups/${groupId}`);
-      
+
     } catch (err) {
       console.error('로켓 전송 실패:', err);
       const backendMessage = err.response?.data?.message || err.response?.data?.error;
-      
+
       if (err.response?.status === 400) {
         alert(`요청 오류: ${backendMessage || '입력 정보를 확인해주세요.'}`);
       } else if (err.response?.status === 403) {
@@ -480,6 +420,130 @@ const GroupRocketCreate = () => {
     return member?.nickname || '알 수 없는 사용자';
   };
 
+  // chat - psw
+  // 히스토리 불러오기 함수
+  const fetchChatHistory = async (beforeMessageId = Number.MAX_SAFE_INTEGER) => {
+    if (loading || !hasMore) return;  // 중복 호출 방지 및 더 없으면 종료
+
+    setLoading(true);
+    try {
+      const res = await api.get(`/groups/${groupId}/chats/history`, {
+        params: { beforeMessageId, size: 5 }
+      });
+      const { messages: historyMessages, hasNext } = res.data.data;
+
+      if (!historyMessages.length) {
+        setHasMore(false); // 더 이상 메시지 없음
+        return;
+      }
+
+      // 메시지 정렬은 API가 어떤 순서로 보내는지 확인 후 필요시 reverse
+      // 여기서는 오래된 순으로 온다고 가정 (오래된 메시지 → 최근 메시지)
+      setMessages(prev => [...historyMessages.reverse(), ...prev]);
+
+      setHasMore(hasNext);
+    } catch (error) {
+      console.error('히스토리 로드 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!stompClient || !stompClient.connected || !groupId || !accessToken) return;
+
+    // 초기 히스토리 조회 (가장 최신 메시지부터)
+    fetchChatHistory();
+
+    // 구독
+    subscriptionRef.current = stompClient.subscribe(`/topic/group/${groupId}`, (message) => {
+      const payload = JSON.parse(message.body);
+      console.log('받은 메시지:', payload);
+      setMessages((prev) => [...prev, payload]);
+    });
+    console.log(`Subscribed to /topic/group/${groupId}`);
+
+    // 입장 메시지 발송
+    stompClient.publish({
+      destination: `/app/group/${groupId}/enter`,
+      body: '',
+    });
+    console.log('Enter 메시지 발송');
+
+    return () => {
+      // 컴포넌트 언마운트
+      if (stompClient && stompClient.connected) {
+        // 구독 해제
+        subscriptionRef.current?.unsubscribe();
+        console.log(`Unsubscribed from /topic/group/${groupId}`);
+
+        // 퇴장 메시지 발송
+        stompClient.publish({
+          destination: `/app/group/${groupId}/exit`,
+          body: '',
+        });
+        console.log('Exit 메시지 발송');
+      }
+    };
+  }, [stompClient?.connected, groupId, accessToken]);
+
+  // 스크롤 위치 복원
+  const handleScroll = () => {
+    const container = messageContainerRef.current;
+    if (!container) return;
+
+    if (container.scrollTop === 0 && messages.length > 0 && hasMore && !loading) {
+      const firstMessageId = messages[0]?.chatMessageId || Number.MAX_SAFE_INTEGER;
+      const prevScrollHeight = container.scrollHeight;
+
+      fetchChatHistory(firstMessageId).then(() => {
+        setTimeout(() => {
+          const newScrollHeight = container.scrollHeight;
+          // 이전과 새로 생긴 높이 차만큼 스크롤 위치를 내려줌으로써 스크롤 유지
+          container.scrollTop = newScrollHeight - prevScrollHeight;
+        }, 50);
+      });
+    }
+  };
+
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    console.log('보내는 메시지:', newMessage);
+
+    stompClient.publish({
+      destination: `/app/group/${groupId}/chat`,
+      body: JSON.stringify({ message: newMessage }),
+    });
+
+    setNewMessage('');
+  };
+
+  const formatTimestamp = (dateString) => {
+    const date = new Date(dateString);
+
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+
+    // 오전/오후
+    const period = hours < 12 ? '오전' : '오후';
+    const displayHour = hours % 12 || 12; // 0시는 12시로 표시
+
+    // 두 자리수 보장
+    const paddedMonth = month.toString().padStart(2, '0');
+    const paddedDay = day.toString().padStart(2, '0');
+    const paddedMinute = minutes.toString().padStart(2, '0');
+
+    return `${paddedMonth}월 ${paddedDay}일 ${period} ${displayHour}:${paddedMinute}`;
+  };
+
+  // 
   if (isLoading && !group) {
     return (
       <div className={styles.loadingContainer}>
@@ -504,7 +568,7 @@ const GroupRocketCreate = () => {
     <div className={styles.groupRocketCreateContainer}>
       {/* 헤더 */}
       <div className={styles.header}>
-        <button 
+        <button
           onClick={() => navigate(`/groups/${groupId}`)}
           className={styles.backButton}
         >
@@ -526,7 +590,7 @@ const GroupRocketCreate = () => {
               <h3>💬 함께 작성하는 메시지</h3>
               <p>모든 참가자가 메시지를 작성해주세요</p>
             </div>
-            
+
             <div className={styles.messageEditor}>
               <div className={styles.messagePreview}>
                 <div className={styles.previewHeader}>
@@ -566,7 +630,7 @@ const GroupRocketCreate = () => {
                   accept="image/*,video/*,.pdf,.doc,.docx"
                   max="5"
                 />
-                <div 
+                <div
                   className={styles.uploadZone}
                   onClick={() => fileInputRef.current?.click()}
                 >
@@ -613,11 +677,11 @@ const GroupRocketCreate = () => {
               <h3>👥 참가자 현황 ({getCompleteCount()}/{members.length})</h3>
               <p>모든 참가자가 초록색이 되면 로켓을 발사할 수 있어요</p>
             </div>
-            
+
             <div className={styles.participantsList}>
               {Array.isArray(members) && members.map((member) => (
                 <div key={member.userId} className={styles.participantItem}>
-                  <div 
+                  <div
                     className={styles.participantCircle}
                     style={{ backgroundColor: STATUS_COLORS[member.status || 'NONE'] }}
                   >
@@ -643,7 +707,7 @@ const GroupRocketCreate = () => {
                   )}
                 </div>
               ))}
-              
+
               {/* 멤버가 없을 때 표시 */}
               {(!Array.isArray(members) || members.length === 0) && (
                 <div className={styles.noMembers}>
@@ -663,7 +727,7 @@ const GroupRocketCreate = () => {
                 <h3>⚙️ 로켓 설정 (방장 전용)</h3>
                 <p>로켓의 세부 정보를 설정해주세요</p>
               </div>
-              
+
               <div className={styles.configForm}>
                 <div className={styles.formField}>
                   <label className={styles.fieldLabel}>로켓 이름 *</label>
@@ -739,12 +803,12 @@ const GroupRocketCreate = () => {
                 <h3>🚀 로켓 미리보기</h3>
                 <p>방장이 설정 중인 로켓 정보예요</p>
               </div>
-              
+
               <div className={styles.rocketPreview}>
                 <div className={styles.previewInfo}>
                   <h4>{formData.rocketName || '로켓 이름 설정 중...'}</h4>
-                  <p>잠금 해제: {formData.lockExpiredAt ? 
-                    new Date(formData.lockExpiredAt).toLocaleString('ko-KR') : 
+                  <p>잠금 해제: {formData.lockExpiredAt ?
+                    new Date(formData.lockExpiredAt).toLocaleString('ko-KR') :
                     '시간 설정 중...'}</p>
                 </div>
                 {formData.design && (
@@ -762,55 +826,70 @@ const GroupRocketCreate = () => {
           )}
 
           {/* 실시간 채팅 카드 */}
-          <div className={styles.chatCard}>
-            <div className={styles.chatHeader}>
-              <div className={styles.chatTitle}>
-                <ChatIcon />
-                <span>실시간 채팅</span>
-              </div>
-              <div className={styles.chatStatus}>
-                <div className={styles.statusDot}></div>
-                <span>온라인</span>
-              </div>
-            </div>
-            
-            <div className={styles.chatContent}>
-              <div className={styles.chatMessages}>
-                {Array.isArray(chatMessages) && chatMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`${styles.chatMessage} ${msg.isSystem ? styles.systemMessage : styles.userMessage}`}
-                  >
-                    <div className={styles.messageHeader}>
-                      <span className={styles.sender}>
-                        {msg.isSystem ? '시스템' : getUserNickname(msg.sender)}
-                      </span>
-                      <span className={styles.time}>{formatTime(msg.timestamp)}</span>
+          <div style={sstyles.container}>
+            <h2>실시간 채팅</h2>
+            <div style={sstyles.chatBox}>
+              <div
+                style={sstyles.messages}
+                onScroll={handleScroll}        // 스크롤 이벤트 핸들러 추가
+                ref={messageContainerRef}      // ref 추가
+              >
+                {messages.map((msg, index) => {
+                  const isMine = msg.nickname === myNickname;
+                  const isEnterOrExitMessage = !msg.message?.trim();
+
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        ...sstyles.message,
+                        textAlign: isEnterOrExitMessage ? 'center' : isMine ? 'right' : 'left',
+                        backgroundColor: isEnterOrExitMessage ? '#eee' : isMine ? '#dcf8c6' : '#ffffff',
+                        borderRadius: '8px',
+                        padding: '8px',
+                        margin: '5px 0',
+                        alignSelf: isEnterOrExitMessage ? 'center' : isMine ? 'flex-end' : 'flex-start',
+                        fontStyle: isEnterOrExitMessage ? 'italic' : 'normal',
+                        color: isEnterOrExitMessage ? '#888' : 'inherit',
+                      }}
+                    >
+                      {isEnterOrExitMessage ? (
+                        <em>
+                          {msg.nickname}님이 입장하셨습니다.
+                        </em>
+                      ) : (
+                        <>
+                          <div style={sstyles.header}>
+                            <strong>
+                              {msg.nickname}
+                              {isMine && ' (나)'}
+                            </strong>{' '}
+                            {msg.sentAt && (
+                              <span style={sstyles.timestamp}>
+                                {formatTimestamp(msg.sentAt)}
+                              </span>
+                            )}
+                          </div>
+                          <div>{msg.message}</div>
+                        </>
+                      )}
                     </div>
-                    <div className={styles.messageContent}>{msg.message}</div>
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
+                  );
+                })}
+                <div ref={messageEndRef} />
               </div>
 
-              <form onSubmit={handleSendMessage} className={styles.chatInputForm}>
-                <div className={styles.chatInputGroup}>
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    className={styles.chatInput}
-                    placeholder="메시지를 입력하세요..."
-                    maxLength={200}
-                  />
-                  <button
-                    type="submit"
-                    className={styles.sendButton}
-                    disabled={!newMessage.trim()}
-                  >
-                    <SendIcon />
-                  </button>
-                </div>
+              <form onSubmit={handleSendMessage} style={sstyles.inputForm}>
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="메시지를 입력하세요"
+                  style={sstyles.input}
+                />
+                <button type="submit" style={sstyles.button} disabled={!newMessage.trim()}>
+                  전송
+                </button>
               </form>
             </div>
           </div>
@@ -827,13 +906,13 @@ const GroupRocketCreate = () => {
           >
             <span className={styles.launchIcon}>🚀</span>
             <span className={styles.launchText}>
-              {isLoading ? '발사 준비 중...' : 
-               !isAllMembersComplete() ? '모든 참가자 완료 대기 중...' : 
-               '로켓 발사하기'}
+              {isLoading ? '발사 준비 중...' :
+                !isAllMembersComplete() ? '모든 참가자 완료 대기 중...' :
+                  '로켓 발사하기'}
             </span>
           </button>
         )}
-        
+
         {!isOwner && (
           <div className={styles.waitingMessage}>
             <span>방장이 로켓을 발사할 때까지 기다려주세요 ⏳</span>
@@ -842,6 +921,53 @@ const GroupRocketCreate = () => {
       </div>
     </div>
   );
+};
+
+const sstyles = {
+  container: {
+    maxWidth: '500px',
+    margin: '0 auto',
+    fontFamily: 'Arial, sans-serif',
+  },
+  chatBox: {
+    border: '1px solid #ccc',
+    borderRadius: '8px',
+    padding: '10px',
+    backgroundColor: '#f9f9f9',
+  },
+  messages: {
+    height: '300px',
+    overflowY: 'auto',
+    marginBottom: '10px',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  message: {
+    padding: '5px 0',
+    borderBottom: '1px solid #eee',
+  },
+  inputForm: {
+    display: 'flex',
+  },
+  input: {
+    flex: 1,
+    padding: '8px',
+    borderRadius: '4px',
+    border: '1px solid #ccc',
+    marginRight: '8px',
+  },
+  button: {
+    padding: '8px 12px',
+    borderRadius: '4px',
+    border: 'none',
+    backgroundColor: '#4CAF50',
+    color: '#fff',
+    cursor: 'pointer',
+  },
+  timestamp: {
+    color: '#888', // 회색
+    fontSize: '0.85em',
+  }
 };
 
 export default GroupRocketCreate;

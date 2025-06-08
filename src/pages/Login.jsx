@@ -4,11 +4,13 @@ import useAuthStore from "../authStore"; // zustand store 가져오기
 import axios from "axios";
 import SocialLoginButtons from "../components/ui/SocialLoginButtons";
 import styles from '../style/Login.module.css'; // 스타일 적용
+import { connectSocket } from "../utils/socket";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { isLoggedIn , setIsLoggedIn, setAccessToken, rememberMe, setRememberMe, setUserId, setNickname} = useAuthStore(); // 상태 업데이트 함수 가져오기
+  const { isLoggedIn, setIsLoggedIn, setAccessToken, rememberMe, setRememberMe, setUserId, setNickname } = useAuthStore(); // 상태 업데이트 함수 가져오기
   const [userData, setUserData] = useState({ username: "", password: "" });
+  const setStompClient = useAuthStore((state) => state.setStompClient);
 
   const handleSignupPage = () => {  // 화살표 함수로 정의
     navigate("/signup");
@@ -43,6 +45,9 @@ const Login = () => {
       setUserId(userInfo.data.data.userId);
       setNickname(userInfo.data.data.nickname); // 응답 구조에 맞게 닉네임 추출
 
+      // 로그인 성공 후 소켓 연결
+      connectSocket(accessToken);
+
       alert("로그인 성공!");
       navigate("/");
     } catch (err) {
@@ -60,7 +65,7 @@ const Login = () => {
       navigate("/"); // 이미 로그인되어 있으면 홈으로 리디렉션
     }
   }, [isLoggedIn, navigate]);
-  
+
   return (
     <div className={styles.container}>
       <div className={styles.box}>
@@ -95,12 +100,12 @@ const Login = () => {
         </label>
 
         <button className={styles.submitBtn} onClick={handleLoginBtn}>로그인</button>
-        
-         <div className={styles.linkContainer}>
+
+        <div className={styles.linkContainer}>
           <span>계정이 없으신가요? <a onClick={handleSignupPage} className={styles.textLink}>회원가입</a></span>
           <a onClick={navigatePasswordReset} className={styles.textLink}>비밀번호 찾기</a>
         </div>
-        
+
         <div className={styles.divider}>
           <span>또는</span>
         </div>

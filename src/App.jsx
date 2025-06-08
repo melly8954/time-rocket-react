@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import useAuthStore from './authStore';
 import { setNavigator } from "./utils/navigate";
 import { fetchUserProfile } from './utils/profile';
+import { connectSocket } from "./utils/socket";
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import SpaceBackground from "./components/common/SpaceBackground";
@@ -21,7 +22,7 @@ import Groups from './pages/Groups';
 import GroupChest from './pages/GroupChest';
 import GroupDetail from './pages/GroupDetail';
 import CreateGroup from './pages/CreateGroup';
-import GroupRocketCreate from './pages/GroupRocketCreate'; 
+import GroupRocketCreate from './pages/GroupRocketCreate';
 
 function App() {
   const didRun = useRef(false);
@@ -46,6 +47,10 @@ function App() {
         setNickname(data.nickname);
         setUserId(data.userId);
         // setAccessToken 생략 가능: 인터셉터에서 이미 갱신함
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+          connectSocket(token);
+        }
       } catch (err) {
         console.log("로그인 상태 확인 실패:", err);
         localStorage.removeItem("accessToken");

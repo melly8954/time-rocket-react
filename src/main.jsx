@@ -7,9 +7,9 @@ import './style/components/animations.css';
 import './style/components/variables.css';
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  // <StrictMode>
     <Router>
       <App />
     </Router>
-  </StrictMode>
+  // </StrictMode>
 )
