@@ -11,23 +11,38 @@ const GroupRocketCreate = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const stompClientRef = useRef(null); // 선언 필수!
+  const [hasMore, setHasMore] = useState(true);   // 더 불러올 메시지 있는지 여부
+  const [loading, setLoading] = useState(false);  // 이전 메시지 불러오는 중 중복방지
+  const stompClientRef = useRef(null);
   const messageEndRef = useRef(null);
-  const myNickname = useAuthStore((state) => state.nickname);
   const messageContainerRef = useRef(null);
+  const myNickname = useAuthStore(state => state.nickname);
+
   // 히스토리 불러오기 함수
   const fetchChatHistory = async (beforeMessageId = Number.MAX_SAFE_INTEGER) => {
+    if (loading || !hasMore) return;  // 중복 호출 방지 및 더 없으면 종료
+
+    setLoading(true);
     try {
       const res = await api.get(`/groups/${groupId}/chats/history`, {
         params: { beforeMessageId, size: 5 }
       });
-      // res.data.data 가 GroupChatHistoryResponse { messages: [], hasNext: bool } 라고 가정
-      const { messages: historyMessages } = res.data.data;
+      const { messages: historyMessages, hasNext } = res.data.data;
 
-      // 과거 메시지를 앞쪽에 붙임 (오래된 메시지 -> 배열 앞쪽)
+      if (!historyMessages.length) {
+        setHasMore(false); // 더 이상 메시지 없음
+        return;
+      }
+
+      // 메시지 정렬은 API가 어떤 순서로 보내는지 확인 후 필요시 reverse
+      // 여기서는 오래된 순으로 온다고 가정 (오래된 메시지 → 최근 메시지)
       setMessages(prev => [...historyMessages.reverse(), ...prev]);
+
+      setHasMore(hasNext);
     } catch (error) {
       console.error('히스토리 로드 실패:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,8 +96,29 @@ const GroupRocketCreate = () => {
     };
   }, [accessToken, groupId]);
 
+  // 스크롤 위치 복원
+  const handleScroll = () => {
+    const container = messageContainerRef.current;
+    if (!container) return;
+
+    if (container.scrollTop === 0 && messages.length > 0 && hasMore && !loading) {
+      const firstMessageId = messages[0]?.chatMessageId || Number.MAX_SAFE_INTEGER;
+      const prevScrollHeight = container.scrollHeight;
+
+      fetchChatHistory(firstMessageId).then(() => {
+        setTimeout(() => {
+          const newScrollHeight = container.scrollHeight;
+          // 이전과 새로 생긴 높이 차만큼 스크롤 위치를 내려줌으로써 스크롤 유지
+          container.scrollTop = newScrollHeight - prevScrollHeight;
+        }, 50);
+      });
+    }
+  };
+
   useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length <= 6) {
+      messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   const handleSendMessage = (e) => {
@@ -112,24 +148,6 @@ const GroupRocketCreate = () => {
     navigate(`/groups/` + groupId); // 나간 뒤 그룹 목록이나 홈으로 이동
   };
 
-  const handleScroll = () => {
-    const container = messageContainerRef.current;
-    if (!container) return;
-
-    if (container.scrollTop === 0 && messages.length > 0) {
-      const firstMessageId = messages[0]?.id || Number.MAX_SAFE_INTEGER;
-
-      const prevScrollHeight = container.scrollHeight;
-
-      fetchChatHistory(firstMessageId).then(() => {
-        setTimeout(() => {
-          const newScrollHeight = container.scrollHeight;
-          container.scrollTop = newScrollHeight - prevScrollHeight;
-        }, 0);
-      });
-    }
-  };
-
   const formatTimestamp = (dateString) => {
     const date = new Date(dateString);
 
@@ -149,6 +167,7 @@ const GroupRocketCreate = () => {
 
     return `${paddedMonth}월 ${paddedDay}일 ${period} ${displayHour}:${paddedMinute}`;
   };
+
   return (
     <div style={styles.container}>
       <h2>실시간 채팅</h2>
