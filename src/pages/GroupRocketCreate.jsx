@@ -23,6 +23,7 @@ const GroupRocketCreate = () => {
   const accessToken = localStorage.getItem('accessToken');
   const { userId, isLoggedIn } = useAuthStore();
   const fileInputRef = useRef(null);
+  const currentUserId = userId;
 
   // 상태 관리
   const [group, setGroup] = useState(null);
@@ -52,6 +53,7 @@ const GroupRocketCreate = () => {
   // 로켓 컨텐츠 준비 state
   const [textContent, setTextContent] = useState('');
   const [files, setFiles] = useState([]);
+  const [isReady, setIsReady] = useState(false); // 준비 상태 관리
 
 
   // 로켓 디자인 옵션
@@ -465,6 +467,29 @@ const GroupRocketCreate = () => {
     }
   };
 
+  const handleCancelReady = async () => {
+    try {
+      // API 호출 예시 (PUT 또는 POST)
+      await api.patch(`/groups/${groupId}/readyStatus`, { isReady: false, currentRound: currentRound });
+      setIsReady(false); // 클라이언트 상태 업데이트
+
+      // 준비 취소 pub 메시지 전송
+      stompClient.publish({
+        destination: `/app/group/${groupId}/readyStatus`,
+        body: JSON.stringify({
+          groupId: groupId,
+          currentRound: currentRound,
+          isReady: false,
+        }),
+      });
+
+      alert(`컨텐츠 준비를 취소했습니다.`);
+    } catch (error) {
+      alert('준비 상태 변경 중 오류가 발생했습니다.');
+      console.error(error);
+    }
+  };
+
 
   // -----
   if (isLoading && !group) {
@@ -601,35 +626,55 @@ const GroupRocketCreate = () => {
 
           {/* 참가자 현황 */}
           <div className={styles.nicknameFrame}>
-            {Array.isArray(members) && members.map((member) => (
-              <div
-                key={member.userId}
-                className={styles.nicknameBox}
-                style={{
-                  border: '2px solid',
-                  borderColor: member.isReady ? 'green' : 'red',
-                  borderRadius: '8px',
-                  padding: '10px 12px',
-                  margin: '6px',
-                  display: 'inline-block',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  minWidth: '100px'
-                }}
-              >
-                <div>{member.nickname}</div>
+            {Array.isArray(members) && members.map((member) => {
+              const isCurrentUser = member.userId === currentUserId;
+
+              return (
                 <div
+                  key={member.userId}
+                  className={styles.nicknameBox}
                   style={{
-                    marginTop: '4px',
-                    fontSize: '0.85rem',
-                    color: member.isReady ? 'green' : 'red',
-                    fontWeight: 'normal',
+                    border: '2px solid',
+                    borderColor: member.isReady ? 'green' : 'red',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    margin: '6px',
+                    display: 'inline-flex',
+                    flexDirection: 'column',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    minWidth: '100px',
+                    height: '110px', // 버튼 포함 전체 높이 고정 (필요시 조절)
+                    justifyContent: 'flex-start',
                   }}
                 >
-                  {member.isReady ? '준비 완료' : '대기 중'}
+                  <div>{member.nickname}</div>
+                  <div
+                    style={{
+                      marginTop: '4px',
+                      fontSize: '0.85rem',
+                      color: member.isReady ? 'green' : 'red',
+                      fontWeight: 'normal',
+                    }}
+                  >
+                    {member.isReady ? '준비 완료' : '대기 중'}
+                  </div>
+
+                  <div style={{ marginTop: 'auto', minHeight: '28px' }}>
+                    {isCurrentUser && member.isReady ? (
+                      <button
+                        onClick={() => handleCancelReady()}
+                        style={{ fontSize: '0.8rem', cursor: 'pointer' }}
+                      >
+                        준비 취소
+                      </button>
+                    ) : (
+                      <div style={{ height: '28px' }} />
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
