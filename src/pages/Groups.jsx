@@ -257,7 +257,7 @@ const Groups = () => {
     }
   }, [myGroupsPage, searchTerm, selectedTheme]);
 
-  // 데이터 로드
+  // 데이터 로드 - 의존성 배열에서 함수 제거
   useEffect(() => {
     if (!userId) return;
     if (activeTab === 'all') {
@@ -265,9 +265,9 @@ const Groups = () => {
     } else {
       fetchMyGroups();
     }
-  }, [userId, activeTab, selectedTheme, fetchGroups, fetchMyGroups]);
+  }, [userId, activeTab, selectedTheme]); // 함수들 제거
 
-  // 실시간 검색 기능
+  // 실시간 검색 기능 - 의존성 배열에서 함수 제거
   useEffect(() => {
     clearTimeout(searchTimeoutRef.current);
     
@@ -295,7 +295,7 @@ const Groups = () => {
     }, 500);
     
     return () => clearTimeout(searchTimeoutRef.current);
-  }, [searchTerm, activeTab, fetchGroups, fetchMyGroups]);
+  }, [searchTerm, activeTab]); // 함수들 제거
 
   // 무한스크롤 구현
   const handleScroll = useCallback(() => {
