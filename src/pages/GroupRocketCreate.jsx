@@ -308,13 +308,28 @@ const GroupRocketCreate = () => {
     // 초기 히스토리 조회 (가장 최신 메시지부터)
     fetchChatHistory();
 
-    // 구독
+    // 실시간 채팅 구독
     subscriptionRef.current = stompClient.subscribe(`/topic/group/${groupId}`, (message) => {
       const payload = JSON.parse(message.body);
       console.log('받은 메시지:', payload);
       setMessages((prev) => [...prev, payload]);
     });
     console.log(`Subscribed to /topic/group/${groupId}`);
+
+    // 준비 상태 구독
+    const readyStatusSub = stompClient.subscribe(`/topic/group/${groupId}/readyStatus`, (message) => {
+      const payload = JSON.parse(message.body);
+      console.log('준비 상태 메시지 받음:', payload);
+
+      setMembers((prevMembers) =>
+        prevMembers.map((member) =>
+          String(member.userId) === String(payload.userId)
+            ? { ...member, isReady: payload.isReady }
+            : member
+        )
+      );
+    });
+    console.log(`Subscribed to /topic/group/${groupId}/readyStatus`);
 
     // 입장 메시지 발송
     stompClient.publish({
@@ -326,9 +341,12 @@ const GroupRocketCreate = () => {
     return () => {
       // 컴포넌트 언마운트
       if (stompClient && stompClient.connected) {
-        // 구독 해제
+        // 실시간 채팅 구독 해제
         subscriptionRef.current?.unsubscribe();
         console.log(`Unsubscribed from /topic/group/${groupId}`);
+        // 준비 상태 구독 해제
+        readyStatusSub.unsubscribe();
+        console.log(`Unsubscribed from /topic/group/${groupId}/readyStatus`);
 
         // 퇴장 메시지 발송
         stompClient.publish({
@@ -431,6 +449,16 @@ const GroupRocketCreate = () => {
       // 저장 후 초기화
       setFormData({ content: '' });
       setFiles([]);
+
+      // 퍼블리시 준비 상태 전송
+      stompClient.publish({
+        destination: `/app/group/${groupId}/readyStatus`,
+        body: JSON.stringify({
+          groupId: groupId,
+          currentRound: currentRound,
+          isReady: true,
+        }),
+      });
     } catch (error) {
       alert('저장 중 오류가 발생했습니다.');
       console.error(error);
