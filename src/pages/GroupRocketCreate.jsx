@@ -100,13 +100,17 @@ const GroupRocketCreate = () => {
       if (response.data?.data) {
         const groupData = response.data.data;
         setGroup(groupData);
-        setIsOwner(groupData.ownerId === userId);
+        setIsOwner(groupData.leaderId === userId);
 
         setFormData(prev => ({
           ...prev,
           rocketName: `${groupData.groupName} 로켓`,
           design: DESIGN_OPTIONS[0].value
         }));
+        console.log('groupData:', groupData);
+        console.log('ownerId:', groupData.ownerId);
+        console.log('userId:', userId);
+        console.log('isOwner:', groupData.ownerId === userId);
       }
     } catch (err) {
       console.error('그룹 정보 조회 실패:', err);
@@ -138,10 +142,7 @@ const GroupRocketCreate = () => {
 
   // 모든 멤버가 완료했는지 확인 (안전하게)
   const isAllMembersComplete = () => {
-    if (!Array.isArray(members) || members.length === 0) {
-      return false;
-    }
-    return members.every(member => member.status === 'COMPLETE');
+    return members.every((member) => member.isReady);
   };
 
   // 완료된 멤버 수 계산 (안전하게)
@@ -858,7 +859,7 @@ const GroupRocketCreate = () => {
 
       {/* 발사 버튼 */}
       <div className={styles.launchSection}>
-        {isOwner && (
+        {isOwner ? (
           <button
             onClick={handleRocketSubmit}
             className={`${styles.launchButton} ${!isAllMembersComplete() ? styles.disabled : ''}`}
@@ -866,14 +867,14 @@ const GroupRocketCreate = () => {
           >
             <span className={styles.launchIcon}>🚀</span>
             <span className={styles.launchText}>
-              {isLoading ? '발사 준비 중...' :
-                !isAllMembersComplete() ? '모든 참가자 완료 대기 중...' :
-                  '로켓 발사하기'}
+              {isLoading
+                ? '발사 준비 중...'
+                : !isAllMembersComplete()
+                  ? '모든 참가자 완료 대기 중...'
+                  : '로켓 발사하기'}
             </span>
           </button>
-        )}
-
-        {!isOwner && (
+        ) : (
           <div className={styles.waitingMessage}>
             <span>방장이 로켓을 발사할 때까지 기다려주세요 ⏳</span>
           </div>
