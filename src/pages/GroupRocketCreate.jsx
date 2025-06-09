@@ -142,80 +142,19 @@ const GroupRocketCreate = () => {
   const fetchMembers = async () => {
     try {
       const response = await api.get(`/groups/${groupId}/members`);
-      if (response.data?.data && Array.isArray(response.data.data)) {
-        // 멤버 데이터에 상태 정보 추가
-        const membersWithStatus = response.data.data.map(member => ({
-          ...member,
-          status: member.userId === userId ? getMyStatus() : 'NONE'
-        }));
-        setMembers(membersWithStatus);
+      const responseData = response.data?.data;
+
+      if (responseData && Array.isArray(responseData.members)) {
+        setMembers(responseData.members); // 불필요한 가공 없이 바로 저장
       } else {
-        console.warn('멤버 데이터가 배열이 아닙니다:', response.data);
+        console.warn('응답 데이터 형식이 올바르지 않습니다:', response.data);
         setMembers([]);
       }
     } catch (err) {
-      console.error('멤버 정보 조회 실패:', err);
-      // 기본 멤버 추가 (현재 사용자)
-      setMembers([
-        {
-          userId: userId,
-          nickname: '나',
-          status: getMyStatus(),
-          isOwner: isOwner
-        }
-      ]);
+      console.error('멤버 조회 실패:', err);
+      alert('멤버 정보를 불러오는 데 실패했습니다.');
     }
   };
-
-  // 내 상태 계산
-  const getMyStatus = () => {
-    if (!formData.content.trim()) {
-      return 'NONE';
-    }
-    if (files.length === 0) {
-      return 'MESSAGE';
-    }
-    return 'COMPLETE';
-  };
-
-  // 내 상태 업데이트 API 호출
-  const updateMyStatus = async () => {
-    try {
-      const status = getMyStatus();
-      await api.put(`/groups/${groupId}/rocket-status`, {
-        userId: userId,
-        status: status,
-        hasMessage: !!formData.content.trim(),
-        hasFiles: files.length > 0
-      });
-
-      // 로컬에서도 내 상태 업데이트
-      setMembers(prev => prev.map(member =>
-        member.userId === userId
-          ? { ...member, status: status }
-          : member
-      ));
-    } catch (err) {
-      console.error('상태 업데이트 실패:', err);
-      // API 실패해도 로컬에서는 업데이트
-      setMembers(prev => prev.map(member =>
-        member.userId === userId
-          ? { ...member, status: getMyStatus() }
-          : member
-      ));
-    }
-  };
-
-  // 상태 업데이트 (메시지나 파일 변경 시)
-  useEffect(() => {
-    if (members.length > 0) {
-      const timer = setTimeout(() => {
-        updateMyStatus();
-      }, 500); // 0.5초 지연 후 업데이트
-
-      return () => clearTimeout(timer);
-    }
-  }, [formData.content, files, members.length]);
 
   // 모든 멤버가 완료했는지 확인 (안전하게)
   const isAllMembersComplete = () => {
@@ -392,32 +331,6 @@ const GroupRocketCreate = () => {
     const now = new Date();
     now.setHours(now.getHours() + 1);
     return now.toISOString().slice(0, 16);
-  };
-
-  const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'NONE': return '대기 중';
-      case 'MESSAGE': return '메시지 작성';
-      case 'FILES': return '파일 첨부';
-      case 'COMPLETE': return '완료';
-      default: return '대기 중';
-    }
-  };
-
-  // 사용자 닉네임 조회 함수 (안전하게)
-  const getUserNickname = (userId) => {
-    if (!Array.isArray(members)) {
-      return '알 수 없는 사용자';
-    }
-    const member = members.find(m => m.userId === userId);
-    return member?.nickname || '알 수 없는 사용자';
   };
 
   // chat - psw
@@ -672,49 +585,36 @@ const GroupRocketCreate = () => {
           </div>
 
           {/* 참가자 현황 */}
-          <div className={styles.participantsCard}>
-            <div className={styles.cardHeader}>
-              <h3>👥 참가자 현황 ({getCompleteCount()}/{members.length})</h3>
-              <p>모든 참가자가 초록색이 되면 로켓을 발사할 수 있어요</p>
-            </div>
-
-            <div className={styles.participantsList}>
-              {Array.isArray(members) && members.map((member) => (
-                <div key={member.userId} className={styles.participantItem}>
-                  <div
-                    className={styles.participantCircle}
-                    style={{ backgroundColor: STATUS_COLORS[member.status || 'NONE'] }}
-                  >
-                    <UserIcon />
-                  </div>
-                  <div className={styles.participantInfo}>
-                    <span className={styles.participantName}>
-                      {member.nickname}
-                      {member.userId === group.ownerId && <span className={styles.ownerIcon}>👑</span>}
-                    </span>
-                    <span className={styles.participantStatus}>
-                      {getStatusText(member.status || 'NONE')}
-                    </span>
-                  </div>
-                  {isOwner && member.userId !== group.ownerId && (
-                    <button
-                      onClick={() => handleKickMember(member.userId)}
-                      className={styles.kickButton}
-                      title="멤버 추방"
-                    >
-                      <KickIcon />
-                    </button>
-                  )}
+          <div className={styles.nicknameFrame}>
+            {Array.isArray(members) && members.map((member) => (
+              <div
+                key={member.userId}
+                className={styles.nicknameBox}
+                style={{
+                  border: '2px solid',
+                  borderColor: member.isReady ? 'green' : 'red',
+                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  margin: '6px',
+                  display: 'inline-block',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  minWidth: '100px'
+                }}
+              >
+                <div>{member.nickname}</div>
+                <div
+                  style={{
+                    marginTop: '4px',
+                    fontSize: '0.85rem',
+                    color: member.isReady ? 'green' : 'red',
+                    fontWeight: 'normal',
+                  }}
+                >
+                  {member.isReady ? '준비 완료' : '대기 중'}
                 </div>
-              ))}
-
-              {/* 멤버가 없을 때 표시 */}
-              {(!Array.isArray(members) || members.length === 0) && (
-                <div className={styles.noMembers}>
-                  <p>멤버 정보를 불러오는 중...</p>
-                </div>
-              )}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 
