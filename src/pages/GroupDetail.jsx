@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
+import { handleApiError } from '../utils/errorHandler';
 import styles from '../style/GroupDetail.module.css';
 import {
   UserIcon,
@@ -153,15 +154,12 @@ const GroupDetail = () => {
       }
     } catch (err) {
       console.error('그룹 상세 정보 조회 실패:', err);
-      if (err.response?.status === 404) {
-        setError('존재하지 않는 모임입니다.');
-      } else {
-        setError('모임 정보를 불러오는데 실패했습니다.');
-      }
+      // 통합 에러 핸들러 사용
+      handleApiError(err, '모임 정보를 불러오는데 실패했습니다.', navigate);
     } finally {
       setIsLoading(false);
     }
-  }, [groupId, userId]);
+  }, [groupId, userId, navigate]);
 
   // 그룹 멤버 목록 조회
   const fetchGroupMembers = useCallback(async () => {
@@ -181,6 +179,9 @@ const GroupDetail = () => {
       // 멤버가 아닌 경우 403 에러가 날 수 있음
       if (err.response?.status === 403) {
         setIsMember(false);
+      } else {
+        // 통합 에러 핸들러 사용 (403이 아닌 경우만)
+        handleApiError(err, '멤버 목록을 불러오는데 실패했습니다.');
       }
     }
   }, [groupId, userId]);
@@ -205,15 +206,8 @@ const GroupDetail = () => {
     } catch (err) {
       console.error('그룹 참가 실패:', err);
       
-      if (err.response?.status === 401) {
-        alert('비밀번호가 올바르지 않습니다.');
-      } else if (err.response?.status === 409) {
-        alert('이미 참가한 모임입니다.');
-      } else if (err.response?.status === 400) {
-        alert('모임 정원이 가득 찼습니다.');
-      } else {
-        alert('모임 참가에 실패했습니다.');
-      }
+      // 통합 에러 핸들러 사용
+      handleApiError(err, '모임 참가에 실패했습니다.');
     } finally {
       setIsJoining(false);
     }
@@ -237,7 +231,8 @@ const GroupDetail = () => {
       alert('모임을 성공적으로 떠났습니다.');
     } catch (err) {
       console.error('그룹 퇴장 실패:', err);
-      alert('모임 퇴장에 실패했습니다.');
+      // 통합 에러 핸들러 사용
+      handleApiError(err, '모임 탈퇴에 실패했습니다.');
     } finally {
       setIsLeaving(false);
     }
@@ -256,7 +251,8 @@ const GroupDetail = () => {
       alert('멤버가 성공적으로 강퇴되었습니다.');
     } catch (err) {
       console.error('멤버 강퇴 실패:', err);
-      alert('멤버 강퇴에 실패했습니다.');
+      // 통합 에러 핸들러 사용
+      handleApiError(err, '멤버 강퇴에 실패했습니다.');
     }
   }, [groupId, fetchGroupMembers]);
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../authStore"; // zustand store 가져오기
 import axios from "axios";
+import { handleApiError } from '../utils/errorHandler';
 import SocialLoginButtons from "../components/ui/SocialLoginButtons";
 import styles from '../style/Login.module.css'; // 스타일 적용
 import { connectSocket } from "../utils/socket";
@@ -51,8 +52,7 @@ const Login = () => {
       alert("로그인 성공!");
       navigate("/");
     } catch (err) {
-      console.error(err);
-      alert(err.response.data.message);
+      handleApiError(err, '로그인에 실패했습니다.', navigate);
     }
   };
 
