@@ -23,23 +23,22 @@ const GroupRocketCreate = () => {
   const accessToken = localStorage.getItem('accessToken');
   const { userId, isLoggedIn } = useAuthStore();
   const fileInputRef = useRef(null);
-  const chatEndRef = useRef(null);
 
   // 상태 관리
   const [group, setGroup] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [members, setMembers] = useState([]); // 빈 배열로 초기화
+  const [currentRound, setCurrentRound] = useState(1);
   const [formData, setFormData] = useState({
     rocketName: '',
     design: '',
     lockExpiredAt: '',
     content: ''
   });
-  const [files, setFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // psw
+  // 실시간 채팅 state
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [hasMore, setHasMore] = useState(true);   // 더 불러올 메시지 있는지 여부
@@ -50,6 +49,9 @@ const GroupRocketCreate = () => {
   const stompClient = useAuthStore((state) => state.stompClient);
   const subscriptionRef = useRef(null);
 
+  // 로켓 컨텐츠 준비 state
+  const [textContent, setTextContent] = useState('');
+  const [files, setFiles] = useState([]);
 
 
   // 로켓 디자인 옵션
@@ -75,14 +77,6 @@ const GroupRocketCreate = () => {
       preview: '/src/assets/rocket_design4.svg'
     }
   ];
-
-  // 참가자 상태 색상
-  const STATUS_COLORS = {
-    NONE: '#ff4757', // 빨간색 - 아무것도 안함
-    MESSAGE: '#ffa502', // 주황색 - 메시지만 작성
-    FILES: '#ffb347', // 노란색 - 메시지 + 파일
-    COMPLETE: '#2ed573' // 초록색 - 모든 작업 완료
-  };
 
   // 인증 및 그룹 정보 확인
   useEffect(() => {
@@ -129,6 +123,7 @@ const GroupRocketCreate = () => {
 
       if (responseData && Array.isArray(responseData.members)) {
         setMembers(responseData.members); // 불필요한 가공 없이 바로 저장
+        setCurrentRound(responseData.currentRound);
       } else {
         console.warn('응답 데이터 형식이 올바르지 않습니다:', response.data);
         setMembers([]);
@@ -401,7 +396,49 @@ const GroupRocketCreate = () => {
     return `${paddedMonth}월 ${paddedDay}일 ${period} ${displayHour}:${paddedMinute}`;
   };
 
-  // 
+  // 모임 로켓 컨텐츠 준비완료
+  const handleSubmit = async () => {
+    if (!formData.content.trim()) {
+      alert('메시지를 작성해주세요.');
+      return;
+    }
+
+    const form = new FormData();
+    const requestData = {
+      content: formData.content,
+    };
+
+    const jsonBlob = new Blob([JSON.stringify(requestData)], {
+      type: 'application/json',
+    });
+
+    form.append('data', jsonBlob);
+
+    files.forEach((file) => {
+      form.append('files', file);
+    });
+
+    try {
+      const response = await api.post(`/groups/${groupId}/rockets/contents`, form, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      alert('모임 로켓 메시지를 성공적으로 저장했습니다!');
+      console.log(response.data);
+
+      // 저장 후 초기화
+      setFormData({ content: '' });
+      setFiles([]);
+    } catch (error) {
+      alert('저장 중 오류가 발생했습니다.');
+      console.error(error);
+    }
+  };
+
+
+  // -----
   if (isLoading && !group) {
     return (
       <div className={styles.loadingContainer}>
@@ -526,6 +563,11 @@ const GroupRocketCreate = () => {
                   </div>
                 </div>
               )}
+            </div>
+            <div className={styles.actionSection}>
+              <button onClick={handleSubmit} className={styles.submitButton}>
+                ✉️ 메시지 저장하기
+              </button>
             </div>
           </div>
 
