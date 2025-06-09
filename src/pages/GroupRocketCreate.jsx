@@ -39,16 +39,6 @@ const GroupRocketCreate = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // 채팅 관련 상태
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 1,
-      sender: '시스템',
-      message: '모든 참가자가 메시지를 작성하면 로켓을 발사할 수 있습니다! 🚀',
-      timestamp: new Date().toISOString(),
-      isSystem: true
-    }
-  ]);
   // psw
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -105,13 +95,6 @@ const GroupRocketCreate = () => {
       fetchMembers();
     }
   }, [isLoggedIn, groupId]);
-
-  // 채팅 스크롤 자동 이동
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatMessages]);
 
   // 그룹 정보 조회
   const fetchGroupInfo = async () => {
@@ -209,44 +192,6 @@ const GroupRocketCreate = () => {
   // 파일 제거
   const removeFile = (index) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // 멤버 추방 (방장만 가능)
-  const handleKickMember = async (memberId) => {
-    if (!isOwner) return;
-
-    if (window.confirm('정말로 이 멤버를 추방하시겠습니까?')) {
-      try {
-        await api.delete(`/groups/${groupId}/members/${memberId}`);
-
-        // 로컬에서 멤버 제거
-        setMembers(prev => prev.filter(member => member.userId !== memberId));
-
-        // 채팅에 시스템 메시지 추가 (API 실패해도 로컬에 추가)
-        const systemMessage = {
-          id: Date.now(),
-          sender: '시스템',
-          message: '멤버가 추방되었습니다.',
-          timestamp: new Date().toISOString(),
-          isSystem: true
-        };
-        setChatMessages(prev => [...prev, systemMessage]);
-
-        // API로 시스템 메시지 전송 시도
-        try {
-          await api.post(`/groups/${groupId}/rocket-chat`, {
-            sender: '시스템',
-            message: '멤버가 추방되었습니다.',
-            isSystem: true
-          });
-        } catch (chatErr) {
-          console.error('시스템 메시지 전송 실패:', chatErr);
-        }
-      } catch (err) {
-        console.error('멤버 추방 실패:', err);
-        alert('멤버 추방에 실패했습니다.');
-      }
-    }
   };
 
   // 로켓 생성 및 전송
