@@ -24,6 +24,7 @@ const GroupRocketCreate = () => {
   const { userId, isLoggedIn } = useAuthStore();
   const fileInputRef = useRef(null);
   const currentUserId = userId;
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
 
   // 상태 관리
   const [group, setGroup] = useState(null);
@@ -130,6 +131,7 @@ const GroupRocketCreate = () => {
       if (responseData && Array.isArray(responseData.members)) {
         setMembers(responseData.members); // 불필요한 가공 없이 바로 저장
         setCurrentRound(responseData.currentRound);
+        console.log("최신 멤버 현황 : " + members);
       } else {
         console.warn('응답 데이터 형식이 올바르지 않습니다:', response.data);
         setMembers([]);
@@ -286,69 +288,77 @@ const GroupRocketCreate = () => {
   };
 
   useEffect(() => {
-    if (!stompClient || !stompClient.connected || !groupId || !accessToken) return;
+    if (!stompClient || !groupId || !accessToken) return;
 
-    // 멤버 정보 최신화
-    fetchMembers();
+    const onConnect = () => {
+      console.log(`STOMP 연결 완료 - 그룹 ${groupId}`);
 
-    // 초기 히스토리 조회 (가장 최신 메시지부터)
-    fetchChatHistory();
+      // 멤버 정보 최신화
+      fetchMembers();
 
-    // 실시간 채팅 구독
-    subscriptionRef.current = stompClient.subscribe(`/topic/group/${groupId}`, (message) => {
-      const payload = JSON.parse(message.body);
-      console.log('받은 메시지:', payload);
-      setMessages((prev) => [...prev, payload]);
-    });
-    console.log(`Subscribed to /topic/group/${groupId}`);
+      // 초기 히스토리 조회 (가장 최신 메시지부터)
+      fetchChatHistory();
 
-    // 준비 상태 구독
-    const readyStatusSub = stompClient.subscribe(`/topic/group/${groupId}/readyStatus`, (message) => {
-      const payload = JSON.parse(message.body);
-      console.log('준비 상태 메시지 받음:', payload);
-
-      setMembers((prevMembers) =>
-        prevMembers.map((member) =>
-          String(member.userId) === String(payload.userId)
-            ? { ...member, isReady: payload.isReady }
-            : member
-        )
-      );
-    });
-    console.log(`Subscribed to /topic/group/${groupId}/readyStatus`);
-
-    // 강퇴 구독
-    const kickSub = stompClient.subscribe(`/topic/group/${groupId}/kick`, (message) => {
-      console.log('강퇴 메시지 수신:', message.body);
-      const kickedUserId = message.body;
-
-      setMembers((prevMembers) => {
-        const filtered = prevMembers.filter((member) => String(member.userId) !== String(kickedUserId));
-        console.log('이전 members:', prevMembers);
-        console.log('강퇴 후 members:', filtered);
-        return filtered;
+      // 실시간 채팅 구독
+      subscriptionRef.current = stompClient.subscribe(`/topic/group/${groupId}`, (message) => {
+        const payload = JSON.parse(message.body);
+        console.log('받은 메시지:', payload);
+        setMessages((prev) => [...prev, payload]);
       });
-    });
+      console.log(`Subscribed to /topic/group/${groupId}`);
 
-    const myKickSub = stompClient.subscribe('/user/queue/kick', (message) => {
-      alert('방장에 의해 강퇴당했습니다.');
-      navigate(`/groups/${groupId}`);
-    });
+      // 준비 상태 구독
+      const readyStatusSub = stompClient.subscribe(`/topic/group/${groupId}/readyStatus`, (message) => {
+        const payload = JSON.parse(message.body);
+        console.log('준비 상태 메시지 받음:', payload);
 
-    // 입장 메시지 발송
-    stompClient.publish({
-      destination: `/app/group/${groupId}/enter`,
-      body: '',
-    });
-    console.log('Enter 메시지 발송');
+        setMembers((prevMembers) =>
+          prevMembers.map((member) =>
+            String(member.userId) === String(payload.userId)
+              ? { ...member, isReady: payload.isReady }
+              : member
+          )
+        );
+      });
+      console.log(`Subscribed to /topic/group/${groupId}/readyStatus`);
 
-    return () => {
-      // 컴포넌트 언마운트
-      if (stompClient && stompClient.connected) {
-        // 실시간 채팅 구독 해제
+      // 강퇴 구독
+      const kickSub = stompClient.subscribe(`/topic/group/${groupId}/kick`, (message) => {
+        const kickedUserId = message.body;
+        console.log('강퇴 메시지 받음:', kickedUserId);
+
+        setMembers((prevMembers) => {
+          const hasKickedUser = prevMembers.some(m => String(m.userId) === String(kickedUserId));
+          const filtered = prevMembers.filter(m => String(m.userId) !== String(kickedUserId));
+
+          if (!hasKickedUser) {
+            // 새로고침 후 유저 리스트가 잘못되었을 수 있으니 fetchMembers 재호출
+            fetchMembers();
+          }
+
+          return filtered;
+        });
+      });
+      console.log(`Subscribed to /topic/group/${groupId}/kick`);
+
+      const myKickSub = stompClient.subscribe('/user/queue/kick', (message) => {
+        alert('방장에 의해 강퇴당했습니다.');
+        navigate(`/groups/${groupId}`);
+      });
+      console.log(`Subscribed to /user/queue/kick`);
+
+      // 입장 메시지 발송
+      stompClient.publish({
+        destination: `/app/group/${groupId}/enter`,
+        body: '',
+      });
+      console.log('Enter 메시지 발송');
+
+      return () => {
+        // 구독 해제
         subscriptionRef.current?.unsubscribe();
         console.log(`Unsubscribed from /topic/group/${groupId}`);
-        // 준비 상태 구독 해제
+
         readyStatusSub.unsubscribe();
         console.log(`Unsubscribed from /topic/group/${groupId}/readyStatus`);
 
@@ -364,9 +374,28 @@ const GroupRocketCreate = () => {
           body: '',
         });
         console.log('Exit 메시지 발송');
-      }
+      };
     };
-  }, [stompClient?.connected, groupId, accessToken]);
+
+    if (stompClient.connected) {
+      // 이미 연결되어 있다면 바로 onConnect 실행
+      const cleanup = onConnect();
+      return cleanup;
+    } else {
+      // 연결 완료 이벤트에 onConnect 콜백 등록
+      stompClient.onConnect = () => {
+        console.log('STOMP onConnect 이벤트 발생');
+        const cleanup = onConnect();
+        // cleanup 반환값이 있으면 호출할 수 있도록 리턴 (선택사항)
+        return cleanup;
+      };
+    }
+
+    return () => {
+      // 컴포넌트 언마운트 시 onConnect 콜백 제거
+      stompClient.onConnect = null;
+    };
+  }, [stompClient, groupId, accessToken]);
 
   // 스크롤 위치 복원
   const handleScroll = () => {
@@ -508,9 +537,7 @@ const GroupRocketCreate = () => {
       });
     }
   };
-  useEffect(() => {
-    console.log('members 상태 변경:', members);
-  }, [members]);
+
   // -----
   if (isLoading && !group) {
     return (
