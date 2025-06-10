@@ -244,7 +244,7 @@ const GroupRocketCreate = () => {
 
     } catch (err) {
       console.error('로켓 전송 실패:', err);
-      
+      alert(err.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -288,6 +288,9 @@ const GroupRocketCreate = () => {
   useEffect(() => {
     if (!stompClient || !stompClient.connected || !groupId || !accessToken) return;
 
+    // 멤버 정보 최신화
+    fetchMembers();
+
     // 초기 히스토리 조회 (가장 최신 메시지부터)
     fetchChatHistory();
 
@@ -314,6 +317,24 @@ const GroupRocketCreate = () => {
     });
     console.log(`Subscribed to /topic/group/${groupId}/readyStatus`);
 
+    // 강퇴 구독
+    const kickSub = stompClient.subscribe(`/topic/group/${groupId}/kick`, (message) => {
+      console.log('강퇴 메시지 수신:', message.body);
+      const kickedUserId = message.body;
+
+      setMembers((prevMembers) => {
+        const filtered = prevMembers.filter((member) => String(member.userId) !== String(kickedUserId));
+        console.log('이전 members:', prevMembers);
+        console.log('강퇴 후 members:', filtered);
+        return filtered;
+      });
+    });
+
+    const myKickSub = stompClient.subscribe('/user/queue/kick', (message) => {
+      alert('방장에 의해 강퇴당했습니다.');
+      navigate(`/groups/${groupId}`);
+    });
+
     // 입장 메시지 발송
     stompClient.publish({
       destination: `/app/group/${groupId}/enter`,
@@ -330,6 +351,12 @@ const GroupRocketCreate = () => {
         // 준비 상태 구독 해제
         readyStatusSub.unsubscribe();
         console.log(`Unsubscribed from /topic/group/${groupId}/readyStatus`);
+
+        kickSub.unsubscribe();
+        console.log(`Unsubscribed from /topic/group/${groupId}/kick`);
+
+        myKickSub.unsubscribe();
+        console.log('Unsubscribed from /user/queue/kick');
 
         // 퇴장 메시지 발송
         stompClient.publish({
@@ -448,6 +475,7 @@ const GroupRocketCreate = () => {
     }
   };
 
+  // 컨텐츠 준비 해제
   const handleCancelReady = async () => {
     try {
       // API 호출 예시 (PUT 또는 POST)
@@ -471,7 +499,18 @@ const GroupRocketCreate = () => {
     }
   };
 
-
+  // 참여자 강퇴(리더전용)
+  const handleKick = (targetUserId) => {
+    if (stompClient && stompClient.connected) {
+      stompClient.publish({
+        destination: `/app/group/${groupId}/kick`,
+        body: JSON.stringify({ userId: targetUserId }),
+      });
+    }
+  };
+  useEffect(() => {
+    console.log('members 상태 변경:', members);
+  }, [members]);
   // -----
   if (isLoading && !group) {
     return (
@@ -609,6 +648,7 @@ const GroupRocketCreate = () => {
           <div className={styles.nicknameFrame}>
             {Array.isArray(members) && members.map((member) => {
               const isCurrentUser = member.userId === currentUserId;
+              const isNotMe = member.userId !== currentUserId;
 
               return (
                 <div
@@ -625,8 +665,9 @@ const GroupRocketCreate = () => {
                     fontWeight: 'bold',
                     textAlign: 'center',
                     minWidth: '100px',
-                    height: '110px', // 버튼 포함 전체 높이 고정 (필요시 조절)
+                    height: '110px',
                     justifyContent: 'flex-start',
+                    position: 'relative', // 버튼 위치를 위해 필요
                   }}
                 >
                   <div>{member.nickname}</div>
@@ -644,7 +685,7 @@ const GroupRocketCreate = () => {
                   <div style={{ marginTop: 'auto', minHeight: '28px' }}>
                     {isCurrentUser && member.isReady ? (
                       <button
-                        onClick={() => handleCancelReady()}
+                        onClick={handleCancelReady}
                         style={{ fontSize: '0.8rem', cursor: 'pointer' }}
                       >
                         준비 취소
@@ -653,6 +694,27 @@ const GroupRocketCreate = () => {
                       <div style={{ height: '28px' }} />
                     )}
                   </div>
+
+                  {/* 리더이고 자기 자신이 아닌 경우만 강퇴 버튼 표시 */}
+                  {isOwner && isNotMe && (
+                    <button
+                      onClick={() => handleKick(member.userId)}
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        fontSize: '0.7rem',
+                        padding: '2px 6px',
+                        backgroundColor: '#ff4d4f',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      강퇴
+                    </button>
+                  )}
                 </div>
               );
             })}
