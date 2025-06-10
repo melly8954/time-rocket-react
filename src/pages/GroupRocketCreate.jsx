@@ -192,7 +192,6 @@ const GroupRocketCreate = () => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // 로켓 생성 및 전송
   const handleRocketSubmit = async (e) => {
     e.preventDefault();
 
@@ -231,40 +230,21 @@ const GroupRocketCreate = () => {
     try {
       setIsLoading(true);
 
-      // FormData 생성 (파일 업로드 포함)
-      const formDataToSend = new FormData();
-      formDataToSend.append('rocketName', formData.rocketName.trim());
-      formDataToSend.append('design', formData.design);
-      formDataToSend.append('lockExpiredAt', formData.lockExpiredAt);
-      formDataToSend.append('content', formData.content);
+      // JSON 데이터 직접 전송
+      const dataToSend = {
+        rocketName: formData.rocketName.trim(),
+        design: formData.design,
+        lockExpiredAt: formData.lockExpiredAt,
+      };
 
-      // 파일 추가
-      files.forEach((file, index) => {
-        formDataToSend.append(`files`, file);
-      });
-
-      await api.post(`/groups/${groupId}/rockets`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      await api.post(`/groups/${groupId}/rockets`, dataToSend);
 
       alert('모임 로켓이 성공적으로 발사되었습니다! 🚀');
       navigate(`/groups/${groupId}`);
 
     } catch (err) {
       console.error('로켓 전송 실패:', err);
-      const backendMessage = err.response?.data?.message || err.response?.data?.error;
-
-      if (err.response?.status === 400) {
-        alert(`요청 오류: ${backendMessage || '입력 정보를 확인해주세요.'}`);
-      } else if (err.response?.status === 403) {
-        alert(`권한 오류: ${backendMessage || '방장만 로켓을 발사할 수 있습니다.'}`);
-      } else if (err.response?.status === 500) {
-        alert(`서버 오류: ${backendMessage || '백엔드 서버에 문제가 있습니다.'}`);
-      } else {
-        alert(`로켓 발사 실패: ${backendMessage || '알 수 없는 오류'}`);
-      }
+      
     } finally {
       setIsLoading(false);
     }
