@@ -28,7 +28,9 @@ const THEME_MAP = {
 };
 
 // 멤버 카드 컴포넌트
-const MemberCard = ({ member, isLeader, canKick, onKick }) => {
+const MemberCard = ({ member, isLeader, currentUserId, onToggleReady, isMember, canKick, onKick }) => {
+  const isCurrentUser = member.userId === currentUserId;
+
   return (
     <div className={`${styles.memberCard} ${member.isKicked ? styles.kicked : ''}`}>
       <div className={styles.memberInfo}>
@@ -43,17 +45,26 @@ const MemberCard = ({ member, isLeader, canKick, onKick }) => {
           <div className={styles.memberStatus}>
             {member.isKicked ? (
               <span className={styles.kickedStatus}>강퇴됨</span>
-            ) : member.isSavedRocket ? (
-              <span className={styles.readyStatus}>로켓 준비 완료</span>
             ) : (
-              <span className={styles.waitingStatus}>로켓 준비 중</span>
+              <div className={styles.readyStatusContainer}>
+                <span className={member.isReady ? styles.readyStatus : styles.waitingStatus}>
+                  {member.isReady ? '준비 완료' : '준비 중'}
+                </span>
+                {isCurrentUser && isMember && !member.isKicked && (
+                  <button
+                    className={`${styles.readyToggleButton} ${member.isReady ? styles.ready : styles.notReady}`}
+                    onClick={() => onToggleReady(member.userId)}
+                  >
+                    {member.isReady ? '✅ 준비 완료' : '❌ 준비 중'}
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
       </div>
-      
       {canKick && !member.isKicked && !isLeader && (
-        <button 
+        <button
           className={styles.kickButton}
           onClick={() => onKick(member.userId)}
         >
@@ -90,15 +101,15 @@ const PasswordModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
             autoFocus
           />
           <div className={styles.modalActions}>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className={styles.cancelButton}
               disabled={isLoading}
             >
               취소
             </button>
-            <button 
+            <button
               type="submit"
               className={styles.joinButton}
               disabled={isLoading || !password.trim()}
@@ -116,7 +127,7 @@ const GroupDetail = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
   const { userId, isLoggedIn } = useAuthStore();
-  
+
   // 상태 관리
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
@@ -139,6 +150,7 @@ const GroupDetail = () => {
       fetchGroupDetail();
       fetchGroupMembers();
     }
+    // eslint-disable-next-line
   }, [groupId, userId]);
 
   // 그룹 상세 정보 조회
@@ -146,15 +158,13 @@ const GroupDetail = () => {
     try {
       setIsLoading(true);
       const response = await api.get(`/groups/${groupId}`);
-      
+
       if (response.data?.data) {
         const groupData = response.data.data;
         setGroup(groupData);
         setIsLeader(groupData.leaderId === userId);
       }
     } catch (err) {
-      console.error('그룹 상세 정보 조회 실패:', err);
-      // 통합 에러 핸들러 사용
       handleApiError(err, '모임 정보를 불러오는데 실패했습니다.', navigate);
     } finally {
       setIsLoading(false);
@@ -165,22 +175,17 @@ const GroupDetail = () => {
   const fetchGroupMembers = useCallback(async () => {
     try {
       const response = await api.get(`/groups/${groupId}/members`);
-      
-      if (response.data?.data) {
+      if (response.data?.data?.members) {
         const memberData = response.data.data;
         setMembers(memberData.members || []);
-        
         // 현재 사용자가 멤버인지 확인
         const currentUserMember = memberData.members?.find(m => m.userId === userId);
         setIsMember(!!currentUserMember && !currentUserMember.isKicked);
       }
     } catch (err) {
-      console.error('그룹 멤버 조회 실패:', err);
-      // 멤버가 아닌 경우 403 에러가 날 수 있음
       if (err.response?.status === 403) {
         setIsMember(false);
       } else {
-        // 통합 에러 핸들러 사용 (403이 아닌 경우만)
         handleApiError(err, '멤버 목록을 불러오는데 실패했습니다.');
       }
     }
@@ -190,23 +195,18 @@ const GroupDetail = () => {
   const handleJoinGroup = useCallback(async (password = null) => {
     try {
       setIsJoining(true);
-      
       const requestData = password ? { password } : {};
-      
       await api.post(`/groups/${groupId}/members`, requestData);
-      
+
       setShowPasswordModal(false);
       setIsMember(true);
-      
+
       // 데이터 새로고침
       await fetchGroupDetail();
       await fetchGroupMembers();
-      
+
       alert('모임에 성공적으로 참가했습니다!');
     } catch (err) {
-      console.error('그룹 참가 실패:', err);
-      
-      // 통합 에러 핸들러 사용
       handleApiError(err, '모임 참가에 실패했습니다.');
     } finally {
       setIsJoining(false);
@@ -216,22 +216,20 @@ const GroupDetail = () => {
   // 그룹 퇴장
   const handleLeaveGroup = useCallback(async () => {
     if (!window.confirm('정말로 이 모임을 떠나시겠습니까?')) return;
-    
+
     try {
       setIsLeaving(true);
-      
+
       await api.delete(`/groups/${groupId}/members/me`);
-      
+
       setIsMember(false);
-      
+
       // 데이터 새로고침
       await fetchGroupDetail();
       await fetchGroupMembers();
-      
+
       alert('모임을 성공적으로 떠났습니다.');
     } catch (err) {
-      console.error('그룹 퇴장 실패:', err);
-      // 통합 에러 핸들러 사용
       handleApiError(err, '모임 탈퇴에 실패했습니다.');
     } finally {
       setIsLeaving(false);
@@ -241,18 +239,26 @@ const GroupDetail = () => {
   // 멤버 강퇴
   const handleKickMember = useCallback(async (memberId) => {
     if (!window.confirm('정말로 이 멤버를 강퇴하시겠습니까?')) return;
-    
+
     try {
       await api.patch(`/groups/${groupId}/members/${memberId}`);
-      
+
       // 멤버 목록 새로고침
       await fetchGroupMembers();
-      
+
       alert('멤버가 성공적으로 강퇴되었습니다.');
     } catch (err) {
-      console.error('멤버 강퇴 실패:', err);
-      // 통합 에러 핸들러 사용
       handleApiError(err, '멤버 강퇴에 실패했습니다.');
+    }
+  }, [groupId, fetchGroupMembers]);
+
+  // 준비 상태 토글
+  const handleToggleReady = useCallback(async (memberUserId) => {
+    try {
+      await api.patch(`/groups/${groupId}/members/${memberUserId}/ready`);
+      await fetchGroupMembers();
+    } catch (err) {
+      handleApiError(err, '준비 상태 변경에 실패했습니다.');
     }
   }, [groupId, fetchGroupMembers]);
 
@@ -308,8 +314,8 @@ const GroupDetail = () => {
     <div className={styles.groupDetailContainer}>
       {/* 헤더 */}
       <div className={styles.groupDetailHeader}>
-        <button 
-          onClick={() => navigate('/groups')} 
+        <button
+          onClick={() => navigate('/groups')}
           className={styles.backButton}
         >
           <BackIcon /> 돌아가기
@@ -323,20 +329,20 @@ const GroupDetail = () => {
             <img src={group.backgroundImage} alt="Group Background" />
           </div>
         )}
-        
+
         <div className={styles.groupContent}>
           <div className={styles.groupTheme}>
             <span className={styles.themeEmoji}>{themeEmoji}</span>
             <span className={styles.themeName}>{group.groupTheme || '기타'}</span>
             {group.isPrivate && <LockIcon className={styles.privateIcon} />}
           </div>
-          
+
           <h1 className={styles.groupName}>{group.groupName}</h1>
-          
+
           <p className={styles.groupDescription}>
             {group.description || '모임 소개가 없습니다.'}
           </p>
-          
+
           <div className={styles.groupStats}>
             <div className={styles.stat}>
               <UserIcon className={styles.statIcon} />
@@ -349,11 +355,11 @@ const GroupDetail = () => {
               <span className={styles.statLabel}>리더</span>
             </div>
           </div>
-          
+
           {/* 액션 버튼들 */}
           <div className={styles.groupActions}>
             {!isMember ? (
-              <button 
+              <button
                 onClick={handleJoinClick}
                 className={styles.joinButton}
                 disabled={isJoining}
@@ -363,16 +369,16 @@ const GroupDetail = () => {
               </button>
             ) : (
               <>
-                <button 
+                <button
                   onClick={handleCreateRocket}
                   className={styles.createRocketButton}
                 >
                   <RocketIcon />
                   모임 로켓 만들기
                 </button>
-                
+
                 {!isLeader && (
-                  <button 
+                  <button
                     onClick={handleLeaveGroup}
                     className={styles.leaveButton}
                     disabled={isLeaving}
@@ -381,9 +387,9 @@ const GroupDetail = () => {
                     {isLeaving ? '퇴장 중...' : '모임 떠나기'}
                   </button>
                 )}
-                
+
                 {isLeader && (
-                  <button 
+                  <button
                     onClick={() => navigate(`/groups/${groupId}/settings`)}
                     className={styles.settingsButton}
                   >
@@ -403,13 +409,16 @@ const GroupDetail = () => {
           <h2 className={styles.sectionTitle}>
             <PeopleIcon /> 모임 멤버 ({members.length}명)
           </h2>
-          
+
           <div className={styles.membersGrid}>
             {members.map(member => (
               <MemberCard
                 key={member.groupMemberId}
                 member={member}
                 isLeader={member.userId === group.leaderId}
+                currentUserId={userId}
+                onToggleReady={handleToggleReady}
+                isMember={isMember}
                 canKick={isLeader}
                 onKick={handleKickMember}
               />
