@@ -18,17 +18,28 @@ import {
 // 테마 맵핑
 const THEME_MAP = {
   '요리': '🍳',
-  '음악': '🎵',
+  '음악': '🎵', 
   '운동': '💪',
   '독서': '📚',
   '영화': '🎬',
   '여행': '✈️',
   '게임': '🎮',
-  '기타': '🌟'
+  '기타': '🌟',
+  'cooking': '🍳',
+  'music': '🎵',
+  'exercise': '💪',
+  'reading': '📚',
+  'movie': '🎬',
+  'travel': '✈️',
+  'game': '🎮',
+  'gaming': '🎮',
+  'other': '🌟'
 };
 
 // 멤버 카드 컴포넌트
-const MemberCard = ({ member, isLeader, canKick, onKick }) => {
+const MemberCard = ({ member, isLeader, currentUserId, onToggleReady, isMember }) => {
+  const isCurrentUser = member.userId === currentUserId;
+  
   return (
     <div className={`${styles.memberCard} ${member.isKicked ? styles.kicked : ''}`}>
       <div className={styles.memberInfo}>
@@ -43,23 +54,24 @@ const MemberCard = ({ member, isLeader, canKick, onKick }) => {
           <div className={styles.memberStatus}>
             {member.isKicked ? (
               <span className={styles.kickedStatus}>강퇴됨</span>
-            ) : member.isSavedRocket ? (
-              <span className={styles.readyStatus}>로켓 준비 완료</span>
             ) : (
-              <span className={styles.waitingStatus}>로켓 준비 중</span>
+              <div className={styles.readyStatusContainer}>
+                <span className={member.isReady ? styles.readyStatus : styles.waitingStatus}>
+                  {member.isReady ? '준비 완료' : '준비 중'}
+                </span>
+                {isCurrentUser && isMember && !member.isKicked && (
+                  <button 
+                    className={`${styles.readyToggleButton} ${member.isReady ? styles.ready : styles.notReady}`}
+                    onClick={() => onToggleReady(member.userId)}
+                  >
+                    {member.isReady ? '✅ 준비 완료' : '❌ 준비 중'}
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
       </div>
-      
-      {canKick && !member.isKicked && !isLeader && (
-        <button 
-          className={styles.kickButton}
-          onClick={() => onKick(member.userId)}
-        >
-          강퇴
-        </button>
-      )}
     </div>
   );
 };
@@ -149,12 +161,12 @@ const GroupDetail = () => {
       
       if (response.data?.data) {
         const groupData = response.data.data;
+        console.log('그룹 데이터:', groupData);
         setGroup(groupData);
         setIsLeader(groupData.leaderId === userId);
       }
     } catch (err) {
       console.error('그룹 상세 정보 조회 실패:', err);
-      // 통합 에러 핸들러 사용
       handleApiError(err, '모임 정보를 불러오는데 실패했습니다.', navigate);
     } finally {
       setIsLoading(false);
@@ -165,26 +177,46 @@ const GroupDetail = () => {
   const fetchGroupMembers = useCallback(async () => {
     try {
       const response = await api.get(`/groups/${groupId}/members`);
+      console.log('멤버 응답 데이터:', response.data);
       
-      if (response.data?.data) {
+      if (response.data?.data?.members) {
         const memberData = response.data.data;
         setMembers(memberData.members || []);
         
         // 현재 사용자가 멤버인지 확인
         const currentUserMember = memberData.members?.find(m => m.userId === userId);
         setIsMember(!!currentUserMember && !currentUserMember.isKicked);
+        
+        console.log('멤버 목록:', memberData.members);
+        console.log('현재 사용자 멤버 여부:', !!currentUserMember);
+      } else {
+        console.warn('멤버 데이터 구조 오류:', response.data);
+        setMembers([]);
+        setIsMember(false);
       }
     } catch (err) {
       console.error('그룹 멤버 조회 실패:', err);
-      // 멤버가 아닌 경우 403 에러가 날 수 있음
-      if (err.response?.status === 403) {
-        setIsMember(false);
-      } else {
-        // 통합 에러 핸들러 사용 (403이 아닌 경우만)
-        handleApiError(err, '멤버 목록을 불러오는데 실패했습니다.');
-      }
+      setMembers([]);
+      setIsMember(false);
     }
   }, [groupId, userId]);
+
+  // 준비 상태 토글
+  const handleToggleReady = useCallback(async (memberId) => {
+    try {
+      const currentMember = members.find(m => m.userId === memberId);
+      const newStatus = currentMember?.isReady ? 'INACTIVE' : 'ACTIVE';
+      
+      await api.put(`/groups/${groupId}/rocket-status`, {
+        status: newStatus
+      });
+      
+      await fetchGroupMembers();
+    } catch (err) {
+      console.error('준비 상태 변경 실패:', err);
+      handleApiError(err, '준비 상태 변경에 실패했습니다.');
+    }
+  }, [groupId, members, fetchGroupMembers]);
 
   // 그룹 참가
   const handleJoinGroup = useCallback(async (password = null) => {
@@ -198,15 +230,12 @@ const GroupDetail = () => {
       setShowPasswordModal(false);
       setIsMember(true);
       
-      // 데이터 새로고침
       await fetchGroupDetail();
       await fetchGroupMembers();
       
       alert('모임에 성공적으로 참가했습니다!');
     } catch (err) {
       console.error('그룹 참가 실패:', err);
-      
-      // 통합 에러 핸들러 사용
       handleApiError(err, '모임 참가에 실패했습니다.');
     } finally {
       setIsJoining(false);
@@ -224,37 +253,17 @@ const GroupDetail = () => {
       
       setIsMember(false);
       
-      // 데이터 새로고침
       await fetchGroupDetail();
       await fetchGroupMembers();
       
       alert('모임을 성공적으로 떠났습니다.');
     } catch (err) {
       console.error('그룹 퇴장 실패:', err);
-      // 통합 에러 핸들러 사용
       handleApiError(err, '모임 탈퇴에 실패했습니다.');
     } finally {
       setIsLeaving(false);
     }
   }, [groupId, fetchGroupDetail, fetchGroupMembers]);
-
-  // 멤버 강퇴
-  const handleKickMember = useCallback(async (memberId) => {
-    if (!window.confirm('정말로 이 멤버를 강퇴하시겠습니까?')) return;
-    
-    try {
-      await api.patch(`/groups/${groupId}/members/${memberId}`);
-      
-      // 멤버 목록 새로고침
-      await fetchGroupMembers();
-      
-      alert('멤버가 성공적으로 강퇴되었습니다.');
-    } catch (err) {
-      console.error('멤버 강퇴 실패:', err);
-      // 통합 에러 핸들러 사용
-      handleApiError(err, '멤버 강퇴에 실패했습니다.');
-    }
-  }, [groupId, fetchGroupMembers]);
 
   // 참가 버튼 클릭
   const handleJoinClick = useCallback(() => {
@@ -269,6 +278,28 @@ const GroupDetail = () => {
   const handleCreateRocket = useCallback(() => {
     navigate(`/groups/${groupId}/rockets/create`);
   }, [navigate, groupId]);
+
+  // 테마 정보 처리 함수
+  const getThemeInfo = (theme) => {
+    if (!theme) return { emoji: '🌟', name: '기타' };
+    
+    if (THEME_MAP[theme]) {
+      return { emoji: THEME_MAP[theme], name: theme };
+    }
+    
+    const lowerTheme = theme.toLowerCase();
+    if (THEME_MAP[lowerTheme]) {
+      return { emoji: THEME_MAP[lowerTheme], name: theme };
+    }
+    
+    for (const [key, emoji] of Object.entries(THEME_MAP)) {
+      if (theme.includes(key) || key.includes(theme)) {
+        return { emoji, name: theme };
+      }
+    }
+    
+    return { emoji: '🌟', name: theme || '기타' };
+  };
 
   if (isLoading) {
     return (
@@ -302,7 +333,8 @@ const GroupDetail = () => {
     );
   }
 
-  const themeEmoji = THEME_MAP[group.groupTheme] || '🌟';
+  // 테마 정보 가져오기
+  const themeInfo = getThemeInfo(group.theme);
 
   return (
     <div className={styles.groupDetailContainer}>
@@ -325,9 +357,9 @@ const GroupDetail = () => {
         )}
         
         <div className={styles.groupContent}>
-          <div className={styles.groupTheme}>
-            <span className={styles.themeEmoji}>{themeEmoji}</span>
-            <span className={styles.themeName}>{group.groupTheme || '기타'}</span>
+          <div className={styles.theme}>
+            <span className={styles.themeEmoji}>{themeInfo.emoji}</span>
+            <span className={styles.themeName}>{themeInfo.name}</span>
             {group.isPrivate && <LockIcon className={styles.privateIcon} />}
           </div>
           
@@ -398,7 +430,7 @@ const GroupDetail = () => {
       </div>
 
       {/* 멤버 목록 */}
-      {isMember && (
+      {members.length > 0 && (
         <div className={styles.membersSection}>
           <h2 className={styles.sectionTitle}>
             <PeopleIcon /> 모임 멤버 ({members.length}명)
@@ -410,8 +442,9 @@ const GroupDetail = () => {
                 key={member.groupMemberId}
                 member={member}
                 isLeader={member.userId === group.leaderId}
-                canKick={isLeader}
-                onKick={handleKickMember}
+                currentUserId={userId}
+                onToggleReady={handleToggleReady}
+                isMember={isMember}
               />
             ))}
           </div>
