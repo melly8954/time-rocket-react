@@ -354,6 +354,27 @@ const GroupRocketCreate = () => {
       });
       console.log('Enter 메시지 발송');
 
+      // 멤버 현황 구독
+      const membersSub = stompClient.subscribe(
+        `/topic/group/${groupId}/members`,
+        (message) => {
+          const payload = JSON.parse(message.body);
+
+          if (payload.member) {
+            // 입장한 유저 추가
+            setMembers((prev) => [...prev, payload.member]);
+          } else if (payload.leaveUserId) {
+            // 퇴장한 유저 제거
+            setMembers((prev) =>
+              prev.filter((m) => m.userId !== payload.leaveUserId)
+            );
+          } else {
+            fetchMembers(); // fallback
+          }
+        }
+      );
+      console.log(`Subscribed to /topic/group/${groupId}/members`);
+
       return () => {
         // 구독 해제
         subscriptionRef.current?.unsubscribe();
@@ -367,6 +388,9 @@ const GroupRocketCreate = () => {
 
         myKickSub.unsubscribe();
         console.log('Unsubscribed from /user/queue/kick');
+
+        membersSub.unsubscribe();
+        console.log(`Unsubscribed from /topic/group/${groupId}/members`);
 
         // 퇴장 메시지 발송
         stompClient.publish({
