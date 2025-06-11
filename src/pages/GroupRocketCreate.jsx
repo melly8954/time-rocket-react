@@ -244,6 +244,13 @@ const GroupRocketCreate = () => {
       alert('모임 로켓이 성공적으로 발사되었습니다! 🚀');
       navigate(`/groups/${groupId}`);
 
+      // 모임 로켓 전송 pub
+      stompClient.publish({
+        destination: `/app/group/${groupId}/send`,
+        body: '',
+      });
+      console.log('모임 로켓 전송');
+
     } catch (err) {
       console.error('로켓 전송 실패:', err);
       alert(err.response?.data?.message);
@@ -354,6 +361,45 @@ const GroupRocketCreate = () => {
       });
       console.log('Enter 메시지 발송');
 
+      // 멤버 현황 구독
+      const membersSub = stompClient.subscribe(
+        `/topic/group/${groupId}/members`,
+        (message) => {
+          const payload = JSON.parse(message.body);
+
+          if (payload.member) {
+            // 입장한 유저 추가
+            setMembers((prev) => [...prev, payload.member]);
+          } else if (payload.leaveUserId) {
+            // 퇴장한 유저 제거
+            setMembers((prev) =>
+              prev.filter((m) => m.userId !== payload.leaveUserId)
+            );
+          } else {
+            fetchMembers(); // fallback
+          }
+        }
+      );
+      console.log(`Subscribed to /topic/group/${groupId}/members`);
+
+      // 로켓 전송 구독
+      const rocketSendSub = stompClient.subscribe(
+        `/topic/group/${groupId}/send`,
+        (message) => {
+          const payload = JSON.parse(message.body);
+          console.log('로켓 전송 메시지:', payload);
+
+          // 내 메시지면 무시 (리더가 자기 pub에 반응하지 않도록)
+          if (payload.senderId === userId) return;
+
+          if (payload.type === 'rocketSent') {
+            alert(`모임장이 로켓을 전송했습니다!`);
+            navigate(`/groups/${groupId}`);
+          }
+        }
+      );
+      console.log(`Subscribed to /topic/group/${groupId}/send`);
+
       return () => {
         // 구독 해제
         subscriptionRef.current?.unsubscribe();
@@ -367,6 +413,12 @@ const GroupRocketCreate = () => {
 
         myKickSub.unsubscribe();
         console.log('Unsubscribed from /user/queue/kick');
+
+        membersSub.unsubscribe();
+        console.log(`Unsubscribed from /topic/group/${groupId}/members`);
+
+        rocketSendSub.unsubscribe();
+        console.log(`Unsubscribed from /topic/group/${groupId}/send`);
 
         // 퇴장 메시지 발송
         stompClient.publish({
