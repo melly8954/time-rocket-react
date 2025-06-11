@@ -19,6 +19,18 @@ const API_PATHS = {
   MY_GROUPS: '/groups/me'
 };
 
+// 테마 옵션
+const THEME_OPTIONS = [
+  { value: '요리', label: '🍳 요리' },
+  { value: '음악', label: '🎵 음악' },
+  { value: '운동', label: '💪 운동' },
+  { value: '독서', label: '📚 독서' },
+  { value: '영화', label: '🎬 영화' },
+  { value: '여행', label: '✈️ 여행' },
+  { value: '게임', label: '🎮 게임' },
+  { value: '기타', label: '🌟 기타' }
+];
+
 // 테마 맵핑
 const THEME_MAP = {
   '요리': '🍳',
@@ -33,7 +45,7 @@ const THEME_MAP = {
 
 // 그룹 카드 컴포넌트
 const GroupCard = ({ group, onClick, isMyGroup = false }) => {
-  const themeEmoji = THEME_MAP[group.groupTheme] || '🌟';
+  const themeEmoji = THEME_MAP[group.theme] || '🌟';
   
   return (
     <div 
@@ -43,7 +55,7 @@ const GroupCard = ({ group, onClick, isMyGroup = false }) => {
       <div className={styles.groupHeader}>
         <div className={styles.groupTheme}>
           <span className={styles.themeEmoji}>{themeEmoji}</span>
-          <span className={styles.themeName}>{group.groupTheme || '기타'}</span>
+          <span className={styles.themeName}>{group.theme || '기타'}</span>
         </div>
         <div className={styles.groupBadges}>
           {group.isPrivate && <LockIcon className={styles.privateIcon} />}
@@ -88,70 +100,39 @@ const Groups = () => {
   // 상태 관리
   const [groups, setGroups] = useState([]);
   const [myGroups, setMyGroups] = useState([]);
-  const [totalGroups, setTotalGroups] = useState(0);
-  const [totalMyGroups, setTotalMyGroups] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'my'
+  const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('');
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [totalPages, setTotalPages] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMoreGroups, setHasMoreGroups] = useState(true);
+  const [hasMoreMyGroups, setHasMoreMyGroups] = useState(true);
+  const [groupsPage, setGroupsPage] = useState(1);
+  const [myGroupsPage, setMyGroupsPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // 인증 확인
   useEffect(() => {
     if (!isLoggedIn) navigate('/login');
   }, [isLoggedIn, navigate]);
 
-  // 데이터 로드
-  useEffect(() => {
-    if (!userId) return;
-    if (activeTab === 'all') {
-      fetchGroups();
-    } else {
-      fetchMyGroups();
-    }
-  }, [userId, currentPage, activeTab, selectedTheme]);
-
-  // 실시간 검색 기능
-  useEffect(() => {
-    clearTimeout(searchTimeoutRef.current);
-    
-    if (searchTerm.trim() === '') {
-      if (isSearchMode) {
-        setIsSearchMode(false);
-        if (activeTab === 'all') {
-          fetchGroups();
-        } else {
-          fetchMyGroups();
-        }
-      }
-      return;
-    }
-    
-    searchTimeoutRef.current = setTimeout(() => {
-      setIsSearchMode(true);
-      setCurrentPage(1);
-      if (activeTab === 'all') {
-        fetchGroups();
-      } else {
-        fetchMyGroups();
-      }
-    }, 500);
-    
-    return () => clearTimeout(searchTimeoutRef.current);
-  }, [searchTerm, activeTab]);
-
   // 전체 그룹 조회
-  const fetchGroups = useCallback(async () => {
+  const fetchGroups = useCallback(async (isLoadMore = false) => {
     if (isFetchingRef.current) return;
     
     const currentFetchId = Date.now();
     isFetchingRef.current = currentFetchId;
-    setIsLoading(true);
+    
+    if (isLoadMore) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+      setGroupsPage(1);
+    }
 
     try {
+      const currentPage = isLoadMore ? groupsPage : 1;
       const params = {
         page: currentPage,
         size: 12
@@ -171,39 +152,57 @@ const Groups = () => {
       
       if (response.data?.data) {
         const responseData = response.data.data;
-        setGroups(responseData.groups || []);
-        setTotalPages(responseData.totalPages || 0);
-        setTotalGroups(responseData.totalElements || 0);
+        const newGroups = responseData.groups || [];
+        
+        if (isLoadMore) {
+          setGroups(prev => [...prev, ...newGroups]);
+        } else {
+          setGroups(newGroups);
+        }
+        
+        setHasMoreGroups(responseData.hasNext || false);
+        
+        if (responseData.hasNext) {
+          setGroupsPage(currentPage + 1);
+        }
+        
+        setError(null);
       } else {
         setGroups([]);
-        setTotalPages(0);
-        setTotalGroups(0);
+        setHasMoreGroups(false);
+        setError(null);
       }
     } catch (err) {
       if (isFetchingRef.current !== currentFetchId) return;
       
-      console.error('그룹 데이터 로드 실패:', err);
       setGroups([]);
-      if (err.response?.status !== 404) {
-        setError('그룹 데이터를 불러오는데 실패했습니다.');
-      }
+      setHasMoreGroups(false);
+      setError(null);
     } finally {
       if (isFetchingRef.current === currentFetchId) {
         isFetchingRef.current = false;
         setIsLoading(false);
+        setIsLoadingMore(false);
       }
     }
-  }, [currentPage, searchTerm, selectedTheme]);
+  }, [groupsPage, searchTerm, selectedTheme]);
 
   // 내가 참여한 그룹 조회
-  const fetchMyGroups = useCallback(async () => {
+  const fetchMyGroups = useCallback(async (isLoadMore = false) => {
     if (isFetchingRef.current) return;
     
     const currentFetchId = Date.now();
     isFetchingRef.current = currentFetchId;
-    setIsLoading(true);
+    
+    if (isLoadMore) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+      setMyGroupsPage(1);
+    }
 
     try {
+      const currentPage = isLoadMore ? myGroupsPage : 1;
       const params = {
         page: currentPage,
         size: 12
@@ -223,38 +222,115 @@ const Groups = () => {
       
       if (response.data?.data) {
         const responseData = response.data.data;
-        setMyGroups(responseData.groups || []);
-        setTotalPages(responseData.totalPages || 0);
-        setTotalMyGroups(responseData.totalElements || 0);
+        const newGroups = responseData.groups || [];
+        
+        if (isLoadMore) {
+          setMyGroups(prev => [...prev, ...newGroups]);
+        } else {
+          setMyGroups(newGroups);
+        }
+        
+        setHasMoreMyGroups(responseData.hasNext || false);
+        
+        if (responseData.hasNext) {
+          setMyGroupsPage(currentPage + 1);
+        }
+        
+        setError(null);
       } else {
         setMyGroups([]);
-        setTotalPages(0);
-        setTotalMyGroups(0);
+        setHasMoreMyGroups(false);
+        setError(null);
       }
     } catch (err) {
       if (isFetchingRef.current !== currentFetchId) return;
       
-      console.error('내 그룹 데이터 로드 실패:', err);
       setMyGroups([]);
-      if (err.response?.status !== 404) {
-        setError('내 그룹 데이터를 불러오는데 실패했습니다.');
-      }
+      setHasMoreMyGroups(false);
+      setError(null);
     } finally {
       if (isFetchingRef.current === currentFetchId) {
         isFetchingRef.current = false;
         setIsLoading(false);
+        setIsLoadingMore(false);
       }
     }
-  }, [currentPage, searchTerm, selectedTheme]);
+  }, [myGroupsPage, searchTerm, selectedTheme]);
+
+  // 데이터 로드 - 의존성 배열에서 함수 제거
+  useEffect(() => {
+    if (!userId) return;
+    if (activeTab === 'all') {
+      fetchGroups();
+    } else {
+      fetchMyGroups();
+    }
+  }, [userId, activeTab, selectedTheme]); // 함수들 제거
+
+  // 실시간 검색 기능 - 의존성 배열에서 함수 제거
+  useEffect(() => {
+    clearTimeout(searchTimeoutRef.current);
+    
+    if (searchTerm.trim() === '') {
+      if (isSearchMode) {
+        setIsSearchMode(false);
+        if (activeTab === 'all') {
+          fetchGroups();
+        } else {
+          fetchMyGroups();
+        }
+      }
+      return;
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      setIsSearchMode(true);
+      if (activeTab === 'all') {
+        setGroupsPage(1);
+        fetchGroups();
+      } else {
+        setMyGroupsPage(1);
+        fetchMyGroups();
+      }
+    }, 500);
+    
+    return () => clearTimeout(searchTimeoutRef.current);
+  }, [searchTerm, activeTab]); // 함수들 제거
+
+  // 무한스크롤 구현
+  const handleScroll = useCallback(() => {
+    if (isLoadingMore) return;
+    
+    const currentHasMore = activeTab === 'all' ? hasMoreGroups : hasMoreMyGroups;
+    if (!currentHasMore) return;
+    
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight;
+    const clientHeight = window.innerHeight;
+    
+    if (scrollTop + clientHeight >= scrollHeight - 200) {
+      if (activeTab === 'all') {
+        fetchGroups(true);
+      } else {
+        fetchMyGroups(true);
+      }
+    }
+  }, [isLoadingMore, hasMoreGroups, hasMoreMyGroups, activeTab, fetchGroups, fetchMyGroups]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   // UI 이벤트 핸들러
   const handleSearch = useCallback(e => {
     e.preventDefault();
     setIsSearchMode(true);
-    setCurrentPage(1);
     if (activeTab === 'all') {
+      setGroupsPage(1);
       fetchGroups();
     } else {
+      setMyGroupsPage(1);
       fetchMyGroups();
     }
   }, [activeTab, fetchGroups, fetchMyGroups]);
@@ -262,10 +338,11 @@ const Groups = () => {
   const clearSearch = useCallback(() => {
     setSearchTerm('');
     setIsSearchMode(false);
-    setCurrentPage(1);
     if (activeTab === 'all') {
+      setGroupsPage(1);
       fetchGroups();
     } else {
+      setMyGroupsPage(1);
       fetchMyGroups();
     }
   }, [activeTab, fetchGroups, fetchMyGroups]);
@@ -274,15 +351,9 @@ const Groups = () => {
     setActiveTab(tab);
     setSearchTerm('');
     setIsSearchMode(false);
-    setCurrentPage(1);
-    setTimeout(() => {
-      if (tab === 'all') {
-        fetchGroups();
-      } else {
-        fetchMyGroups();
-      }
-    }, 0);
-  }, [fetchGroups, fetchMyGroups]);
+    setSelectedTheme('');
+    setError(null);
+  }, []);
 
   const handleGroupClick = useCallback((group) => {
     navigate(`/groups/${group.groupId}`);
@@ -292,23 +363,31 @@ const Groups = () => {
     navigate('/groups/create');
   }, [navigate]);
 
+  const handleThemeChange = useCallback((e) => {
+    const newTheme = e.target.value;
+    setSelectedTheme(newTheme);
+    setError(null);
+  }, []);
+
   // 현재 표시할 데이터
   const currentGroups = activeTab === 'all' ? groups : myGroups;
-  const currentTotal = activeTab === 'all' ? totalGroups : totalMyGroups;
-
-  // 오류 화면
-  if (error) {
-    return (
-      <div className={styles.groupsError}>
-        <h2>오류가 발생했습니다</h2>
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()}>다시 시도</button>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.groupsContainer}>
+      {/* 에러 메시지 표시 */}
+      {error && (
+        <div className={styles.errorBanner} style={{
+          background: '#fee',
+          color: '#c33',
+          padding: '12px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          border: '1px solid #fcc'
+        }}>
+          <p style={{ margin: 0 }}>{error}</p>
+        </div>
+      )}
+
       {/* 헤더 영역 */}
       <div className={styles.groupsHeader}>
         <div className={styles.headerContent}>
@@ -367,16 +446,13 @@ const Groups = () => {
         <div className={styles.filterControls}>
           <select 
             value={selectedTheme} 
-            onChange={(e) => {
-              setSelectedTheme(e.target.value);
-              setCurrentPage(1);
-            }}
+            onChange={handleThemeChange}
             className={styles.themeFilter}
           >
             <option value="">모든 테마</option>
-            {Object.keys(THEME_MAP).map(theme => (
-              <option key={theme} value={theme}>
-                {THEME_MAP[theme]} {theme}
+            {THEME_OPTIONS.map(theme => (
+              <option key={theme.value} value={theme.value}>
+                {theme.label}
               </option>
             ))}
           </select>
@@ -386,15 +462,21 @@ const Groups = () => {
       {isSearchMode && (
         <div className={styles.searchResultsInfo}>
           <p>
-            검색어: "{searchTerm}" - {currentTotal}개의 모임을 찾았습니다
-            {currentGroups.length === 0 && ' (해당하는 모임은 존재하지 않습니다)'}
+            검색어: "{searchTerm}"
+            {currentGroups.length === 0 && ' - 해당하는 모임이 없습니다'}
           </p>
         </div>
       )}
 
-      <div className={styles.groupsCount}>
-        총 {currentTotal}개의 모임이 있습니다
-      </div>
+      {/* 선택된 테마 표시 */}
+      {selectedTheme && (
+        <div className={styles.searchResultsInfo}>
+          <p>
+            선택된 테마: "{selectedTheme}"
+            {currentGroups.length === 0 && ' - 해당 테마의 모임이 없습니다'}
+          </p>
+        </div>
+      )}
 
       {/* 그룹 목록 */}
       {isLoading ? (
@@ -403,16 +485,30 @@ const Groups = () => {
           <p>모임 데이터를 불러오는 중...</p>
         </div>
       ) : currentGroups.length > 0 ? (
-        <div className={styles.groupsGrid}>
-          {currentGroups.map((group) => (
-            <GroupCard
-              key={group.groupId}
-              group={group}
-              onClick={handleGroupClick}
-              isMyGroup={activeTab === 'my'}
-            />
-          ))}
-        </div>
+        <>
+          <div className={styles.groupsGrid}>
+            {currentGroups.map((group) => (
+              <GroupCard
+                key={group.groupId}
+                group={group}
+                onClick={handleGroupClick}
+                isMyGroup={activeTab === 'my'}
+              />
+            ))}
+          </div>
+          
+          {/* 무한스크롤 로딩 표시 */}
+          {isLoadingMore && (
+            <div className={styles.loadingMore} style={{
+              textAlign: 'center',
+              padding: '20px',
+              color: '#666'
+            }}>
+              <div className={styles.loadingSpinner}></div>
+              <p>더 많은 모임을 불러오는 중...</p>
+            </div>
+          )}
+        </>
       ) : (
         <div className={styles.emptyGroups}>
           {activeTab === 'all' ? (
@@ -437,39 +533,6 @@ const Groups = () => {
               </div>
             </>
           )}
-        </div>
-      )}
-
-      {/* 페이지네이션 */}
-      {!isLoading && totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            className={styles.paginationBtn}
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
-          >
-            이전
-          </button>
-          
-          {Array.from({ length: totalPages }, (_, i) => i + 1)
-            .slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))
-            .map(pageNum => (
-              <button
-                key={pageNum}
-                className={`${styles.paginationBtn} ${currentPage === pageNum ? styles.active : ''}`}
-                onClick={() => setCurrentPage(pageNum)}
-              >
-                {pageNum}
-              </button>
-            ))}
-            
-          <button
-            className={styles.paginationBtn}
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage(currentPage + 1)}
-          >
-            다음
-          </button>
         </div>
       )}
     </div>

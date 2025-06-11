@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
+import { handleApiError } from '../utils/errorHandler';
 import styles from '../style/CreateGroup.module.css';
 import {
   BackIcon,
@@ -32,8 +33,8 @@ const CreateGroup = () => {
   const [formData, setFormData] = useState({
     groupName: '',
     description: '',
-    themeId: '', // 숫자로 변환될 예정
-    memberLimit: '', // 숫자로 변환될 예정
+    themeId: '',
+    memberLimit: '',
     isPrivate: false,
     password: ''
   });
@@ -151,19 +152,23 @@ const CreateGroup = () => {
       // FormData 생성
       const submitData = new FormData();
       
+      // 테마 ID를 테마 이름으로 변환
+      const selectedThemeOption = THEME_OPTIONS.find(theme => theme.id === parseInt(formData.themeId));
+      const themeName = selectedThemeOption ? selectedThemeOption.value : null;
+      
       // 백엔드 CreateGroupRequest에 맞는 JSON 데이터 생성
       const groupData = {
         groupName: formData.groupName.trim(),
         description: formData.description.trim(),
-        themeId: parseInt(formData.themeId), // Long 타입으로 변환
-        memberLimit: formData.memberLimit ? parseInt(formData.memberLimit) : null, // Integer 타입으로 변환
+        theme: themeName, // themeId 대신 theme 이름 전송
+        memberLimit: formData.memberLimit ? parseInt(formData.memberLimit) : null,
         isPrivate: formData.isPrivate,
         password: formData.isPrivate ? formData.password.trim() : null
       };
       
-      console.log('Sending group data:', groupData); // 디버깅용
+      console.log('Sending group data:', groupData);
       
-      // JSON을 Blob으로 변환하여 추가 (multipart/form-data 형식)
+      // JSON을 Blob으로 변환하여 추가
       submitData.append('data', new Blob([JSON.stringify(groupData)], {
         type: 'application/json'
       }));
@@ -188,17 +193,9 @@ const CreateGroup = () => {
       console.error('모임 생성 실패:', err);
       console.error('Error response:', err.response?.data);
       
-      if (err.response?.status === 400) {
-        const errorMessage = err.response.data?.message || '입력 정보를 확인해주세요.';
-        alert(`입력 오류: ${errorMessage}`);
-      } else if (err.response?.status === 409) {
-        alert('이미 같은 이름의 모임이 존재합니다.');
-      } else if (err.response?.status === 401) {
-        alert('로그인이 필요합니다.');
-        navigate('/login');
-      } else {
-        alert('모임 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');
-      }
+      // 통합 에러 핸들러 사용
+      const errorMessage = err.response?.data?.message || '모임 생성에 실패했습니다.';
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -206,6 +203,7 @@ const CreateGroup = () => {
 
   return (
     <div className={styles.createGroupContainer}>
+      {/* 나머지 JSX는 동일하게 유지 */}
       {/* 헤더 */}
       <div className={styles.createGroupHeader}>
         <button 
