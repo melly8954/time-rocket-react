@@ -63,6 +63,7 @@ const MemberCard = ({ member, isLeader, currentUserId, onToggleReady, isMember, 
           </div>
         </div>
       </div>
+      
       {canKick && !member.isKicked && !isLeader && (
         <button
           className={styles.kickButton}
@@ -138,6 +139,7 @@ const GroupDetail = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [isLeader, setIsLeader] = useState(false);
+  const stompClient = useAuthStore((state) => state.stompClient);
 
   // 인증 확인
   useEffect(() => {
@@ -204,10 +206,19 @@ const GroupDetail = () => {
       // 데이터 새로고침
       await fetchGroupDetail();
       await fetchGroupMembers();
+      
+      if (stompClient && stompClient.connected) {
+        stompClient.publish({
+          destination: `/app/group/${groupId}/join_member`,
+          body: JSON.stringify({
+            isReady: false,
+          }),
+        });
+      }
 
       alert('모임에 성공적으로 참가했습니다!');
     } catch (err) {
-      handleApiError(err, '모임 참가에 실패했습니다.');
+      console.error('그룹 참가 실패:', err);
     } finally {
       setIsJoining(false);
     }
@@ -227,6 +238,13 @@ const GroupDetail = () => {
       // 데이터 새로고침
       await fetchGroupDetail();
       await fetchGroupMembers();
+
+      if (stompClient && stompClient.connected) {
+        stompClient.publish({
+          destination: `/app/group/${groupId}/leave_member`,
+          body: '', // 서버에서 principal 통해 userId 추출하면 body 없어도 됨
+        });
+      }
 
       alert('모임을 성공적으로 떠났습니다.');
     } catch (err) {

@@ -1678,3 +1678,43 @@
 .retryButton:hover {
   background: #2196f3;
 }
+
+.nicknameFrame {
+  border: 3px solid #ddd;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: #f9f9f9;
+}
+
+.actionSection {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.submitButton {
+  background-color: #4f46e5; /* 인디고-600 */
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.submitButton:hover {
+  background-color: #4338ca; /* 인디고-700 */
+}
+
+.submitButton:active {
+  transform: scale(0.98);
+  background-color: #3730a3; /* 인디고-800 */
+}
+
+.submitButton:disabled {
+  background-color: #a5b4fc; /* 인디고-300 */
+  cursor: not-allowed;
+}
