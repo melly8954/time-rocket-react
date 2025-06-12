@@ -127,7 +127,6 @@ const GroupDetail = () => {
   const [isMember, setIsMember] = useState(false);
   const [isLeader, setIsLeader] = useState(false);
   const stompClient = useAuthStore((state) => state.stompClient);
-  const [isKicked, setIsKicked] = useState(false);
 
   // 인증 확인
   useEffect(() => {
