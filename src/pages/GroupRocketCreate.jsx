@@ -505,80 +505,90 @@ const GroupRocketCreate = () => {
     return `${paddedMonth}월 ${paddedDay}일 ${period} ${displayHour}:${paddedMinute}`;
   };
 
-  // 모임 로켓 컨텐츠 준비완료
-  const handleSubmit = async () => {
-    if (!formData.content.trim()) {
-      alert('메시지를 작성해주세요.');
-      return;
-    }
+// 기존 handleSubmit 함수에서 준비 상태 변경 부분
+const handleSubmit = async () => {
+  if (!formData.content.trim()) {
+    alert('메시지를 작성해주세요.');
+    return;
+  }
 
-    const form = new FormData();
-    const requestData = {
-      content: formData.content,
-    };
-
-    const jsonBlob = new Blob([JSON.stringify(requestData)], {
-      type: 'application/json',
-    });
-
-    form.append('data', jsonBlob);
-
-    files.forEach((file) => {
-      form.append('files', file);
-    });
-
-    try {
-      const response = await api.post(`/groups/${groupId}/rockets/contents`, form, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      alert('모임 로켓 메시지를 성공적으로 저장했습니다!');
-      console.log(response.data);
-
-      // 저장 후 초기화
-      setFormData({ content: '' });
-      setFiles([]);
-
-      // 퍼블리시 준비 상태 전송
-      stompClient.publish({
-        destination: `/app/group/${groupId}/readyStatus`,
-        body: JSON.stringify({
-          groupId: groupId,
-          currentRound: currentRound,
-          isReady: true,
-        }),
-      });
-    } catch (error) {
-      alert('저장 중 오류가 발생했습니다.');
-      console.error(error);
-    }
+  const form = new FormData();
+  const requestData = {
+    content: formData.content,
   };
 
-  // 컨텐츠 준비 해제
-  const handleCancelReady = async () => {
-    try {
-      // API 호출 예시 (PUT 또는 POST)
-      await api.patch(`/groups/${groupId}/readyStatus`, { isReady: false, currentRound: currentRound });
-      setIsReady(false); // 클라이언트 상태 업데이트
+  const jsonBlob = new Blob([JSON.stringify(requestData)], {
+    type: 'application/json',
+  });
 
-      // 준비 취소 pub 메시지 전송
-      stompClient.publish({
-        destination: `/app/group/${groupId}/readyStatus`,
-        body: JSON.stringify({
-          groupId: groupId,
-          currentRound: currentRound,
-          isReady: false,
-        }),
-      });
+  form.append('data', jsonBlob);
 
-      alert(`컨텐츠 준비를 취소했습니다.`);
-    } catch (error) {
-      alert('준비 상태 변경 중 오류가 발생했습니다.');
-      console.error(error);
-    }
-  };
+  files.forEach((file) => {
+    form.append('files', file);
+  });
+
+  try {
+    const response = await api.post(`/groups/${groupId}/rockets/contents`, form, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    alert('모임 로켓 메시지를 성공적으로 저장했습니다!');
+    console.log(response.data);
+
+    // 저장 후 초기화
+    setFormData({ content: '' });
+    setFiles([]);
+
+    // 🔧 수정: 백엔드 API에 맞춰서 준비 상태 업데이트
+    await api.patch(`/groups/${groupId}/readyStatus`, {
+      isReady: true,
+      currentRound: currentRound
+    });
+
+    // 퍼블리시 준비 상태 전송
+    stompClient.publish({
+      destination: `/app/group/${groupId}/readyStatus`,
+      body: JSON.stringify({
+        groupId: groupId,
+        currentRound: currentRound,
+        isReady: true,
+      }),
+    });
+  } catch (error) {
+    alert('저장 중 오류가 발생했습니다.');
+    console.error(error);
+  }
+};
+
+// 🔧 수정: 컨텐츠 준비 해제 함수도 동일하게 수정
+const handleCancelReady = async () => {
+  try {
+    // 백엔드 API에 맞춰서 수정
+    await api.patch(`/groups/${groupId}/readyStatus`, { 
+      isReady: false, 
+      currentRound: currentRound 
+    });
+    
+    setIsReady(false);
+
+    // 준비 취소 pub 메시지 전송
+    stompClient.publish({
+      destination: `/app/group/${groupId}/readyStatus`,
+      body: JSON.stringify({
+        groupId: groupId,
+        currentRound: currentRound,
+        isReady: false,
+      }),
+    });
+
+    alert(`컨텐츠 준비를 취소했습니다.`);
+  } catch (error) {
+    alert('준비 상태 변경 중 오류가 발생했습니다.');
+    console.error(error);
+  }
+};
 
   // 참여자 강퇴(리더전용)
   const handleKick = (targetUserId) => {
@@ -735,24 +745,13 @@ const GroupRocketCreate = () => {
                   className={styles.nicknameBox}
                   style={{
                     border: '2px solid',
-                    borderColor: member.isReady ? 'green' : 'red',
-                    borderRadius: '8px',
-                    padding: '10px 12px',
-                    margin: '6px',
-                    display: 'inline-flex',
-                    flexDirection: 'column',
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    minWidth: '100px',
-                    height: '110px',
-                    justifyContent: 'flex-start',
-                    position: 'relative', // 버튼 위치를 위해 필요
+                    borderColor: member.isReady ? 'green' : 'red'
                   }}
                 >
                   <div>{member.nickname}</div>
                   <div
                     style={{
-                      marginTop: '4px',
+                      marginTop: '14px',
                       fontSize: '0.85rem',
                       color: member.isReady ? 'green' : 'red',
                       fontWeight: 'normal',
@@ -770,7 +769,7 @@ const GroupRocketCreate = () => {
                         준비 취소
                       </button>
                     ) : (
-                      <div style={{ height: '28px' }} />
+                      <div style={{ height: '18px' }} />
                     )}
                   </div>
 
@@ -909,50 +908,146 @@ const GroupRocketCreate = () => {
 
           {/* 실시간 채팅 카드 */}
           <div style={sstyles.container}>
-            <h2>실시간 채팅</h2>
+            <h2 style={sstyles.h2}>실시간 채팅</h2>
             <div style={sstyles.chatBox}>
               <div
                 style={sstyles.messages}
-                onScroll={handleScroll}        // 스크롤 이벤트 핸들러 추가
-                ref={messageContainerRef}      // ref 추가
+                onScroll={handleScroll}
+                ref={messageContainerRef}
               >
                 {messages.map((msg, index) => {
                   const isMine = msg.nickname === myNickname;
                   const isEnterOrExitMessage = !msg.message?.trim();
+                  const isEnterMessage = msg.message?.includes('참여했습니다') || msg.message?.includes('입장하셨습니다');
+                  const isExitMessage = msg.message?.includes('나갔습니다') || msg.message?.includes('퇴장하셨습니다');
+
+                  // 스타일 결정
+                  let messageStyle = { ...sstyles.message };
+                  
+                  if (isEnterOrExitMessage || isEnterMessage || isExitMessage) {
+                    // 시스템 메시지 (입장/퇴장)
+                    messageStyle = {
+                      ...messageStyle,
+                      alignSelf: 'center',
+                      background: isEnterMessage 
+                        ? 'linear-gradient(135deg, rgba(46, 213, 115, 0.15) 0%, rgba(0, 206, 201, 0.15) 100%)'
+                        : isExitMessage
+                        ? 'linear-gradient(135deg, rgba(255, 71, 87, 0.15) 0%, rgba(255, 99, 71, 0.15) 100%)'
+                        : 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 140, 0, 0.15) 50%, rgba(255, 69, 0, 0.15) 100%)',
+                      border: isEnterMessage
+                        ? '2px solid rgba(46, 213, 115, 0.5)'
+                        : isExitMessage
+                        ? '2px solid rgba(255, 71, 87, 0.5)'
+                        : '2px solid rgba(255, 215, 0, 0.4)',
+                      color: isEnterMessage
+                        ? '#2ed573'
+                        : isExitMessage
+                        ? '#ff4757'
+                        : '#ffd700',
+                      textAlign: 'center',
+                      fontWeight: '600',
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      borderRadius: '25px',
+                      padding: '10px 20px',
+                      fontSize: '13px',
+                      textShadow: isEnterMessage
+                        ? '0 0 10px rgba(46, 213, 115, 0.5)'
+                        : isExitMessage
+                        ? '0 0 10px rgba(255, 71, 87, 0.5)'
+                        : '0 0 10px rgba(255, 215, 0, 0.5)',
+                      boxShadow: isEnterMessage
+                        ? '0 4px 20px rgba(46, 213, 115, 0.2)'
+                        : isExitMessage
+                        ? '0 4px 20px rgba(255, 71, 87, 0.2)'
+                        : '0 4px 20px rgba(255, 215, 0, 0.2)',
+                      maxWidth: '90%',
+                      fontStyle: 'italic',
+                    };
+                  } else if (isMine) {
+                    // 내 메시지
+                    messageStyle = {
+                      ...messageStyle,
+                      alignSelf: 'flex-end',
+                      background: 'linear-gradient(135deg, rgba(79, 172, 254, 0.3) 0%, rgba(147, 51, 234, 0.3) 100%)',
+                      borderColor: 'rgba(79, 172, 254, 0.4)',
+                      color: '#e2e8f0',
+                      textAlign: 'right',
+                      borderRadius: '15px 15px 5px 15px',
+                      boxShadow: '0 4px 15px rgba(79, 172, 254, 0.2)',
+                    };
+                  } else {
+                    // 다른 사람 메시지
+                    messageStyle = {
+                      ...messageStyle,
+                      alignSelf: 'flex-start',
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                      color: '#e2e8f0',
+                      textAlign: 'left',
+                      borderRadius: '15px 15px 15px 5px',
+                      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                    };
+                  }
 
                   return (
                     <div
                       key={index}
-                      style={{
-                        ...sstyles.message,
-                        textAlign: isEnterOrExitMessage ? 'center' : isMine ? 'right' : 'left',
-                        backgroundColor: isEnterOrExitMessage ? '#eee' : isMine ? '#dcf8c6' : '#ffffff',
-                        borderRadius: '8px',
-                        padding: '8px',
-                        margin: '5px 0',
-                        alignSelf: isEnterOrExitMessage ? 'center' : isMine ? 'flex-end' : 'flex-start',
-                        fontStyle: isEnterOrExitMessage ? 'italic' : 'normal',
-                        color: isEnterOrExitMessage ? '#888' : 'inherit',
+                      style={messageStyle}
+                      onMouseEnter={(e) => {
+                        if (!isEnterOrExitMessage && !isEnterMessage && !isExitMessage) {
+                          e.target.style.transform = 'translateY(-1px)';
+                          e.target.style.boxShadow = isMine 
+                            ? '0 6px 25px rgba(79, 172, 254, 0.3)'
+                            : '0 6px 20px rgba(0, 0, 0, 0.3)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isEnterOrExitMessage && !isEnterMessage && !isExitMessage) {
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = isMine
+                            ? '0 4px 15px rgba(79, 172, 254, 0.2)'
+                            : '0 4px 15px rgba(0, 0, 0, 0.2)';
+                        }
                       }}
                     >
-                      {isEnterOrExitMessage ? (
-                        <em>
-                          {msg.nickname}님이 입장하셨습니다.
-                        </em>
+                      {isEnterOrExitMessage || isEnterMessage || isExitMessage ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '16px' }}>
+                            {isEnterMessage ? '🚀' : isExitMessage ? '👋' : '📢'}
+                          </span>
+                          <span style={{ fontWeight: '600' }}>
+                            {isEnterOrExitMessage 
+                              ? `${msg.nickname}님이 입장하셨습니다.`
+                              : msg.message
+                            }
+                          </span>
+                        </div>
                       ) : (
                         <>
                           <div style={sstyles.header}>
-                            <strong>
+                            <strong style={{ 
+                              color: isMine ? '#00d4ff' : '#a0aec0', 
+                              textShadow: isMine ? '0 0 8px rgba(0, 212, 255, 0.4)' : 'none',
+                              fontFamily: "'Space Grotesk', sans-serif",
+                              fontWeight: '600'
+                            }}>
                               {msg.nickname}
                               {isMine && ' (나)'}
-                            </strong>{' '}
+                            </strong>
                             {msg.sentAt && (
                               <span style={sstyles.timestamp}>
                                 {formatTimestamp(msg.sentAt)}
                               </span>
                             )}
                           </div>
-                          <div>{msg.message}</div>
+                          <div style={{ 
+                            fontSize: '14px', 
+                            lineHeight: '1.4', 
+                            wordWrap: 'break-word',
+                            fontFamily: "'Inter', sans-serif"
+                          }}>
+                            {msg.message}
+                          </div>
                         </>
                       )}
                     </div>
@@ -961,20 +1056,67 @@ const GroupRocketCreate = () => {
                 <div ref={messageEndRef} />
               </div>
 
-              <form onSubmit={handleSendMessage} style={sstyles.inputForm}>
+              <form 
+                onSubmit={handleSendMessage} 
+                style={sstyles.inputForm}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(79, 172, 254, 0.6)';
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(79, 172, 254, 0.2)';
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(79, 172, 254, 0.3)';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="메시지를 입력하세요"
-                  style={sstyles.input}
+                  placeholder="메시지를 입력하세요..."
+                  style={{
+                    ...sstyles.input,
+                    '::placeholder': {
+                      color: '#718096',
+                      fontStyle: 'italic'
+                    }
+                  }}
                 />
-                <button type="submit" style={sstyles.button} disabled={!newMessage.trim()}>
+                <button 
+                  type="submit" 
+                  style={{
+                    ...sstyles.button,
+                    ...(newMessage.trim() ? {} : {
+                      opacity: '0.5',
+                      cursor: 'not-allowed',
+                      background: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)',
+                      transform: 'none',
+                      boxShadow: 'none'
+                    })
+                  }}
+                  disabled={!newMessage.trim()}
+                  onMouseEnter={(e) => {
+                    if (newMessage.trim()) {
+                      e.target.style.background = 'linear-gradient(135deg, #00d4ff 0%, #9333ea 100%)';
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 20px rgba(79, 172, 254, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (newMessage.trim()) {
+                      e.target.style.background = 'linear-gradient(135deg, #4facfe 0%, #9333ea 100%)';
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 15px rgba(79, 172, 254, 0.3)';
+                    }
+                  }}
+                >
                   전송
                 </button>
               </form>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -1009,46 +1151,124 @@ const sstyles = {
   container: {
     maxWidth: '500px',
     margin: '0 auto',
-    fontFamily: 'Arial, sans-serif',
+    fontFamily: "'Space Grotesk', 'Inter', sans-serif",
+    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+    backdropFilter: 'blur(20px)',
+    border: '2px solid rgba(79, 172, 254, 0.3)',
+    borderRadius: '20px',
+    padding: '25px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+    position: 'relative',
+    overflow: 'hidden',
   },
+  
   chatBox: {
-    border: '1px solid #ccc',
-    borderRadius: '8px',
-    padding: '10px',
-    backgroundColor: '#f9f9f9',
+    border: '2px solid rgba(79, 172, 254, 0.4)',
+    borderRadius: '15px',
+    padding: '20px',
+    background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(79, 172, 254, 0.05) 100%)',
+    backdropFilter: 'blur(15px)',
+    boxShadow: 'inset 0 0 30px rgba(79, 172, 254, 0.1)',
   },
+  
   messages: {
     height: '300px',
     overflowY: 'auto',
-    marginBottom: '10px',
+    marginBottom: '15px',
     display: 'flex',
     flexDirection: 'column',
+    gap: '8px',
+    paddingRight: '8px',
+    // 스크롤바 스타일
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'rgba(79, 172, 254, 0.6) rgba(0, 0, 0, 0.2)',
   },
+  
   message: {
-    padding: '5px 0',
-    borderBottom: '1px solid #eee',
-  },
-  inputForm: {
-    display: 'flex',
-  },
-  input: {
-    flex: 1,
-    padding: '8px',
-    borderRadius: '4px',
-    border: '1px solid #ccc',
-    marginRight: '8px',
-  },
-  button: {
-    padding: '8px 12px',
-    borderRadius: '4px',
-    border: 'none',
-    backgroundColor: '#4CAF50',
-    color: '#fff',
+    padding: '12px 16px',
+    borderRadius: '15px',
+    margin: '3px 0',
+    position: 'relative',
+    maxWidth: '85%',
+    wordWrap: 'break-word',
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '14px',
+    lineHeight: '1.4',
+    transition: 'all 0.2s ease',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
     cursor: 'pointer',
   },
+  
+  inputForm: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center',
+    background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(79, 172, 254, 0.05) 100%)',
+    border: '2px solid rgba(79, 172, 254, 0.3)',
+    borderRadius: '20px',
+    padding: '8px',
+    transition: 'all 0.3s ease',
+    backdropFilter: 'blur(10px)',
+  },
+  
+  input: {
+    flex: 1,
+    border: 'none',
+    background: 'transparent',
+    padding: '12px 16px',
+    fontSize: '14px',
+    outline: 'none',
+    color: '#e2e8f0',
+    fontFamily: "'Inter', sans-serif",
+    fontWeight: '400',
+    letterSpacing: '-0.01em',
+  },
+  
+  button: {
+    padding: '10px 16px',
+    borderRadius: '15px',
+    border: 'none',
+    background: 'linear-gradient(135deg, #4facfe 0%, #9333ea 100%)',
+    color: 'white',
+    cursor: 'pointer',
+    fontFamily: "'Space Grotesk', sans-serif",
+    fontWeight: '600',
+    fontSize: '14px',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 15px rgba(79, 172, 254, 0.3)',
+    textShadow: '0 0 8px rgba(255, 255, 255, 0.3)',
+    letterSpacing: '-0.02em',
+  },
+  
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '4px',
+    fontSize: '12px',
+  },
+  
   timestamp: {
-    color: '#888', // 회색
-    fontSize: '0.85em',
+    color: 'rgba(160, 174, 192, 0.8)',
+    fontSize: '11px',
+    fontFamily: "'JetBrains Mono', monospace",
+    letterSpacing: '0.02em',
+  },
+  
+  // 제목 스타일
+  h2: {
+    fontSize: '1.3rem',
+    fontWeight: '600',
+    fontFamily: "'Space Grotesk', sans-serif",
+    background: 'linear-gradient(135deg, #00d4ff 0%, #9333ea 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    margin: '0 0 20px 0',
+    textShadow: '0 0 10px rgba(0, 212, 255, 0.3)',
+    letterSpacing: '-0.025em',
+    textAlign: 'center',
   }
 };
 
