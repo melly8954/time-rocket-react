@@ -505,7 +505,6 @@ const GroupRocketCreate = () => {
     return `${paddedMonth}월 ${paddedDay}일 ${period} ${displayHour}:${paddedMinute}`;
   };
 
-// 기존 handleSubmit 함수에서 준비 상태 변경 부분
 const handleSubmit = async () => {
   if (!formData.content.trim()) {
     alert('메시지를 작성해주세요.');
@@ -541,12 +540,6 @@ const handleSubmit = async () => {
     setFormData({ content: '' });
     setFiles([]);
 
-    // 🔧 수정: 백엔드 API에 맞춰서 준비 상태 업데이트
-    await api.patch(`/groups/${groupId}/readyStatus`, {
-      isReady: true,
-      currentRound: currentRound
-    });
-
     // 퍼블리시 준비 상태 전송
     stompClient.publish({
       destination: `/app/group/${groupId}/readyStatus`,
@@ -562,7 +555,6 @@ const handleSubmit = async () => {
   }
 };
 
-// 🔧 수정: 컨텐츠 준비 해제 함수도 동일하게 수정
 const handleCancelReady = async () => {
   try {
     // 백엔드 API에 맞춰서 수정
