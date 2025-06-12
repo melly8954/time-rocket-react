@@ -127,6 +127,7 @@ const GroupDetail = () => {
   const [isMember, setIsMember] = useState(false);
   const [isLeader, setIsLeader] = useState(false);
   const stompClient = useAuthStore((state) => state.stompClient);
+  const [isKicked, setIsKicked] = useState(false);
 
   // 인증 확인
   useEffect(() => {
@@ -214,16 +215,7 @@ const GroupDetail = () => {
       alert('모임에 성공적으로 참가했습니다!');
     } catch (err) {
       console.error('그룹 참가 실패:', err);
-
-      if (err.response?.status === 401) {
-        alert('비밀번호가 올바르지 않습니다.');
-      } else if (err.response?.status === 409) {
-        alert('이미 참가한 모임입니다.');
-      } else if (err.response?.status === 400) {
-        alert('모임 정원이 가득 찼습니다.');
-      } else {
-        alert('모임 참가에 실패했습니다.');
-      }
+      alert(err.response.data.message);
     } finally {
       setIsJoining(false);
     }
@@ -287,9 +279,29 @@ const GroupDetail = () => {
   }, [group?.isPrivate, handleJoinGroup]);
 
   // 로켓 생성 페이지로 이동
-  const handleCreateRocket = useCallback(() => {
-    navigate(`/groups/${groupId}/rockets/create`);
-  }, [navigate, groupId]);
+  const handleCreateRocket = useCallback(async () => {
+    try {
+      // 강퇴 여부 또는 현재 참가 가능 여부 확인용 API 호출
+      const res = await api.get(`/groups/${groupId}/members`);
+      console.log(res);
+      const members = res.data?.data?.members;
+
+      const currentUser = members.find(member => member.userId === userId);
+
+      if (!currentUser) {
+        alert('당신은 이 모임에 참여하고 있지 않습니다.');
+        navigate('/groups');
+        return;
+      }
+
+      // 강퇴가 아니라면 로켓 생성 페이지로 이동
+      navigate(`/groups/${groupId}/rockets/create`);
+
+    } catch (err) {
+      console.error('참가 상태 확인 실패:', err);
+      alert('참가 가능 여부 확인 중 오류가 발생했습니다.');
+    }
+  }, [navigate, groupId, userId]);
 
   if (isLoading) {
     return (
@@ -323,7 +335,7 @@ const GroupDetail = () => {
     );
   }
 
-  const themeEmoji = THEME_MAP[group.groupTheme] || '🌟';
+  const themeEmoji = THEME_MAP[group.theme] || '🌟';
 
   return (
     <div className={styles.groupDetailContainer}>
@@ -348,7 +360,7 @@ const GroupDetail = () => {
         <div className={styles.groupContent}>
           <div className={styles.groupTheme}>
             <span className={styles.themeEmoji}>{themeEmoji}</span>
-            <span className={styles.themeName}>{group.groupTheme || '기타'}</span>
+            <span className={styles.themeName}>{group.theme || '기타'}</span>
             {group.isPrivate && <LockIcon className={styles.privateIcon} />}
           </div>
 
