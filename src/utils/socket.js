@@ -14,4 +14,6 @@ export const connectSocket = (token) => {
 
   stompClient.activate();
   useAuthStore.getState().setStompClient(stompClient);
+
+  return stompClient;
 };

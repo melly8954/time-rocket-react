@@ -1,6 +1,7 @@
 import axios from "axios";
 import useAuthStore from "../authStore";
 import { goTo } from "./navigate"; // 전역 navigate 사용
+import { connectSocket } from "./socket";
 
 const api = axios.create({
   baseURL: "/api",
@@ -29,7 +30,7 @@ api.interceptors.response.use(
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
-    
+
       try {
         const res = await axios.post("/api/tokens/refresh", null, {
           withCredentials: true,
@@ -42,6 +43,14 @@ api.interceptors.response.use(
 
         // 리프레시 성공 후 원래 요청 재시도
         originalRequest.headers["Authorization"] = `Bearer ${newAccess}`;
+
+        // 기존 STOMP 연결 종료 후 새 토큰으로 재연결
+        const stompClient = useAuthStore.getState().stompClient;
+        if (stompClient?.connected) {
+          stompClient.deactivate(); // 연결 종료
+        }
+        connectSocket(newAccess); // 새 토큰으로 다시 연결
+
         return api(originalRequest);
       } catch (refreshError) {
         console.log("토큰 재발급 실패");
@@ -50,7 +59,7 @@ api.interceptors.response.use(
         setIsLoggedIn(false);
         setAccessToken(null);
         setNickname("");
-        goTo("/login"); 
+        goTo("/login");
       }
     }
 
