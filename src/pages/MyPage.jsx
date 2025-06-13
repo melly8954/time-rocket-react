@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from "../utils/api";
 import { fetchUserProfile } from '../utils/profile';
+import { AlertModal } from '../components/common/Modal';
 import '../style/MyPage.css';
 
 const MyPage = () => {
@@ -23,6 +24,36 @@ const MyPage = () => {
         posts: ['우주 여행기 #1', '행성 관측 기록'],
         files: ['space_image1.png', 'research_data.pdf']
     });
+
+    // 모달 상태 관리 추가
+    const [alertModal, setAlertModal] = useState({ 
+        isOpen: false, 
+        message: '', 
+        type: 'default',
+        title: '알림'
+    });
+
+    const showAlert = (message, type = 'default', title = '알림') => {
+        setAlertModal({ 
+            isOpen: true, 
+            message, 
+            type,
+            title 
+        });
+    };
+
+    const closeAlert = () => {
+        setAlertModal({ ...alertModal, isOpen: false });
+    };
+
+    // 통합된 에러 처리 함수
+    const handleApiError = (err, defaultMessage = '오류가 발생했습니다.') => {
+        console.error('API 오류:', err);
+        
+        const errorMessage = err.response?.data?.message || defaultMessage;
+        showAlert(errorMessage, 'danger', '오류');
+    };
+
     // 행성 레벨 시스템 데이터
     const planetLevels = [
         { name: '수성', minXp: 0, maxXp: 50, levelRange: '1-5' },
@@ -73,16 +104,77 @@ const MyPage = () => {
                 }));
             } catch (err) {
                 console.error("프로필 불러오기 실패", err);
+                handleApiError(err, "프로필을 불러오는데 실패했습니다.");
             }
         };
-        getProfile();   // 마이페이지 렌더링 시에만 호출
+        getProfile();
     }, []);
+
+    // 비밀번호 변경 핸들러
+    const handlePasswordChange = () => {
+        if (userData.provider && userData.providerId) {
+            showAlert("소셜 로그인은 비밀번호 변경이 불가합니다.", 'warning', '비밀번호 변경 불가');
+            return;
+        }
+        navigate(`/password-change/${userId}`);
+    };
+
+    // 계정 탈퇴 핸들러
+    const handleDeleteAccount = async () => {
+        // 확인 대화상자를 모달로 처리
+        const confirmDelete = () => {
+            return new Promise((resolve) => {
+                setAlertModal({
+                    isOpen: true,
+                    message: "정말 계정을 탈퇴하시겠습니까?\n탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.",
+                    type: 'warning',
+                    title: '계정 탈퇴 확인',
+                    onConfirm: () => {
+                        setAlertModal({ ...alertModal, isOpen: false });
+                        resolve(true);
+                    },
+                    onCancel: () => {
+                        setAlertModal({ ...alertModal, isOpen: false });
+                        resolve(false);
+                    },
+                    showCancel: true
+                });
+            });
+        };
+
+        const confirmed = await confirmDelete();
+        if (!confirmed) return;
+
+        try {
+            const accessToken = localStorage.getItem("accessToken");
+            await api.patch(`/users/${userId}/status`,
+                { status: "DELETED" },
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    withCredentials: true,
+                }
+            );
+            
+            showAlert("계정이 성공적으로 탈퇴 처리되었습니다.", 'success', '탈퇴 완료');
+            
+            // 모달이 닫힌 후 로그아웃 페이지로 이동
+            setTimeout(() => {
+                navigate("/logout");
+            }, 1500);
+        } catch (error) {
+            console.error("계정 탈퇴 실패", error);
+            handleApiError(error, "계정 탈퇴 처리 중 오류가 발생했습니다.");
+        }
+    };
 
     return (
         <div className="mypage-container">
             <div className="rocket-section">
                 <div className="rocket-image">
-                    <image src="./assets/rocket.png"></image>
+                    <img src="./assets/rocket.png" alt="rocket" />
                     <div className="rocket">🚀</div>
                     <div className="rocket-time">
                         {currentTime.toLocaleString('ko-KR', {
@@ -102,41 +194,13 @@ const MyPage = () => {
                         <h2>{userData.nickname} <span className="badge-icon">⭐</span></h2>
                         <p>{userData.email}
                             <button
-                                onClick={() => {
-                                    if (userData.provider && userData.providerId) {
-                                        alert("소셜 로그인은 비밀번호 변경이 불가합니다.");
-                                        return;
-                                    }
-                                    navigate(`/password-change/${userId}`);
-                                }}
+                                onClick={handlePasswordChange}
                                 className="change-password-button"
                             >
                                 비밀번호 변경
                             </button>
                             <button
-                                onClick={async () => {
-                                    if (!window.confirm("정말 계정을 탈퇴하시겠습니까?")) return;
-
-                                    try {
-                                        const accessToken = localStorage.getItem("accessToken");
-                                        await api.patch(`/users/${userId}/status`,
-                                            { status: "DELETED" },
-                                            {
-                                                headers: {
-                                                    Authorization: `Bearer ${accessToken}`,
-                                                    'Content-Type': 'application/json',
-                                                },
-                                                withCredentials: true,
-                                            }
-                                        );
-                                        alert("계정이 탈퇴 처리되었습니다.");
-                                        // 로그아웃 처리
-                                        navigate("/logout"); // 홈 또는 로그인 페이지로
-                                    } catch (error) {
-                                        console.error("계정 탈퇴 실패", error);
-                                        alert(error.data.data.message);
-                                    }
-                                }}
+                                onClick={handleDeleteAccount}
                                 className="delete-account-button"
                             >
                                 계정 탈퇴
@@ -198,25 +262,56 @@ const MyPage = () => {
                 {activeTab === 'storage' && (
                     <div className="storage-content">
                         <h3>보관함</h3>
-                        <ul>
-                            {userData.files.map((file, index) => (
-                                <li key={index}>{file}</li>
-                            ))}
-                        </ul>
+                        <div className="storage-items">
+                            {userData.files.length > 0 ? (
+                                <ul>
+                                    {userData.files.map((file, index) => (
+                                        <li key={index} className="file-item">
+                                            <span className="file-icon">📁</span>
+                                            {file}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="empty-message">보관된 파일이 없습니다.</p>
+                            )}
+                        </div>
                     </div>
                 )}
 
                 {activeTab === 'posts' && (
                     <div className="posts-content">
-                        <h3>게시글</h3>
-                        <ul>
-                            {userData.posts.map((post, index) => (
-                                <li key={index}>{post}</li>
-                            ))}
-                        </ul>
+                        <h3>내 게시글</h3>
+                        <div className="posts-items">
+                            {userData.posts.length > 0 ? (
+                                <ul>
+                                    {userData.posts.map((post, index) => (
+                                        <li key={index} className="post-item">
+                                            <span className="post-icon">📝</span>
+                                            {post}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="empty-message">작성한 게시글이 없습니다.</p>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
+
+            {/* AlertModal 추가 */}
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={closeAlert}
+                title={alertModal.title}
+                message={alertModal.message}
+                type={alertModal.type}
+                buttonText={alertModal.showCancel ? undefined : "확인"}
+                onConfirm={alertModal.onConfirm}
+                onCancel={alertModal.onCancel}
+                showCancel={alertModal.showCancel}
+            />
         </div>
     );
 };
