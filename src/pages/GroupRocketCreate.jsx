@@ -25,12 +25,15 @@ const GroupRocketCreate = () => {
   const fileInputRef = useRef(null);
   const currentUserId = userId;
   const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const rocketNameRef = useRef(null);
+  const lockExpiredAtRef = useRef(null);
 
   // 상태 관리
   const [group, setGroup] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [members, setMembers] = useState([]); // 빈 배열로 초기화
+  const [members, setMembers] = useState([]);
   const [currentRound, setCurrentRound] = useState(1);
+  const [sharedRocketDesign, setSharedRocketDesign] = useState('');
   const [formData, setFormData] = useState({
     rocketName: '',
     design: '',
@@ -43,19 +46,20 @@ const GroupRocketCreate = () => {
   // 실시간 채팅 state
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [hasMore, setHasMore] = useState(true);   // 더 불러올 메시지 있는지 여부
-  const [loading, setLoading] = useState(false);  // 이전 메시지 불러오는 중 중복방지
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
   const messageEndRef = useRef(null);
   const messageContainerRef = useRef(null);
   const myNickname = useAuthStore(state => state.nickname);
   const stompClient = useAuthStore((state) => state.stompClient);
   const subscriptionRef = useRef(null);
+  const rocketSendSubRef = useRef(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   // 로켓 컨텐츠 준비 state
   const [textContent, setTextContent] = useState('');
   const [files, setFiles] = useState([]);
-  const [isReady, setIsReady] = useState(false); // 준비 상태 관리
-
+  const [isReady, setIsReady] = useState(false);
 
   // 로켓 디자인 옵션
   const DESIGN_OPTIONS = [
@@ -80,6 +84,21 @@ const GroupRocketCreate = () => {
       preview: '/src/assets/rocket_design4.svg'
     }
   ];
+
+  const scrollToBottom = () => {
+    const container = messageContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  };
+
+  const checkScrollButton = () => {
+    const container = messageContainerRef.current;
+    if (!container) return;
+    
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+    setShowScrollButton(!isAtBottom && messages.length > 0);
+  };
 
   // 인증 및 그룹 정보 확인
   useEffect(() => {
@@ -129,7 +148,7 @@ const GroupRocketCreate = () => {
       const responseData = response.data?.data;
 
       if (responseData && Array.isArray(responseData.members)) {
-        setMembers(responseData.members); // 불필요한 가공 없이 바로 저장
+        setMembers(responseData.members);
         setCurrentRound(responseData.currentRound);
         console.log("최신 멤버 현황 : " + members);
       } else {
@@ -162,6 +181,24 @@ const GroupRocketCreate = () => {
       ...prev,
       [name]: value
     }));
+
+    // 로켓 디자인이 변경되면 실시간으로 전송
+    if (name === 'design' && isOwner) {
+      setSharedRocketDesign(value);
+      
+      // 실시간으로 다른 멤버들에게 로켓 디자인 전송
+      if (stompClient && stompClient.connected) {
+        stompClient.publish({
+          destination: `/app/group/${groupId}/rocketDesign`,
+          body: JSON.stringify({
+            design: value,
+            rocketName: formData.rocketName,
+            senderId: userId
+          }),
+        });
+        console.log('로켓 디자인 실시간 전송:', value);
+      }
+    }
 
     if (errors[name]) {
       setErrors(prev => ({
@@ -198,27 +235,34 @@ const GroupRocketCreate = () => {
     e.preventDefault();
 
     if (!isOwner) {
-      alert('방장만 로켓을 발사할 수 있습니다.');
+      alert('모임장만 로켓을 발사할 수 있습니다.');
       return;
     }
 
     if (!isAllMembersComplete()) {
-      alert('모든 참가자가 작업을 완료해야 로켓을 발사할 수 있습니다.');
+      alert('모든 모임원들은 작업을 완료해야 로켓을 발사할 수 있습니다.');
       return;
     }
 
     const newErrors = {};
-    if (!formData.rocketName.trim()) {
+
+    const rocketName = (formData.rocketName ?? '').trim();
+    const design = formData.design ?? '';
+    const lockExpiredAt = formData.lockExpiredAt;
+
+    if (!rocketName) {
       newErrors.rocketName = '로켓 이름을 입력해주세요.';
     }
-    if (!formData.design) {
+
+    if (!design) {
       newErrors.design = '로켓 디자인을 선택해주세요.';
     }
-    if (!formData.lockExpiredAt) {
+
+    if (!lockExpiredAt) {
       newErrors.lockExpiredAt = '잠금 해제 시간을 설정해주세요.';
     } else {
       const now = new Date();
-      const selectedTime = new Date(formData.lockExpiredAt);
+      const selectedTime = new Date(lockExpiredAt);
       if (selectedTime <= now) {
         newErrors.lockExpiredAt = '미래 시간을 선택해주세요.';
       }
@@ -226,17 +270,25 @@ const GroupRocketCreate = () => {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      
+      if (newErrors.rocketName && rocketNameRef.current) {
+        rocketNameRef.current.focus();
+        rocketNameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (newErrors.lockExpiredAt && lockExpiredAtRef.current) {
+        lockExpiredAtRef.current.focus();
+        lockExpiredAtRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      
       return;
     }
 
     try {
       setIsLoading(true);
 
-      // JSON 데이터 직접 전송
       const dataToSend = {
-        rocketName: formData.rocketName.trim(),
-        design: formData.design,
-        lockExpiredAt: formData.lockExpiredAt,
+        rocketName,
+        design,
+        lockExpiredAt,
       };
 
       await api.post(`/groups/${groupId}/rockets`, dataToSend);
@@ -251,9 +303,9 @@ const GroupRocketCreate = () => {
       });
       console.log('모임 로켓 전송');
 
-    } catch (err) {
-      console.error('로켓 전송 실패:', err);
-      alert(err.response?.data?.message);
+    } catch (error) {
+      console.error('로켓 발사 실패:', error);
+      alert('로켓 발사 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -265,10 +317,9 @@ const GroupRocketCreate = () => {
     return now.toISOString().slice(0, 16);
   };
 
-  // chat - psw
   // 히스토리 불러오기 함수
   const fetchChatHistory = async (beforeMessageId = Number.MAX_SAFE_INTEGER) => {
-    if (loading || !hasMore) return;  // 중복 호출 방지 및 더 없으면 종료
+    if (loading || !hasMore) return;
 
     setLoading(true);
     try {
@@ -278,14 +329,11 @@ const GroupRocketCreate = () => {
       const { messages: historyMessages, hasNext } = res.data.data;
 
       if (!historyMessages.length) {
-        setHasMore(false); // 더 이상 메시지 없음
+        setHasMore(false);
         return;
       }
 
-      // 메시지 정렬은 API가 어떤 순서로 보내는지 확인 후 필요시 reverse
-      // 여기서는 오래된 순으로 온다고 가정 (오래된 메시지 → 최근 메시지)
       setMessages(prev => [...historyMessages.reverse(), ...prev]);
-
       setHasMore(hasNext);
     } catch (error) {
       console.error('히스토리 로드 실패:', error);
@@ -329,6 +377,24 @@ const GroupRocketCreate = () => {
       });
       console.log(`Subscribed to /topic/group/${groupId}/readyStatus`);
 
+      const rocketDesignSub = stompClient.subscribe(
+        `/topic/group/${groupId}/rocketDesign`,
+        (message) => {
+          const payload = JSON.parse(message.body);
+          console.log('로켓 디자인 업데이트 받음:', payload);
+          
+          if (payload.senderId !== userId && !isOwner) {
+            setSharedRocketDesign(payload.design);
+            setFormData(prev => ({
+              ...prev,
+              design: payload.design,
+              rocketName: payload.rocketName || prev.rocketName
+            }));
+            console.log('로켓 디자인 업데이트 적용됨:', payload.design);
+          }
+        }
+      );
+
       // 강퇴 구독
       const kickSub = stompClient.subscribe(`/topic/group/${groupId}/kick`, (message) => {
         const kickedUserId = message.body;
@@ -339,7 +405,6 @@ const GroupRocketCreate = () => {
           const filtered = prevMembers.filter(m => String(m.userId) !== String(kickedUserId));
 
           if (!hasKickedUser) {
-            // 새로고침 후 유저 리스트가 잘못되었을 수 있으니 fetchMembers 재호출
             fetchMembers();
           }
 
@@ -349,7 +414,7 @@ const GroupRocketCreate = () => {
       console.log(`Subscribed to /topic/group/${groupId}/kick`);
 
       const myKickSub = stompClient.subscribe('/user/queue/kick', (message) => {
-        alert('방장에 의해 강퇴당했습니다.');
+        alert('모임장에 의해 강퇴당했습니다.');
         navigate(`/groups/${groupId}`);
       });
       console.log(`Subscribed to /user/queue/kick`);
@@ -368,19 +433,22 @@ const GroupRocketCreate = () => {
           const payload = JSON.parse(message.body);
 
           if (payload.member) {
-            // 입장한 유저 추가
             setMembers((prev) => [...prev, payload.member]);
           } else if (payload.leaveUserId) {
-            // 퇴장한 유저 제거
             setMembers((prev) =>
               prev.filter((m) => m.userId !== payload.leaveUserId)
             );
           } else {
-            fetchMembers(); // fallback
+            fetchMembers();
           }
         }
       );
       console.log(`Subscribed to /topic/group/${groupId}/members`);
+
+        if (rocketSendSubRef.current) {
+          // 이미 구독했으면 더 이상 하지 않음
+          return;
+        }
 
       // 로켓 전송 구독
       const rocketSendSub = stompClient.subscribe(
@@ -389,7 +457,6 @@ const GroupRocketCreate = () => {
           const payload = JSON.parse(message.body);
           console.log('로켓 전송 메시지:', payload);
 
-          // 내 메시지면 무시 (리더가 자기 pub에 반응하지 않도록)
           if (payload.senderId === userId) return;
 
           if (payload.type === 'rocketSent') {
@@ -398,15 +465,18 @@ const GroupRocketCreate = () => {
           }
         }
       );
+      rocketSendSubRef.current = rocketSendSub;
       console.log(`Subscribed to /topic/group/${groupId}/send`);
 
       return () => {
-        // 구독 해제
         subscriptionRef.current?.unsubscribe();
         console.log(`Unsubscribed from /topic/group/${groupId}`);
 
         readyStatusSub.unsubscribe();
         console.log(`Unsubscribed from /topic/group/${groupId}/readyStatus`);
+
+        rocketDesignSub.unsubscribe();
+        console.log(`Unsubscribed from /topic/group/${groupId}/rocketDesign`);
 
         kickSub.unsubscribe();
         console.log(`Unsubscribed from /topic/group/${groupId}/kick`);
@@ -418,6 +488,7 @@ const GroupRocketCreate = () => {
         console.log(`Unsubscribed from /topic/group/${groupId}/members`);
 
         rocketSendSub.unsubscribe();
+        rocketSendSubRef.current = null;
         console.log(`Unsubscribed from /topic/group/${groupId}/send`);
 
         // 퇴장 메시지 발송
@@ -430,47 +501,56 @@ const GroupRocketCreate = () => {
     };
 
     if (stompClient.connected) {
-      // 이미 연결되어 있다면 바로 onConnect 실행
       const cleanup = onConnect();
       return cleanup;
     } else {
-      // 연결 완료 이벤트에 onConnect 콜백 등록
       stompClient.onConnect = () => {
         console.log('STOMP onConnect 이벤트 발생');
         const cleanup = onConnect();
-        // cleanup 반환값이 있으면 호출할 수 있도록 리턴 (선택사항)
         return cleanup;
       };
     }
 
     return () => {
-      // 컴포넌트 언마운트 시 onConnect 콜백 제거
       stompClient.onConnect = null;
     };
-  }, [stompClient, groupId, accessToken]);
+  }, [stompClient, groupId, accessToken, isOwner]);
+
+  // 스크롤 관리
+  useEffect(() => {
+    const container = messageContainerRef.current;
+    if (!container) return;
+
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+    
+    if (isAtBottom) {
+      setTimeout(() => {
+        messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [messages]);
 
   // 스크롤 위치 복원
   const handleScroll = () => {
     const container = messageContainerRef.current;
     if (!container) return;
 
-    if (container.scrollTop === 0 && messages.length > 0 && hasMore && !loading) {
+    checkScrollButton();
+
+    if (container.scrollTop <= 50 && messages.length > 0 && hasMore && !loading) {
       const firstMessageId = messages[0]?.chatMessageId || Number.MAX_SAFE_INTEGER;
       const prevScrollHeight = container.scrollHeight;
+      const prevScrollTop = container.scrollTop;
 
       fetchChatHistory(firstMessageId).then(() => {
-        setTimeout(() => {
+        requestAnimationFrame(() => {
           const newScrollHeight = container.scrollHeight;
-          // 이전과 새로 생긴 높이 차만큼 스크롤 위치를 내려줌으로써 스크롤 유지
-          container.scrollTop = newScrollHeight - prevScrollHeight;
-        }, 50);
+          const heightDifference = newScrollHeight - prevScrollHeight;
+          container.scrollTop = prevScrollTop + heightDifference;
+        });
       });
     }
   };
-
-  useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -483,6 +563,13 @@ const GroupRocketCreate = () => {
     });
 
     setNewMessage('');
+    
+    setTimeout(() => {
+      const container = messageContainerRef.current;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 100);
   };
 
   const formatTimestamp = (dateString) => {
@@ -505,84 +592,93 @@ const GroupRocketCreate = () => {
     return `${paddedMonth}월 ${paddedDay}일 ${period} ${displayHour}:${paddedMinute}`;
   };
 
-const handleSubmit = async () => {
-  if (!formData.content.trim()) {
-    alert('메시지를 작성해주세요.');
-    return;
-  }
+  const handleSubmit = async () => {
+    // 메시지 또는 파일 중 하나는 필수
+    if (!formData.content.trim() && files.length === 0) {
+      alert('메시지를 작성하거나 파일을 첨부해주세요. (둘 중 하나는 필수)');
+      return;
+    }
 
-  const form = new FormData();
-  const requestData = {
-    content: formData.content,
+    const form = new FormData();
+    const requestData = {
+      content: formData.content.trim() || '', // trim() 추가
+    };
+
+    const jsonBlob = new Blob([JSON.stringify(requestData)], {
+      type: 'application/json',
+    });
+
+    form.append('data', jsonBlob);
+
+    // 파일이 있을 때만 추가
+    if (files.length > 0) {
+      files.forEach((file) => {
+        form.append('files', file);
+      });
+    }
+
+    try {
+      const response = await api.post(`/groups/${groupId}/rockets/contents`, form, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      alert('모임 로켓 컨텐츠를 성공적으로 저장했습니다!');
+      console.log(response.data);
+
+      // 저장 후 초기화
+      setFormData(prev => ({ ...prev, content: '' }));
+      setFiles([]);
+
+      // 퍼블리시 준비 상태 전송
+      stompClient.publish({
+        destination: `/app/group/${groupId}/readyStatus`,
+        body: JSON.stringify({
+          groupId: groupId,
+          currentRound: currentRound,
+          isReady: true,
+        }),
+      });
+    } catch (error) {
+      console.error('저장 에러:', error);
+      
+      // 더 자세한 에러 정보 표시
+      if (error.response?.data) {
+        console.error('에러 응답:', error.response.data);
+        alert(`저장 중 오류가 발생했습니다: ${error.response.data.message || '서버 오류'}`);
+      } else {
+        alert('저장 중 오류가 발생했습니다.');
+      }
+    }
   };
 
-  const jsonBlob = new Blob([JSON.stringify(requestData)], {
-    type: 'application/json',
-  });
+  const handleCancelReady = async () => {
+    try {
+      await api.patch(`/groups/${groupId}/readyStatus`, { 
+        isReady: false, 
+        currentRound: currentRound 
+      });
+      
+      setIsReady(false);
 
-  form.append('data', jsonBlob);
+      stompClient.publish({
+        destination: `/app/group/${groupId}/readyStatus`,
+        body: JSON.stringify({
+          groupId: groupId,
+          currentRound: currentRound,
+          isReady: false,
+        }),
+      });
 
-  files.forEach((file) => {
-    form.append('files', file);
-  });
+      alert(`컨텐츠 준비를 취소했습니다.`);
+    } catch (error) {
+      alert('준비 상태 변경 중 오류가 발생했습니다.');
+      console.error(error);
+    }
+  };
 
-  try {
-    const response = await api.post(`/groups/${groupId}/rockets/contents`, form, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    alert('모임 로켓 메시지를 성공적으로 저장했습니다!');
-    console.log(response.data);
-
-    // 저장 후 초기화
-    setFormData({ content: '' });
-    setFiles([]);
-
-    // 퍼블리시 준비 상태 전송
-    stompClient.publish({
-      destination: `/app/group/${groupId}/readyStatus`,
-      body: JSON.stringify({
-        groupId: groupId,
-        currentRound: currentRound,
-        isReady: true,
-      }),
-    });
-  } catch (error) {
-    alert('저장 중 오류가 발생했습니다.');
-    console.error(error);
-  }
-};
-
-const handleCancelReady = async () => {
-  try {
-    // 백엔드 API에 맞춰서 수정
-    await api.patch(`/groups/${groupId}/readyStatus`, { 
-      isReady: false, 
-      currentRound: currentRound 
-    });
-    
-    setIsReady(false);
-
-    // 준비 취소 pub 메시지 전송
-    stompClient.publish({
-      destination: `/app/group/${groupId}/readyStatus`,
-      body: JSON.stringify({
-        groupId: groupId,
-        currentRound: currentRound,
-        isReady: false,
-      }),
-    });
-
-    alert(`컨텐츠 준비를 취소했습니다.`);
-  } catch (error) {
-    alert('준비 상태 변경 중 오류가 발생했습니다.');
-    console.error(error);
-  }
-};
-
-  // 참여자 강퇴(리더전용)
+  // 모임원 강퇴(모임장전용)
   const handleKick = (targetUserId) => {
     if (stompClient && stompClient.connected) {
       stompClient.publish({
@@ -592,7 +688,6 @@ const handleCancelReady = async () => {
     }
   };
 
-  // -----
   if (isLoading && !group) {
     return (
       <div className={styles.loadingContainer}>
@@ -625,7 +720,7 @@ const handleCancelReady = async () => {
         </button>
         <div className={styles.headerInfo}>
           <h1><RocketIcon /> 함께 만드는 모임 로켓</h1>
-          <span><GroupIcon /> {group.groupName} {isOwner && <span className={styles.ownerBadge}>방장</span>}</span>
+          <span><GroupIcon /> {group.groupName} {isOwner && <span className={styles.ownerBadge}>모임장</span>}</span>
         </div>
       </div>
 
@@ -637,7 +732,7 @@ const handleCancelReady = async () => {
           <div className={styles.messageCard}>
             <div className={styles.cardHeader}>
               <h3>💬 함께 작성하는 메시지</h3>
-              <p>모든 참가자가 메시지를 작성해주세요</p>
+              <p>모든 모임원 분들께서는 메시지를 작성해주세요</p>
             </div>
 
             <div className={styles.messageEditor}>
@@ -725,7 +820,7 @@ const handleCancelReady = async () => {
             </div>
           </div>
 
-          {/* 참가자 현황 */}
+          {/* 모임원 현황 */}
           <div className={styles.nicknameFrame}>
             {Array.isArray(members) && members.map((member) => {
               const isCurrentUser = member.userId === currentUserId;
@@ -793,11 +888,11 @@ const handleCancelReady = async () => {
 
         {/* 오른쪽 영역 */}
         <div className={styles.rightSection}>
-          {/* 로켓 설정 카드 (방장만) */}
+          {/* 로켓 설정 카드 (모임장만) */}
           {isOwner && (
             <div className={styles.configCard}>
               <div className={styles.cardHeader}>
-                <h3>⚙️ 로켓 설정 (방장 전용)</h3>
+                <h3>⚙️ 로켓 설정 (모임장 전용)</h3>
                 <p>로켓의 세부 정보를 설정해주세요</p>
               </div>
 
@@ -805,6 +900,7 @@ const handleCancelReady = async () => {
                 <div className={styles.formField}>
                   <label className={styles.fieldLabel}>로켓 이름 *</label>
                   <input
+                    ref={rocketNameRef}
                     type="text"
                     name="rocketName"
                     value={formData.rocketName}
@@ -821,6 +917,7 @@ const handleCancelReady = async () => {
                 <div className={styles.formField}>
                   <label className={styles.fieldLabel}>잠금 해제 시간 *</label>
                   <input
+                    ref={lockExpiredAtRef}
                     type="datetime-local"
                     name="lockExpiredAt"
                     value={formData.lockExpiredAt}
@@ -844,7 +941,24 @@ const handleCancelReady = async () => {
                       <div
                         key={design.value}
                         className={`${styles.designOption} ${formData.design === design.value ? styles.selected : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, design: design.value }))}
+                        onClick={() => {
+                          const newDesign = design.value;
+                          setFormData(prev => ({ ...prev, design: newDesign }));
+                          setSharedRocketDesign(newDesign);
+                          
+                          // 실시간으로 다른 멤버들에게 로켓 디자인 전송
+                          if (stompClient && stompClient.connected) {
+                            stompClient.publish({
+                              destination: `/app/group/${groupId}/rocketDesign`,
+                              body: JSON.stringify({
+                                design: newDesign,
+                                rocketName: formData.rocketName,
+                                senderId: userId
+                              }),
+                            });
+                            console.log('로켓 디자인 실시간 전송:', newDesign);
+                          }
+                        }}
                       >
                         <div className={styles.designImageWrapper}>
                           <img
@@ -874,26 +988,108 @@ const handleCancelReady = async () => {
             <div className={styles.previewCard}>
               <div className={styles.cardHeader}>
                 <h3>🚀 로켓 미리보기</h3>
-                <p>방장이 설정 중인 로켓 정보예요</p>
+                <p>모임장이 설정 중인 로켓 정보예요</p>
               </div>
 
               <div className={styles.rocketPreview}>
                 <div className={styles.previewInfo}>
-                  <h4>{formData.rocketName || '로켓 이름 설정 중...'}</h4>
-                  <p>잠금 해제: {formData.lockExpiredAt ?
-                    new Date(formData.lockExpiredAt).toLocaleString('ko-KR') :
-                    '시간 설정 중...'}</p>
+                  <h4 style={{
+                    background: 'linear-gradient(135deg, #00d4ff 0%, #9333ea 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    textShadow: '0 0 10px rgba(0, 212, 255, 0.3)',
+                  }}>
+                    {formData.rocketName || '로켓 이름 설정 중...'}
+                  </h4>
+                  <p style={{ color: '#a0aec0', fontSize: '13px' }}>
+                    잠금 해제: {formData.lockExpiredAt ?
+                      new Date(formData.lockExpiredAt).toLocaleString('ko-KR') :
+                      '시간 설정 중...'}
+                  </p>
                 </div>
-                {formData.design && (
-                  <div className={styles.previewDesign}>
-                    <img
-                      src={formData.design}
-                      alt="선택된 로켓 디자인"
-                      className={styles.previewImage}
-                      onError={(e) => { e.target.src = '/src/assets/rocket.png' }}
-                    />
+                
+                {(sharedRocketDesign || formData.design) && (
+                  <div className={styles.previewDesign} style={{
+                    animation: sharedRocketDesign ? 'rocketUpdate 0.5s ease-in-out' : 'none'
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+                      borderRadius: '15px',
+                      padding: '20px',
+                      border: '2px solid rgba(79, 172, 254, 0.3)',
+                      backdropFilter: 'blur(10px)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '10px'
+                    }}>
+                      <img
+                        src={sharedRocketDesign || formData.design}
+                        alt="실시간 로켓 디자인"
+                        className={styles.previewImage}
+                        style={{
+                          width: '100px',
+                          height: '100px',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 0 15px rgba(79, 172, 254, 0.6))',
+                          animation: 'rocketFloat 2s ease-in-out infinite'
+                        }}
+                        onError={(e) => { e.target.src = '/src/assets/rocket.png' }}
+                      />
+                      <span style={{
+                        fontSize: '12px',
+                        color: '#00d4ff',
+                        fontFamily: "'Space Grotesk', sans-serif",
+                        fontWeight: '600',
+                        textShadow: '0 0 8px rgba(0, 212, 255, 0.4)'
+                      }}>
+                        {DESIGN_OPTIONS.find(option => option.value === (sharedRocketDesign || formData.design))?.label || '선택됨'}
+                      </span>
+                    </div>
                   </div>
                 )}
+
+                {!sharedRocketDesign && !formData.design && (
+                  <div style={{
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#a0aec0',
+                    fontStyle: 'italic',
+                    background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(79, 172, 254, 0.05) 100%)',
+                    borderRadius: '15px',
+                    border: '2px dashed rgba(79, 172, 254, 0.3)'
+                  }}>
+                    <div style={{ fontSize: '32px', marginBottom: '10px' }}>🛠️</div>
+                    <p>모임장이 로켓 디자인을 선택하면<br />여기에 실시간으로 표시됩니다</p>
+                  </div>
+                )}
+              </div>
+
+              {/* 실시간 업데이트 인디케이터 */}
+              <div style={{
+                marginTop: '15px',
+                padding: '8px 12px',
+                background: 'linear-gradient(135deg, rgba(46, 213, 115, 0.1) 0%, rgba(0, 206, 201, 0.1) 100%)',
+                border: '1px solid rgba(46, 213, 115, 0.3)',
+                borderRadius: '20px',
+                textAlign: 'center',
+                fontSize: '12px',
+                color: '#2ed573',
+                fontFamily: "'Space Grotesk', sans-serif",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}>
+                <span style={{ 
+                  width: '6px', 
+                  height: '6px', 
+                  background: '#2ed573', 
+                  borderRadius: '50%',
+                  animation: 'pulse 2s infinite'
+                }}></span>
+                실시간 동기화 중
               </div>
             </div>
           )}
@@ -1048,6 +1244,32 @@ const handleCancelReady = async () => {
                 <div ref={messageEndRef} />
               </div>
 
+              {showScrollButton && (
+                <button
+                  onClick={scrollToBottom}
+                  style={{
+                    position: 'absolute',
+                    bottom: '80px',
+                    right: '30px',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #4facfe 0%, #9333ea 100%)',
+                    border: 'none',
+                    color: 'white',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 15px rgba(79, 172, 254, 0.3)',
+                    zIndex: 10,
+                    fontSize: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  ⬇️
+                </button>
+              )}
+
               <form 
                 onSubmit={handleSendMessage} 
                 style={sstyles.inputForm}
@@ -1131,7 +1353,7 @@ const handleCancelReady = async () => {
           </button>
         ) : (
           <div className={styles.waitingMessage}>
-            <span>방장이 로켓을 발사할 때까지 기다려주세요 ⏳</span>
+            <span>모임장이 로켓을 발사할 때까지 기다려주세요 ⏳</span>
           </div>
         )}
       </div>
@@ -1161,6 +1383,7 @@ const sstyles = {
     background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(79, 172, 254, 0.05) 100%)',
     backdropFilter: 'blur(15px)',
     boxShadow: 'inset 0 0 30px rgba(79, 172, 254, 0.1)',
+    position: 'relative',
   },
   
   messages: {
@@ -1171,7 +1394,6 @@ const sstyles = {
     flexDirection: 'column',
     gap: '8px',
     paddingRight: '8px',
-    // 스크롤바 스타일
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(79, 172, 254, 0.6) rgba(0, 0, 0, 0.2)',
   },
@@ -1248,7 +1470,6 @@ const sstyles = {
     letterSpacing: '0.02em',
   },
   
-  // 제목 스타일
   h2: {
     fontSize: '1.3rem',
     fontWeight: '600',
