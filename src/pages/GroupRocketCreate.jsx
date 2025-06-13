@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
+import { AlertModal, ConfirmModal } from '../components/common/Modal';
 import styles from '../style/GroupRocketCreate.module.css';
 import {
   BackIcon,
@@ -60,6 +61,57 @@ const GroupRocketCreate = () => {
   const [textContent, setTextContent] = useState('');
   const [files, setFiles] = useState([]);
   const [isReady, setIsReady] = useState(false);
+
+  // 모달 상태
+  const [alertModal, setAlertModal] = useState({ 
+    isOpen: false, 
+    message: '', 
+    type: 'default',
+    title: '알림'
+  });
+
+  const [confirmModal, setConfirmModal] = useState({ 
+    isOpen: false, 
+    message: '', 
+    onConfirm: null 
+  });
+
+  const showAlert = (message, type = 'default', title = '알림') => {
+    setAlertModal({ 
+      isOpen: true, 
+      message, 
+      type,
+      title 
+    });
+  };
+
+  const showConfirm = (message, onConfirm) => {
+    setConfirmModal({ 
+      isOpen: true, 
+      message, 
+      onConfirm 
+    });
+  };
+
+  const closeAlert = () => {
+    setAlertModal({ ...alertModal, isOpen: false });
+  };
+
+  const closeConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false });
+  };
+
+  // 통합된 에러 처리 함수
+  const handleApiError = (err, defaultMessage = '오류가 발생했습니다.') => {
+    console.error('API 오류:', err);
+    
+    const errorMessage = err.response?.data?.message || defaultMessage;
+    showAlert(errorMessage, 'danger', '오류');
+    
+    if (err.response?.status === 401) {
+      setTimeout(() => navigate('/login'), 2000);
+    }
+  };
 
   // 로켓 디자인 옵션
   const DESIGN_OPTIONS = [
@@ -134,8 +186,8 @@ const GroupRocketCreate = () => {
       }
     } catch (err) {
       console.error('그룹 정보 조회 실패:', err);
-      alert('모임 정보를 불러올 수 없습니다.');
-      navigate('/groups');
+      handleApiError(err, '모임 정보를 불러올 수 없습니다.');
+      setTimeout(() => navigate('/groups'), 2000);
     } finally {
       setIsLoading(false);
     }
@@ -157,7 +209,7 @@ const GroupRocketCreate = () => {
       }
     } catch (err) {
       console.error('멤버 조회 실패:', err);
-      alert('멤버 정보를 불러오는 데 실패했습니다.');
+      handleApiError(err, '멤버 정보를 불러오는 데 실패했습니다.');
     }
   };
 
@@ -213,13 +265,13 @@ const GroupRocketCreate = () => {
     const selectedFiles = Array.from(e.target.files);
 
     if (selectedFiles.length > 5) {
-      alert('최대 5개의 파일만 업로드 가능합니다.');
+      showAlert('최대 5개의 파일만 업로드 가능합니다.', 'warning', '파일 업로드');
       return;
     }
 
     const oversizedFiles = selectedFiles.filter(file => file.size > 10 * 1024 * 1024);
     if (oversizedFiles.length > 0) {
-      alert('각 파일은 10MB 이하여야 합니다.');
+      showAlert('각 파일은 10MB 이하여야 합니다.', 'warning', '파일 크기 초과');
       return;
     }
 
@@ -235,12 +287,12 @@ const GroupRocketCreate = () => {
     e.preventDefault();
 
     if (!isOwner) {
-      alert('모임장만 로켓을 발사할 수 있습니다.');
+      showAlert('모임장만 로켓을 발사할 수 있습니다.', 'warning', '권한 없음');
       return;
     }
 
     if (!isAllMembersComplete()) {
-      alert('모든 모임원들은 작업을 완료해야 로켓을 발사할 수 있습니다.');
+      showAlert('모든 모임원들은 작업을 완료해야 로켓을 발사할 수 있습니다.', 'warning', '작업 미완료');
       return;
     }
 
@@ -293,8 +345,11 @@ const GroupRocketCreate = () => {
 
       await api.post(`/groups/${groupId}/rockets`, dataToSend);
 
-      alert('모임 로켓이 성공적으로 발사되었습니다! 🚀');
-      navigate(`/groups/${groupId}`);
+      showAlert('모임 로켓이 성공적으로 발사되었습니다! 🚀', 'success', '발사 완료');
+      
+      setTimeout(() => {
+        navigate(`/groups/${groupId}`);
+      }, 2000);
 
       // 모임 로켓 전송 pub
       stompClient.publish({
@@ -305,7 +360,7 @@ const GroupRocketCreate = () => {
 
     } catch (error) {
       console.error('로켓 발사 실패:', error);
-      alert('로켓 발사 중 오류가 발생했습니다.');
+      handleApiError(error, '로켓 발사 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -414,8 +469,8 @@ const GroupRocketCreate = () => {
       console.log(`Subscribed to /topic/group/${groupId}/kick`);
 
       const myKickSub = stompClient.subscribe('/user/queue/kick', (message) => {
-        alert('모임장에 의해 강퇴당했습니다.');
-        navigate(`/groups/${groupId}`);
+        showAlert('모임장에 의해 강퇴당했습니다.', 'warning', '강퇴');
+        setTimeout(() => navigate(`/groups/${groupId}`), 2000);
       });
       console.log(`Subscribed to /user/queue/kick`);
 
@@ -460,8 +515,8 @@ const GroupRocketCreate = () => {
           if (payload.senderId === userId) return;
 
           if (payload.type === 'rocketSent') {
-            alert(`모임장이 로켓을 전송했습니다!`);
-            navigate(`/groups/${groupId}`);
+            showAlert('모임장이 로켓을 전송했습니다!', 'success', '로켓 전송');
+            setTimeout(() => navigate(`/groups/${groupId}`), 2000);
           }
         }
       );
@@ -595,7 +650,7 @@ const GroupRocketCreate = () => {
   const handleSubmit = async () => {
     // 메시지 또는 파일 중 하나는 필수
     if (!formData.content.trim() && files.length === 0) {
-      alert('메시지를 작성하거나 파일을 첨부해주세요. (둘 중 하나는 필수)');
+      showAlert('메시지를 작성하거나 파일을 첨부해주세요. (둘 중 하나는 필수)', 'warning', '내용 입력 필요');
       return;
     }
 
@@ -624,7 +679,7 @@ const GroupRocketCreate = () => {
         },
       });
 
-      alert('모임 로켓 컨텐츠를 성공적으로 저장했습니다!');
+      showAlert('모임 로켓 컨텐츠를 성공적으로 저장했습니다!', 'success', '저장 완료');
       console.log(response.data);
 
       // 저장 후 초기화
@@ -642,14 +697,7 @@ const GroupRocketCreate = () => {
       });
     } catch (error) {
       console.error('저장 에러:', error);
-      
-      // 더 자세한 에러 정보 표시
-      if (error.response?.data) {
-        console.error('에러 응답:', error.response.data);
-        alert(`저장 중 오류가 발생했습니다: ${error.response.data.message || '서버 오류'}`);
-      } else {
-        alert('저장 중 오류가 발생했습니다.');
-      }
+      handleApiError(error, '저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -671,21 +719,25 @@ const GroupRocketCreate = () => {
         }),
       });
 
-      alert(`컨텐츠 준비를 취소했습니다.`);
+      showAlert('컨텐츠 준비를 취소했습니다.', 'success', '준비 취소');
     } catch (error) {
-      alert('준비 상태 변경 중 오류가 발생했습니다.');
-      console.error(error);
+      handleApiError(error, '준비 상태 변경 중 오류가 발생했습니다.');
     }
   };
 
   // 모임원 강퇴(모임장전용)
   const handleKick = (targetUserId) => {
-    if (stompClient && stompClient.connected) {
-      stompClient.publish({
-        destination: `/app/group/${groupId}/kick`,
-        body: JSON.stringify({ userId: targetUserId }),
-      });
-    }
+    showConfirm(
+      '정말로 이 멤버를 강퇴하시겠습니까?',
+      () => {
+        if (stompClient && stompClient.connected) {
+          stompClient.publish({
+            destination: `/app/group/${groupId}/kick`,
+            body: JSON.stringify({ userId: targetUserId }),
+          });
+        }
+      }
+    );
   };
 
   if (isLoading && !group) {
@@ -751,7 +803,7 @@ const GroupRocketCreate = () => {
                   value={formData.content}
                   onChange={handleInputChange}
                   className={`${styles.messageInput} ${errors.content ? styles.error : ''}`}
-                  placeholder="모임원들과 함께 나누고 싶은 이야기를 작성해보세요...&#10;&#10;예시:&#10;• 오늘 모임 정말 즐거웠어요!&#10;• 다음에도 함께 해요 😊&#10;• 소중한 추억 감사합니다"
+                  placeholder="모임원들과 함께 나누고 싶은 이야기를 작성해보세요..."
                   rows={4}
                   maxLength={500}
                 />
@@ -1357,6 +1409,26 @@ const GroupRocketCreate = () => {
           </div>
         )}
       </div>
+
+      {/* 모달들 */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={closeAlert}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        buttonText="확인"
+      />
+      
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        confirmText="확인"
+        cancelText="취소"
+        type="danger"
+      />
     </div>
   );
 };
