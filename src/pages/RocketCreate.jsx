@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { fetchUserProfile } from "../utils/profile";
 import DesignSelector, { designs } from "../components/ui/DesignSelector";
-import { AlertModal } from '../components/common/Modal'; // AlertModal import 추가
+import { AlertModal } from '../components/common/Modal';
 import "../style/RocketCreate.css";
 
 function RocketCreate() {
