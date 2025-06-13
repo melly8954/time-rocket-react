@@ -50,6 +50,7 @@ const GroupRocketCreate = () => {
   const myNickname = useAuthStore(state => state.nickname);
   const stompClient = useAuthStore((state) => state.stompClient);
   const subscriptionRef = useRef(null);
+  const rocketSendSubRef = useRef(null);
 
   // 로켓 컨텐츠 준비 state
   const [textContent, setTextContent] = useState('');
@@ -390,6 +391,11 @@ const GroupRocketCreate = () => {
       );
       console.log(`Subscribed to /topic/group/${groupId}/members`);
 
+      if (rocketSendSubRef.current) {
+        // 이미 구독했으면 더 이상 하지 않음
+        return;
+      }
+
       // 로켓 전송 구독
       const rocketSendSub = stompClient.subscribe(
         `/topic/group/${groupId}/send`,
@@ -406,6 +412,7 @@ const GroupRocketCreate = () => {
           }
         }
       );
+      rocketSendSubRef.current = rocketSendSub;
       console.log(`Subscribed to /topic/group/${groupId}/send`);
 
       return () => {
@@ -426,6 +433,7 @@ const GroupRocketCreate = () => {
         console.log(`Unsubscribed from /topic/group/${groupId}/members`);
 
         rocketSendSub.unsubscribe();
+        rocketSendSubRef.current = null;
         console.log(`Unsubscribed from /topic/group/${groupId}/send`);
 
         // 퇴장 메시지 발송
