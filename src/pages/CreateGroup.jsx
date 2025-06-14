@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
 import { handleApiError } from '../utils/errorHandler';
+import { AlertModal } from '../components/common/Modal';
 import styles from '../style/CreateGroup.module.css';
 import {
   BackIcon,
@@ -44,6 +45,27 @@ const CreateGroup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // 모달 상태
+  const [alertModal, setAlertModal] = useState({ 
+    isOpen: false, 
+    message: '', 
+    type: 'default',
+    title: '알림'
+  });
+
+  const showAlert = (message, type = 'default', title = '알림') => {
+    setAlertModal({ 
+      isOpen: true, 
+      message, 
+      type,
+      title 
+    });
+  };
+
+  const closeAlert = () => {
+    setAlertModal({ ...alertModal, isOpen: false });
+  };
+
   // 인증 확인
   React.useEffect(() => {
     if (!isLoggedIn) navigate('/login');
@@ -74,13 +96,13 @@ const CreateGroup = () => {
     if (file) {
       // 파일 크기 체크 (5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('이미지 파일은 5MB 이하만 업로드 가능합니다.');
+        showAlert('이미지 파일은 5MB 이하만 업로드 가능합니다.', 'warning', '파일 크기 초과');
         return;
       }
       
       // 파일 타입 체크
       if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 업로드 가능합니다.');
+        showAlert('이미지 파일만 업로드 가능합니다.', 'warning', '파일 형식 오류');
         return;
       }
       
@@ -186,8 +208,12 @@ const CreateGroup = () => {
       });
       
       console.log('Group created successfully:', response.data);
-      alert('모임이 성공적으로 생성되었습니다!');
-      navigate('/groups');
+      showAlert('모임이 성공적으로 생성되었습니다!', 'success', '생성 완료');
+      
+      // 모달 닫힌 후 페이지 이동
+      setTimeout(() => {
+        navigate('/groups');
+      }, 1500);
       
     } catch (err) {
       console.error('모임 생성 실패:', err);
@@ -195,7 +221,7 @@ const CreateGroup = () => {
       
       // 통합 에러 핸들러 사용
       const errorMessage = err.response?.data?.message || '모임 생성에 실패했습니다.';
-      alert(errorMessage);
+      showAlert(errorMessage, 'danger', '생성 실패');
     } finally {
       setIsLoading(false);
     }
@@ -451,6 +477,16 @@ const CreateGroup = () => {
           </div>
         )}
       </form>
+
+      {/* AlertModal 추가 */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={closeAlert}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        buttonText="확인"
+      />
     </div>
   );
 };

@@ -100,7 +100,7 @@
 .rocket-form input[type="datetime-local"] {
   width: 95.5%;
   padding: 14px 16px;
-  background: var(--input-bg);
+  background: #47487a;
   border: 1px solid var(--input-border);
   border-radius: 12px;
   color: var(--text-white);
@@ -769,7 +769,7 @@
 
 /* 폼 헤더 스타일 개선 */
 .form-header {
-  margin-bottom: 5px;
+  margin: 20px;
   font-weight: bold;
 }
 

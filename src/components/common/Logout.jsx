@@ -1,7 +1,7 @@
-// src/components/common/Logout.jsx
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../authStore";
+import { AlertModal } from '/src/components/common/Modal';
 import axios from "axios";
 
 const Logout = () => {
@@ -10,6 +10,27 @@ const Logout = () => {
   const effectRan = useRef(false);
   const stompClient = useAuthStore((state) => state.stompClient);
   const clearStompClient = useAuthStore((state) => state.clearStompClient);
+
+  const [alertModal, setAlertModal] = useState({ 
+    isOpen: false, 
+    message: '', 
+    type: 'default',
+    title: '알림'
+  });
+
+  const showAlert = (message, type = 'default', title = '알림') => {
+    setAlertModal({ 
+      isOpen: true, 
+      message, 
+      type,
+      title 
+    });
+  };
+
+  const closeAlert = () => {
+    setAlertModal({ ...alertModal, isOpen: false });
+    navigate("/login");
+  };
 
   useEffect(() => {
     // StrictMode 시에도 한 번만 실행되도록 guard
@@ -38,15 +59,25 @@ const Logout = () => {
           console.log("소켓 연결 종료됨 (로그아웃 시)");
         }
         clearStompClient();
-        alert("로그아웃 되었습니다.");
-        navigate("/login");
+        
+        // alert 대신 모달 사용
+        showAlert("로그아웃 되었습니다.", 'success', '로그아웃');
       }
     };
 
     logout();
   }, []); // 빈 배열로, 마운트 시 한 번만 실행
 
-  return null;
+  return (
+    <AlertModal
+      isOpen={alertModal.isOpen}
+      onClose={closeAlert}
+      title={alertModal.title}
+      message={alertModal.message}
+      type={alertModal.type}
+      buttonText="확인"
+    />
+  );
 };
 
 export default Logout;

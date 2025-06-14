@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { fetchUserProfile } from "../utils/profile";
 import DesignSelector, { designs } from "../components/ui/DesignSelector";
+import { AlertModal } from '../components/common/Modal';
 import "../style/RocketCreate.css";
 
 function RocketCreate() {
@@ -18,6 +19,35 @@ function RocketCreate() {
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef(null);
+
+    // 모달 상태 관리 추가
+    const [alertModal, setAlertModal] = useState({ 
+        isOpen: false, 
+        message: '', 
+        type: 'default',
+        title: '알림'
+    });
+
+    const showAlert = (message, type = 'default', title = '알림') => {
+        setAlertModal({ 
+            isOpen: true, 
+            message, 
+            type,
+            title 
+        });
+    };
+
+    const closeAlert = () => {
+        setAlertModal({ ...alertModal, isOpen: false });
+    };
+
+    // 통합된 에러 처리 함수
+    const handleApiError = (err, defaultMessage = '오류가 발생했습니다.') => {
+        console.error('API 오류:', err);
+        
+        const errorMessage = err.response?.data?.message || defaultMessage;
+        showAlert(errorMessage, 'danger');
+    };
 
     // 초기 설정 및 API 호출 함수들
     useEffect(() => {
@@ -70,18 +100,18 @@ function RocketCreate() {
         });
     };
 
-    // API 통신 함수들
+    // API 통신 함수들 - alert를 showAlert로 변경
     const handleTempSave = async () => {
         try {
             if (form.lockExpiredAt && new Date(form.lockExpiredAt) < new Date()) {
-                alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
+                showAlert("잠금 해제일은 현재 시간보다 이후여야 합니다.", 'warning', '입력 오류');
                 return;
             }
             await api.post("rockets/temp-rockets", form);
-            alert("임시 저장되었습니다.");
+            showAlert("임시 저장되었습니다.", 'success', '저장 완료');
         } catch (err) {
             console.error("임시 저장 실패", err);
-            alert(err.response?.data?.message || "임시 저장 중 오류가 발생했습니다.");
+            handleApiError(err, "임시 저장 중 오류가 발생했습니다.");
         }
     };
 
@@ -91,7 +121,7 @@ function RocketCreate() {
             const tempRocket = response.data.data;
             
             if (!tempRocket) {
-                alert("임시저장된 로켓이 없습니다.");
+                showAlert("임시저장된 로켓이 없습니다.", 'warning', '알림');
                 return;
             }
             
@@ -108,37 +138,37 @@ function RocketCreate() {
             const designIndex = designs.findIndex(d => d.imgUrl === tempRocket.design);
             if (designIndex !== -1) setCurrentDesignIdx(designIndex);
             
-            alert("임시저장된 로켓을 불러왔습니다.");
+            showAlert("임시저장된 로켓을 불러왔습니다.", 'success', '불러오기 완료');
         } catch (err) {
             console.error("임시 저장 불러오기 실패", err);
-            alert(err.response?.data?.message || "임시 저장 불러오기 중 오류가 발생했습니다.");
+            handleApiError(err, "임시 저장 불러오기 중 오류가 발생했습니다.");
         }
     };
 
     const validateForm = (checkStep) => {
         if (checkStep === 1 && !form.rocketName) {
-            alert("로켓 이름을 입력해주세요.");
+            showAlert("로켓 이름을 입력해주세요.", 'warning', '입력 오류');
             return false;
         }
         
         if (checkStep === 2) {
             if (!form.lockExpiredAt) {
-                alert("잠금 해제일을 설정해주세요.");
+                showAlert("잠금 해제일을 설정해주세요.", 'warning', '입력 오류');
                 return false;
             }
             
             if (!form.receiverType) {
-                alert("수신자 유형을 선택해주세요.");
+                showAlert("수신자 유형을 선택해주세요.", 'warning', '입력 오류');
                 return false;
             }
             
             if (form.receiverType === "other" && !form.receiverEmail) {
-                alert("수신자 이메일을 입력해주세요.");
+                showAlert("수신자 이메일을 입력해주세요.", 'warning', '입력 오류');
                 return false;
             }
             
             if (new Date(form.lockExpiredAt) < new Date()) {
-                alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
+                showAlert("잠금 해제일은 현재 시간보다 이후여야 합니다.", 'warning', '입력 오류');
                 return false;
             }
         }
@@ -186,11 +216,15 @@ function RocketCreate() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             
-            alert("로켓이 성공적으로 전송되었습니다!");
-            navigate("/");
+            showAlert("로켓이 성공적으로 전송되었습니다!", 'success', '전송 완료');
+            
+            // 모달이 닫힌 후 홈으로 이동
+            setTimeout(() => {
+                navigate("/");
+            }, 1500);
         } catch (err) {
             console.error("로켓 전송 실패", err);
-            alert(`로켓 전송 실패: ${err.response?.data?.message || "서버 오류가 발생했습니다"}`);
+            handleApiError(err, "로켓 전송 중 오류가 발생했습니다.");
         } finally {
             setIsSubmitting(false);
         }
@@ -292,7 +326,7 @@ function RocketCreate() {
                                 </div>
                                 <input
                                     type="email" name="receiverEmail"
-                                    placeholder="수신자 이메일"
+                                    placeholder="수신자 이메일을 입력하세요"
                                     value={form.receiverEmail}
                                     onChange={handleChange}
                                 />
@@ -372,6 +406,16 @@ function RocketCreate() {
                     >&#8594;</button>
                 </div>
             </form>
+
+            {/* AlertModal 추가 */}
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={closeAlert}
+                title={alertModal.title}
+                message={alertModal.message}
+                type={alertModal.type}
+                buttonText="확인"
+            />
         </div>
     );
 }

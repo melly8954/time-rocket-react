@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
+import { AlertModal, ConfirmModal } from '../components/common/Modal';
 import styles from '../style/GroupDetail.module.css';
 import {
   UserIcon,
@@ -50,15 +51,6 @@ const MemberCard = ({ member, isLeader, canKick, onKick }) => {
           </div>
         </div>
       </div>
-
-      {canKick && !member.isKicked && !isLeader && (
-        <button
-          className={styles.kickButton}
-          onClick={() => onKick(member.userId)}
-        >
-          강퇴
-        </button>
-      )}
     </div>
   );
 };
@@ -128,6 +120,57 @@ const GroupDetail = () => {
   const [isLeader, setIsLeader] = useState(false);
   const stompClient = useAuthStore((state) => state.stompClient);
 
+  // 모달 상태
+  const [alertModal, setAlertModal] = useState({ 
+    isOpen: false, 
+    message: '', 
+    type: 'default',
+    title: '알림'
+  });
+
+  const [confirmModal, setConfirmModal] = useState({ 
+    isOpen: false, 
+    message: '', 
+    onConfirm: null 
+  });
+
+  const showAlert = (message, type = 'default', title = '알림') => {
+    setAlertModal({ 
+      isOpen: true, 
+      message, 
+      type,
+      title 
+    });
+  };
+
+  const showConfirm = (message, onConfirm) => {
+    setConfirmModal({ 
+      isOpen: true, 
+      message, 
+      onConfirm 
+    });
+  };
+
+  const closeAlert = () => {
+    setAlertModal({ ...alertModal, isOpen: false });
+  };
+
+  const closeConfirm = () => {
+    setConfirmModal({ ...confirmModal, isOpen: false });
+  };
+
+  // 통합된 에러 처리 함수
+  const handleApiError = (err, defaultMessage = '오류가 발생했습니다.') => {
+    console.error('API 오류:', err);
+    
+    const errorMessage = err.response?.data?.message || defaultMessage;
+    showAlert(errorMessage, 'danger', '오류');
+    
+    if (err.response?.status === 401) {
+      setTimeout(() => navigate('/login'), 2000);
+    }
+  };
+
   // 인증 확인
   useEffect(() => {
     if (!isLoggedIn) navigate('/login');
@@ -157,7 +200,8 @@ const GroupDetail = () => {
       if (err.response?.status === 404) {
         setError('존재하지 않는 모임입니다.');
       } else {
-        setError('모임 정보를 불러오는데 실패했습니다.');
+        const errorMessage = err.response?.data?.message || '모임 정보를 불러오는데 실패했습니다.';
+        setError(errorMessage);
       }
     } finally {
       setIsLoading(false);
@@ -211,10 +255,10 @@ const GroupDetail = () => {
         });
       }
 
-      alert('모임에 성공적으로 참가했습니다!');
+      showAlert('모임에 성공적으로 참가했습니다!', 'success', '참가 완료');
     } catch (err) {
       console.error('그룹 참가 실패:', err);
-      alert(err.response.data.message);
+      handleApiError(err, '모임 참가에 실패했습니다.');
     } finally {
       setIsJoining(false);
     }
@@ -222,50 +266,56 @@ const GroupDetail = () => {
 
   // 그룹 퇴장
   const handleLeaveGroup = useCallback(async () => {
-    if (!window.confirm('정말로 이 모임을 떠나시겠습니까?')) return;
+    showConfirm(
+      '정말로 이 모임을 떠나시겠습니까?',
+      async () => {
+        try {
+          setIsLeaving(true);
 
-    try {
-      setIsLeaving(true);
+          await api.delete(`/groups/${groupId}/members/me`);
 
-      await api.delete(`/groups/${groupId}/members/me`);
+          setIsMember(false);
 
-      setIsMember(false);
+          // 데이터 새로고침
+          await fetchGroupDetail();
+          await fetchGroupMembers();
 
-      // 데이터 새로고침
-      await fetchGroupDetail();
-      await fetchGroupMembers();
+          if (stompClient && stompClient.connected) {
+            stompClient.publish({
+              destination: `/app/group/${groupId}/leave_member`,
+              body: '', // 서버에서 principal 통해 userId 추출하면 body 없어도 됨
+            });
+          }
 
-      if (stompClient && stompClient.connected) {
-        stompClient.publish({
-          destination: `/app/group/${groupId}/leave_member`,
-          body: '', // 서버에서 principal 통해 userId 추출하면 body 없어도 됨
-        });
+          showAlert('모임을 성공적으로 떠났습니다.', 'success', '퇴장 완료');
+        } catch (err) {
+          console.error('그룹 퇴장 실패:', err);
+          handleApiError(err, '모임 퇴장에 실패했습니다.');
+        } finally {
+          setIsLeaving(false);
+        }
       }
-
-      alert('모임을 성공적으로 떠났습니다.');
-    } catch (err) {
-      console.error('그룹 퇴장 실패:', err);
-      alert('모임 퇴장에 실패했습니다.');
-    } finally {
-      setIsLeaving(false);
-    }
+    );
   }, [groupId, fetchGroupDetail, fetchGroupMembers]);
 
   // 멤버 강퇴
   const handleKickMember = useCallback(async (memberId) => {
-    if (!window.confirm('정말로 이 멤버를 강퇴하시겠습니까?')) return;
+    showConfirm(
+      '정말로 이 멤버를 강퇴하시겠습니까?',
+      async () => {
+        try {
+          await api.patch(`/groups/${groupId}/members/${memberId}`);
 
-    try {
-      await api.patch(`/groups/${groupId}/members/${memberId}`);
+          // 멤버 목록 새로고침
+          await fetchGroupMembers();
 
-      // 멤버 목록 새로고침
-      await fetchGroupMembers();
-
-      alert('멤버가 성공적으로 강퇴되었습니다.');
-    } catch (err) {
-      console.error('멤버 강퇴 실패:', err);
-      alert('멤버 강퇴에 실패했습니다.');
-    }
+          showAlert('멤버가 성공적으로 강퇴되었습니다.', 'success', '강퇴 완료');
+        } catch (err) {
+          console.error('멤버 강퇴 실패:', err);
+          handleApiError(err, '멤버 강퇴에 실패했습니다.');
+        }
+      }
+    );
   }, [groupId, fetchGroupMembers]);
 
   // 참가 버튼 클릭
@@ -288,8 +338,8 @@ const GroupDetail = () => {
       const currentUser = members.find(member => member.userId === userId);
 
       if (!currentUser) {
-        alert('당신은 이 모임에 참여하고 있지 않습니다.');
-        navigate('/groups');
+        showAlert('당신은 이 모임에 참여하고 있지 않습니다.', 'warning', '참가 필요');
+        setTimeout(() => navigate('/groups'), 2000);
         return;
       }
 
@@ -298,7 +348,7 @@ const GroupDetail = () => {
 
     } catch (err) {
       console.error('참가 상태 확인 실패:', err);
-      alert('참가 가능 여부 확인 중 오류가 발생했습니다.');
+      handleApiError(err, '참가 가능 여부 확인 중 오류가 발생했습니다.');
     }
   }, [navigate, groupId, userId]);
 
@@ -456,6 +506,26 @@ const GroupDetail = () => {
         onClose={() => setShowPasswordModal(false)}
         onSubmit={handleJoinGroup}
         isLoading={isJoining}
+      />
+
+      {/* 모달들 */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={closeAlert}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        buttonText="확인"
+      />
+      
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        confirmText="확인"
+        cancelText="취소"
+        type="danger"
       />
     </div>
   );

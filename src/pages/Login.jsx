@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useAuthStore from "../authStore"; // zustand store 가져오기
 import axios from "axios";
 import { handleApiError } from '../utils/errorHandler';
+import { AlertModal } from '../components/common/Modal';
 import SocialLoginButtons from "../components/ui/SocialLoginButtons";
 import styles from '../style/Login.module.css'; // 스타일 적용
 import { connectSocket } from "../utils/socket";
@@ -12,6 +13,35 @@ const Login = () => {
   const { isLoggedIn, setIsLoggedIn, setAccessToken, rememberMe, setRememberMe, setUserId, setNickname } = useAuthStore(); // 상태 업데이트 함수 가져오기
   const [userData, setUserData] = useState({ username: "", password: "" });
   const setStompClient = useAuthStore((state) => state.setStompClient);
+
+  // 모달 상태
+  const [alertModal, setAlertModal] = useState({ 
+    isOpen: false, 
+    message: '', 
+    type: 'default',
+    title: '알림'
+  });
+
+  const showAlert = (message, type = 'default', title = '알림') => {
+    setAlertModal({ 
+      isOpen: true, 
+      message, 
+      type,
+      title 
+    });
+  };
+
+  const closeAlert = () => {
+    setAlertModal({ ...alertModal, isOpen: false });
+  };
+
+  // 통합된 에러 처리 함수
+  const handleApiError = (err, defaultMessage = '오류가 발생했습니다.') => {
+    console.error('API 오류:', err);
+    
+    const errorMessage = err.response?.data?.message || defaultMessage;
+    showAlert(errorMessage, 'danger', '로그인 실패');
+  };
 
   const handleSignupPage = () => {  // 화살표 함수로 정의
     navigate("/signup");
@@ -23,6 +53,16 @@ const Login = () => {
   };
 
   const handleLoginBtn = async () => {
+    if (!userData.username.trim()) {
+      showAlert('이메일 또는 사용자 닉네임을 입력해주세요.', 'warning', '입력 오류');
+      return;
+    }
+
+    if (!userData.password.trim()) {
+      showAlert('비밀번호를 입력해주세요.', 'warning', '입력 오류');
+      return;
+    }
+
     const formData = new FormData();
     formData.append("username", userData.username);
     formData.append("password", userData.password);
@@ -49,15 +89,26 @@ const Login = () => {
       // 로그인 성공 후 소켓 연결
       connectSocket(accessToken);
 
-      alert("로그인 성공!");
-      navigate("/");
+      showAlert("로그인에 성공했습니다!", 'success', '로그인 성공');
+      
+      // 모달이 닫힌 후 홈으로 이동
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
     } catch (err) {
-      handleApiError(err, '로그인에 실패했습니다.', navigate);
+      handleApiError(err, '로그인에 실패했습니다.');
     }
   };
 
   const navigatePasswordReset = () => {  // 화살표 함수로 정의
     navigate("/password-reset");
+  };
+
+  // Enter 키 처리
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleLoginBtn();
+    }
   };
 
   useEffect(() => {
@@ -78,6 +129,8 @@ const Login = () => {
           id="username"
           value={userData.username}
           onChange={handleLoginInput}
+          onKeyPress={handleKeyPress}
+          placeholder="이메일 또는 닉네임을 입력하세요"
         />
 
         <label htmlFor="password">비밀번호</label>
@@ -87,6 +140,8 @@ const Login = () => {
           id="password"
           value={userData.password}
           onChange={handleLoginInput}
+          onKeyPress={handleKeyPress}
+          placeholder="비밀번호를 입력하세요"
         />
 
         <label>
@@ -113,6 +168,16 @@ const Login = () => {
         <h2>소셜 로그인</h2>
         <SocialLoginButtons />
       </div>
+
+      {/* AlertModal 추가 */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={closeAlert}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        buttonText="확인"
+      />
     </div>
   );
 };
