@@ -100,19 +100,7 @@ const SignUp = () => {
             alert("회원가입 성공!");
             navigate('/');
         } catch (err) {
-            console.log(err);
-            if (err.response) {
-                const statusCode = err.response.status;
-                if (statusCode === 400) {
-                    alert("400 Error: 잘못된 요청입니다.");
-                } else if (statusCode === 500) {
-                    alert("500 Error: 서버에서 문제가 발생했습니다.");
-                } else {
-                    alert(`알 수 없는 오류 발생: ${statusCode}`);
-                }
-            } else {
-                alert("네트워크 오류 또는 요청을 처리할 수 없습니다.");
-            }
+            alert(err.response.data.message);
         }
     };
 
