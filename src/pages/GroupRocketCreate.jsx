@@ -55,7 +55,6 @@ const GroupRocketCreate = () => {
   const stompClient = useAuthStore((state) => state.stompClient);
   const subscriptionRef = useRef(null);
   const rocketSendSubRef = useRef(null);
-  const [showScrollButton, setShowScrollButton] = useState(false);
 
   // 로켓 컨텐츠 준비 state
   const [textContent, setTextContent] = useState('');
@@ -142,14 +141,6 @@ const GroupRocketCreate = () => {
     if (container) {
       container.scrollTop = container.scrollHeight;
     }
-  };
-
-  const checkScrollButton = () => {
-    const container = messageContainerRef.current;
-    if (!container) return;
-    
-    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-    setShowScrollButton(!isAtBottom && messages.length > 0);
   };
 
   // 인증 및 그룹 정보 확인
@@ -262,20 +253,28 @@ const GroupRocketCreate = () => {
 
   // 파일 선택 핸들러
   const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
+    const newSelectedFiles = Array.from(e.target.files);
 
-    if (selectedFiles.length > 5) {
-      showAlert('최대 5개의 파일만 업로드 가능합니다.', 'warning', '파일 업로드');
+    // 중복 제거: 현재 files 상태값에 없는 파일만 필터링
+    const uniqueNewFiles = newSelectedFiles.filter(newFile => {
+      return !files.some(existingFile => existingFile.name === newFile.name);
+    });
+
+    // 전체 합친 리스트
+    const totalFiles = [...files, ...uniqueNewFiles];
+
+    if (totalFiles.length > 5) {
+      alert('최대 5개의 파일만 업로드 가능합니다.');
       return;
     }
 
-    const oversizedFiles = selectedFiles.filter(file => file.size > 10 * 1024 * 1024);
+    const oversizedFiles = uniqueNewFiles.filter(file => file.size > 10 * 1024 * 1024);
     if (oversizedFiles.length > 0) {
       showAlert('각 파일은 10MB 이하여야 합니다.', 'warning', '파일 크기 초과');
       return;
     }
 
-    setFiles(selectedFiles);
+    setFiles(totalFiles);
   };
 
   // 파일 제거
@@ -500,10 +499,10 @@ const GroupRocketCreate = () => {
       );
       console.log(`Subscribed to /topic/group/${groupId}/members`);
 
-        if (rocketSendSubRef.current) {
-          // 이미 구독했으면 더 이상 하지 않음
-          return;
-        }
+      if (rocketSendSubRef.current) {
+        // 이미 구독했으면 더 이상 하지 않음
+        return;
+      }
 
       // 로켓 전송 구독
       const rocketSendSub = stompClient.subscribe(
@@ -590,8 +589,6 @@ const GroupRocketCreate = () => {
     const container = messageContainerRef.current;
     if (!container) return;
 
-    checkScrollButton();
-
     if (container.scrollTop <= 50 && messages.length > 0 && hasMore && !loading) {
       const firstMessageId = messages[0]?.chatMessageId || Number.MAX_SAFE_INTEGER;
       const prevScrollHeight = container.scrollHeight;
@@ -648,15 +645,14 @@ const GroupRocketCreate = () => {
   };
 
   const handleSubmit = async () => {
-    // 메시지 또는 파일 중 하나는 필수
-    if (!formData.content.trim() && files.length === 0) {
-      showAlert('메시지를 작성하거나 파일을 첨부해주세요. (둘 중 하나는 필수)', 'warning', '내용 입력 필요');
+    if (!formData.content.trim()) {
+      alert('메시지를 작성해주세요.');
       return;
     }
 
     const form = new FormData();
     const requestData = {
-      content: formData.content.trim() || '', // trim() 추가
+      content: formData.content,
     };
 
     const jsonBlob = new Blob([JSON.stringify(requestData)], {
@@ -665,12 +661,9 @@ const GroupRocketCreate = () => {
 
     form.append('data', jsonBlob);
 
-    // 파일이 있을 때만 추가
-    if (files.length > 0) {
-      files.forEach((file) => {
-        form.append('files', file);
-      });
-    }
+    files.forEach((file) => {
+      form.append('files', file);
+    });
 
     try {
       const response = await api.post(`/groups/${groupId}/rockets/contents`, form, {
@@ -679,7 +672,7 @@ const GroupRocketCreate = () => {
         },
       });
 
-      showAlert('모임 로켓 컨텐츠를 성공적으로 저장했습니다!', 'success', '저장 완료');
+      alert('모임 로켓 메시지를 성공적으로 저장했습니다!');
       console.log(response.data);
 
       // 저장 후 초기화
@@ -696,20 +689,23 @@ const GroupRocketCreate = () => {
         }),
       });
     } catch (error) {
-      console.error('저장 에러:', error);
-      handleApiError(error, '저장 중 오류가 발생했습니다.');
+      alert('저장 중 오류가 발생했습니다.');
+      console.error(error);
     }
   };
 
   const handleCancelReady = async () => {
     try {
-      await api.patch(`/groups/${groupId}/readyStatus`, { 
-        isReady: false, 
-        currentRound: currentRound 
+      // 백엔드 API에 맞춰서 수정
+      await api.patch(`/groups/${groupId}/readyStatus`, {
+        isReady: false,
+        currentRound: currentRound
       });
-      
-      setIsReady(false);
 
+      setIsReady(false);
+      setFiles([]);
+
+      // 준비 취소 pub 메시지 전송
       stompClient.publish({
         destination: `/app/group/${groupId}/readyStatus`,
         body: JSON.stringify({
@@ -719,9 +715,10 @@ const GroupRocketCreate = () => {
         }),
       });
 
-      showAlert('컨텐츠 준비를 취소했습니다.', 'success', '준비 취소');
+      alert(`컨텐츠 준비를 취소했습니다.`);
     } catch (error) {
-      handleApiError(error, '준비 상태 변경 중 오류가 발생했습니다.');
+      alert('준비 상태 변경 중 오류가 발생했습니다.');
+      console.error(error);
     }
   };
 
@@ -821,6 +818,7 @@ const GroupRocketCreate = () => {
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
+                  onClick={(e) => (e.target.value = null)} // 클릭 시 이전 선택 초기화
                   className={styles.hiddenFileInput}
                   multiple
                   accept="image/*,video/*,.pdf,.doc,.docx"
@@ -1163,27 +1161,27 @@ const GroupRocketCreate = () => {
 
                   // 스타일 결정
                   let messageStyle = { ...sstyles.message };
-                  
+
                   if (isEnterOrExitMessage || isEnterMessage || isExitMessage) {
                     // 시스템 메시지 (입장/퇴장)
                     messageStyle = {
                       ...messageStyle,
                       alignSelf: 'center',
-                      background: isEnterMessage 
+                      background: isEnterMessage
                         ? 'linear-gradient(135deg, rgba(46, 213, 115, 0.15) 0%, rgba(0, 206, 201, 0.15) 100%)'
                         : isExitMessage
-                        ? 'linear-gradient(135deg, rgba(255, 71, 87, 0.15) 0%, rgba(255, 99, 71, 0.15) 100%)'
-                        : 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 140, 0, 0.15) 50%, rgba(255, 69, 0, 0.15) 100%)',
+                          ? 'linear-gradient(135deg, rgba(255, 71, 87, 0.15) 0%, rgba(255, 99, 71, 0.15) 100%)'
+                          : 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 140, 0, 0.15) 50%, rgba(255, 69, 0, 0.15) 100%)',
                       border: isEnterMessage
                         ? '2px solid rgba(46, 213, 115, 0.5)'
                         : isExitMessage
-                        ? '2px solid rgba(255, 71, 87, 0.5)'
-                        : '2px solid rgba(255, 215, 0, 0.4)',
+                          ? '2px solid rgba(255, 71, 87, 0.5)'
+                          : '2px solid rgba(255, 215, 0, 0.4)',
                       color: isEnterMessage
                         ? '#2ed573'
                         : isExitMessage
-                        ? '#ff4757'
-                        : '#ffd700',
+                          ? '#ff4757'
+                          : '#ffd700',
                       textAlign: 'center',
                       fontWeight: '600',
                       fontFamily: "'Space Grotesk', sans-serif",
@@ -1193,13 +1191,13 @@ const GroupRocketCreate = () => {
                       textShadow: isEnterMessage
                         ? '0 0 10px rgba(46, 213, 115, 0.5)'
                         : isExitMessage
-                        ? '0 0 10px rgba(255, 71, 87, 0.5)'
-                        : '0 0 10px rgba(255, 215, 0, 0.5)',
+                          ? '0 0 10px rgba(255, 71, 87, 0.5)'
+                          : '0 0 10px rgba(255, 215, 0, 0.5)',
                       boxShadow: isEnterMessage
                         ? '0 4px 20px rgba(46, 213, 115, 0.2)'
                         : isExitMessage
-                        ? '0 4px 20px rgba(255, 71, 87, 0.2)'
-                        : '0 4px 20px rgba(255, 215, 0, 0.2)',
+                          ? '0 4px 20px rgba(255, 71, 87, 0.2)'
+                          : '0 4px 20px rgba(255, 215, 0, 0.2)',
                       maxWidth: '90%',
                       fontStyle: 'italic',
                     };
@@ -1236,11 +1234,11 @@ const GroupRocketCreate = () => {
                       onMouseEnter={(e) => {
                         if (!isEnterOrExitMessage && !isEnterMessage && !isExitMessage) {
                           e.target.style.transform = 'translateY(-1px)';
-                          e.target.style.boxShadow = isMine 
+                          e.target.style.boxShadow = isMine
                             ? '0 6px 25px rgba(79, 172, 254, 0.3)'
                             : '0 6px 20px rgba(0, 0, 0, 0.3)';
                         }
-                      }}
+                            }}
                       onMouseLeave={(e) => {
                         if (!isEnterOrExitMessage && !isEnterMessage && !isExitMessage) {
                           e.target.style.transform = 'translateY(0)';
@@ -1256,7 +1254,7 @@ const GroupRocketCreate = () => {
                             {isEnterMessage ? '🚀' : isExitMessage ? '👋' : '📢'}
                           </span>
                           <span style={{ fontWeight: '600' }}>
-                            {isEnterOrExitMessage 
+                            {isEnterOrExitMessage
                               ? `${msg.nickname}님이 입장하셨습니다.`
                               : msg.message
                             }
@@ -1265,8 +1263,8 @@ const GroupRocketCreate = () => {
                       ) : (
                         <>
                           <div style={sstyles.header}>
-                            <strong style={{ 
-                              color: isMine ? '#00d4ff' : '#a0aec0', 
+                            <strong style={{
+                              color: isMine ? '#00d4ff' : '#a0aec0',
                               textShadow: isMine ? '0 0 8px rgba(0, 212, 255, 0.4)' : 'none',
                               fontFamily: "'Space Grotesk', sans-serif",
                               fontWeight: '600'
@@ -1280,9 +1278,9 @@ const GroupRocketCreate = () => {
                               </span>
                             )}
                           </div>
-                          <div style={{ 
-                            fontSize: '14px', 
-                            lineHeight: '1.4', 
+                          <div style={{
+                            fontSize: '14px',
+                            lineHeight: '1.4',
                             wordWrap: 'break-word',
                             fontFamily: "'Inter', sans-serif"
                           }}>
@@ -1296,34 +1294,8 @@ const GroupRocketCreate = () => {
                 <div ref={messageEndRef} />
               </div>
 
-              {showScrollButton && (
-                <button
-                  onClick={scrollToBottom}
-                  style={{
-                    position: 'absolute',
-                    bottom: '80px',
-                    right: '30px',
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #4facfe 0%, #9333ea 100%)',
-                    border: 'none',
-                    color: 'white',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 15px rgba(79, 172, 254, 0.3)',
-                    zIndex: 10,
-                    fontSize: '18px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  ⬇️
-                </button>
-              )}
-
-              <form 
-                onSubmit={handleSendMessage} 
+              <form
+                onSubmit={handleSendMessage}
                 style={sstyles.inputForm}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = 'rgba(79, 172, 254, 0.6)';
@@ -1349,8 +1321,8 @@ const GroupRocketCreate = () => {
                     }
                   }}
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   style={{
                     ...sstyles.button,
                     ...(newMessage.trim() ? {} : {
@@ -1447,7 +1419,7 @@ const sstyles = {
     position: 'relative',
     overflow: 'hidden',
   },
-  
+
   chatBox: {
     border: '2px solid rgba(79, 172, 254, 0.4)',
     borderRadius: '15px',
@@ -1457,7 +1429,7 @@ const sstyles = {
     boxShadow: 'inset 0 0 30px rgba(79, 172, 254, 0.1)',
     position: 'relative',
   },
-  
+
   messages: {
     height: '300px',
     overflowY: 'auto',
@@ -1469,7 +1441,7 @@ const sstyles = {
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(79, 172, 254, 0.6) rgba(0, 0, 0, 0.2)',
   },
-  
+
   message: {
     padding: '12px 16px',
     borderRadius: '15px',
@@ -1485,7 +1457,7 @@ const sstyles = {
     border: '1px solid rgba(255, 255, 255, 0.1)',
     cursor: 'pointer',
   },
-  
+
   inputForm: {
     display: 'flex',
     gap: '12px',
@@ -1497,7 +1469,7 @@ const sstyles = {
     transition: 'all 0.3s ease',
     backdropFilter: 'blur(10px)',
   },
-  
+
   input: {
     flex: 1,
     border: 'none',
@@ -1510,7 +1482,7 @@ const sstyles = {
     fontWeight: '400',
     letterSpacing: '-0.01em',
   },
-  
+
   button: {
     padding: '10px 16px',
     borderRadius: '15px',
@@ -1526,7 +1498,7 @@ const sstyles = {
     textShadow: '0 0 8px rgba(255, 255, 255, 0.3)',
     letterSpacing: '-0.02em',
   },
-  
+
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -1534,14 +1506,15 @@ const sstyles = {
     marginBottom: '4px',
     fontSize: '12px',
   },
-  
+
   timestamp: {
     color: 'rgba(160, 174, 192, 0.8)',
     fontSize: '11px',
     fontFamily: "'JetBrains Mono', monospace",
     letterSpacing: '0.02em',
   },
-  
+
+  // 제목 스타일
   h2: {
     fontSize: '1.3rem',
     fontWeight: '600',
