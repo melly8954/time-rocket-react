@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
+import debounce from 'lodash/debounce';
 import styles from '../style/GroupRocketCreate.module.css';
 import {
   BackIcon,
@@ -147,27 +148,17 @@ const GroupRocketCreate = () => {
     return members.every((member) => member.isReady);
   };
 
-  // 완료된 멤버 수 계산 (안전하게)
-  const getCompleteCount = () => {
-    if (!Array.isArray(members)) {
-      return 0;
-    }
-    return members.filter(member => member.status === 'COMPLETE').length;
-  };
-
   // 입력값 변경 핸들러
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const updated = { ...formData, [name]: value };
+    setFormData(updated);
 
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+    if (isOwner) {
+      broadcastRocketConfig({
+        ...updated,
+        rocketName: updated.rocketName.trim(),
+      });
     }
   };
 
@@ -194,6 +185,20 @@ const GroupRocketCreate = () => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  // 방장이 설정 바꿀 때마다 publish
+  const broadcastRocketConfig = debounce((config) => {
+    if (!stompClient || !isOwner) return;
+
+    stompClient.publish({
+      destination: `/app/group/${groupId}/rocket-config`,
+      body: JSON.stringify({
+        ...config,
+        senderId: userId,
+      }),
+    });
+  }, 500); // 500ms 딜레이
+
+  // 모임 로켓 전송
   const handleRocketSubmit = async (e) => {
     e.preventDefault();
 
@@ -400,6 +405,21 @@ const GroupRocketCreate = () => {
       );
       console.log(`Subscribed to /topic/group/${groupId}/send`);
 
+      // 로켓 설정 실시간 반영 구독
+      const rocketConfigSub = stompClient.subscribe(
+        `/topic/group/${groupId}/rocket-config`,
+        (message) => {
+          const data = JSON.parse(message.body);
+          console.log('로켓 설정 업데이트 수신:', data);
+
+          // 방장이 보낸 메시지면 무시 (자기 자신)
+          if (data.senderId && data.senderId === userId) return;
+
+          setFormData((prev) => ({ ...prev, ...data }));
+        }
+      );
+      console.log(`Subscribed to /topic/group/${groupId}/rocket-config`);
+
       return () => {
         // 구독 해제
         subscriptionRef.current?.unsubscribe();
@@ -419,6 +439,9 @@ const GroupRocketCreate = () => {
 
         rocketSendSub.unsubscribe();
         console.log(`Unsubscribed from /topic/group/${groupId}/send`);
+
+        rocketConfigSub.unsubscribe();
+        console.log(`Unsubscribed from /topic/group/${groupId}/rocket-config`);
 
         // 퇴장 메시지 발송
         stompClient.publish({
@@ -505,82 +528,82 @@ const GroupRocketCreate = () => {
     return `${paddedMonth}월 ${paddedDay}일 ${period} ${displayHour}:${paddedMinute}`;
   };
 
-const handleSubmit = async () => {
-  if (!formData.content.trim()) {
-    alert('메시지를 작성해주세요.');
-    return;
-  }
+  const handleSubmit = async () => {
+    if (!formData.content.trim()) {
+      alert('메시지를 작성해주세요.');
+      return;
+    }
 
-  const form = new FormData();
-  const requestData = {
-    content: formData.content,
+    const form = new FormData();
+    const requestData = {
+      content: formData.content,
+    };
+
+    const jsonBlob = new Blob([JSON.stringify(requestData)], {
+      type: 'application/json',
+    });
+
+    form.append('data', jsonBlob);
+
+    files.forEach((file) => {
+      form.append('files', file);
+    });
+
+    try {
+      const response = await api.post(`/groups/${groupId}/rockets/contents`, form, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      alert('모임 로켓 메시지를 성공적으로 저장했습니다!');
+      console.log(response.data);
+
+      // 저장 후 초기화
+      setFormData({ content: '' });
+      setFiles([]);
+
+      // 퍼블리시 준비 상태 전송
+      stompClient.publish({
+        destination: `/app/group/${groupId}/readyStatus`,
+        body: JSON.stringify({
+          groupId: groupId,
+          currentRound: currentRound,
+          isReady: true,
+        }),
+      });
+    } catch (error) {
+      alert('저장 중 오류가 발생했습니다.');
+      console.error(error);
+    }
   };
 
-  const jsonBlob = new Blob([JSON.stringify(requestData)], {
-    type: 'application/json',
-  });
-
-  form.append('data', jsonBlob);
-
-  files.forEach((file) => {
-    form.append('files', file);
-  });
-
-  try {
-    const response = await api.post(`/groups/${groupId}/rockets/contents`, form, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    alert('모임 로켓 메시지를 성공적으로 저장했습니다!');
-    console.log(response.data);
-
-    // 저장 후 초기화
-    setFormData({ content: '' });
-    setFiles([]);
-
-    // 퍼블리시 준비 상태 전송
-    stompClient.publish({
-      destination: `/app/group/${groupId}/readyStatus`,
-      body: JSON.stringify({
-        groupId: groupId,
-        currentRound: currentRound,
-        isReady: true,
-      }),
-    });
-  } catch (error) {
-    alert('저장 중 오류가 발생했습니다.');
-    console.error(error);
-  }
-};
-
-const handleCancelReady = async () => {
-  try {
-    // 백엔드 API에 맞춰서 수정
-    await api.patch(`/groups/${groupId}/readyStatus`, { 
-      isReady: false, 
-      currentRound: currentRound 
-    });
-    
-    setIsReady(false);
-
-    // 준비 취소 pub 메시지 전송
-    stompClient.publish({
-      destination: `/app/group/${groupId}/readyStatus`,
-      body: JSON.stringify({
-        groupId: groupId,
-        currentRound: currentRound,
+  const handleCancelReady = async () => {
+    try {
+      // 백엔드 API에 맞춰서 수정
+      await api.patch(`/groups/${groupId}/readyStatus`, {
         isReady: false,
-      }),
-    });
+        currentRound: currentRound
+      });
 
-    alert(`컨텐츠 준비를 취소했습니다.`);
-  } catch (error) {
-    alert('준비 상태 변경 중 오류가 발생했습니다.');
-    console.error(error);
-  }
-};
+      setIsReady(false);
+
+      // 준비 취소 pub 메시지 전송
+      stompClient.publish({
+        destination: `/app/group/${groupId}/readyStatus`,
+        body: JSON.stringify({
+          groupId: groupId,
+          currentRound: currentRound,
+          isReady: false,
+        }),
+      });
+
+      alert(`컨텐츠 준비를 취소했습니다.`);
+    } catch (error) {
+      alert('준비 상태 변경 중 오류가 발생했습니다.');
+      console.error(error);
+    }
+  };
 
   // 참여자 강퇴(리더전용)
   const handleKick = (targetUserId) => {
@@ -844,7 +867,14 @@ const handleCancelReady = async () => {
                       <div
                         key={design.value}
                         className={`${styles.designOption} ${formData.design === design.value ? styles.selected : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, design: design.value }))}
+                        onClick={() => {
+                          const updated = { ...formData, design: design.value };
+                          setFormData(updated);
+
+                          if (isOwner) {
+                            broadcastRocketConfig(updated);
+                          }
+                        }}
                       >
                         <div className={styles.designImageWrapper}>
                           <img
@@ -915,27 +945,27 @@ const handleCancelReady = async () => {
 
                   // 스타일 결정
                   let messageStyle = { ...sstyles.message };
-                  
+
                   if (isEnterOrExitMessage || isEnterMessage || isExitMessage) {
                     // 시스템 메시지 (입장/퇴장)
                     messageStyle = {
                       ...messageStyle,
                       alignSelf: 'center',
-                      background: isEnterMessage 
+                      background: isEnterMessage
                         ? 'linear-gradient(135deg, rgba(46, 213, 115, 0.15) 0%, rgba(0, 206, 201, 0.15) 100%)'
                         : isExitMessage
-                        ? 'linear-gradient(135deg, rgba(255, 71, 87, 0.15) 0%, rgba(255, 99, 71, 0.15) 100%)'
-                        : 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 140, 0, 0.15) 50%, rgba(255, 69, 0, 0.15) 100%)',
+                          ? 'linear-gradient(135deg, rgba(255, 71, 87, 0.15) 0%, rgba(255, 99, 71, 0.15) 100%)'
+                          : 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 140, 0, 0.15) 50%, rgba(255, 69, 0, 0.15) 100%)',
                       border: isEnterMessage
                         ? '2px solid rgba(46, 213, 115, 0.5)'
                         : isExitMessage
-                        ? '2px solid rgba(255, 71, 87, 0.5)'
-                        : '2px solid rgba(255, 215, 0, 0.4)',
+                          ? '2px solid rgba(255, 71, 87, 0.5)'
+                          : '2px solid rgba(255, 215, 0, 0.4)',
                       color: isEnterMessage
                         ? '#2ed573'
                         : isExitMessage
-                        ? '#ff4757'
-                        : '#ffd700',
+                          ? '#ff4757'
+                          : '#ffd700',
                       textAlign: 'center',
                       fontWeight: '600',
                       fontFamily: "'Space Grotesk', sans-serif",
@@ -945,13 +975,13 @@ const handleCancelReady = async () => {
                       textShadow: isEnterMessage
                         ? '0 0 10px rgba(46, 213, 115, 0.5)'
                         : isExitMessage
-                        ? '0 0 10px rgba(255, 71, 87, 0.5)'
-                        : '0 0 10px rgba(255, 215, 0, 0.5)',
+                          ? '0 0 10px rgba(255, 71, 87, 0.5)'
+                          : '0 0 10px rgba(255, 215, 0, 0.5)',
                       boxShadow: isEnterMessage
                         ? '0 4px 20px rgba(46, 213, 115, 0.2)'
                         : isExitMessage
-                        ? '0 4px 20px rgba(255, 71, 87, 0.2)'
-                        : '0 4px 20px rgba(255, 215, 0, 0.2)',
+                          ? '0 4px 20px rgba(255, 71, 87, 0.2)'
+                          : '0 4px 20px rgba(255, 215, 0, 0.2)',
                       maxWidth: '90%',
                       fontStyle: 'italic',
                     };
@@ -988,7 +1018,7 @@ const handleCancelReady = async () => {
                       onMouseEnter={(e) => {
                         if (!isEnterOrExitMessage && !isEnterMessage && !isExitMessage) {
                           e.target.style.transform = 'translateY(-1px)';
-                          e.target.style.boxShadow = isMine 
+                          e.target.style.boxShadow = isMine
                             ? '0 6px 25px rgba(79, 172, 254, 0.3)'
                             : '0 6px 20px rgba(0, 0, 0, 0.3)';
                         }
@@ -1008,7 +1038,7 @@ const handleCancelReady = async () => {
                             {isEnterMessage ? '🚀' : isExitMessage ? '👋' : '📢'}
                           </span>
                           <span style={{ fontWeight: '600' }}>
-                            {isEnterOrExitMessage 
+                            {isEnterOrExitMessage
                               ? `${msg.nickname}님이 입장하셨습니다.`
                               : msg.message
                             }
@@ -1017,8 +1047,8 @@ const handleCancelReady = async () => {
                       ) : (
                         <>
                           <div style={sstyles.header}>
-                            <strong style={{ 
-                              color: isMine ? '#00d4ff' : '#a0aec0', 
+                            <strong style={{
+                              color: isMine ? '#00d4ff' : '#a0aec0',
                               textShadow: isMine ? '0 0 8px rgba(0, 212, 255, 0.4)' : 'none',
                               fontFamily: "'Space Grotesk', sans-serif",
                               fontWeight: '600'
@@ -1032,9 +1062,9 @@ const handleCancelReady = async () => {
                               </span>
                             )}
                           </div>
-                          <div style={{ 
-                            fontSize: '14px', 
-                            lineHeight: '1.4', 
+                          <div style={{
+                            fontSize: '14px',
+                            lineHeight: '1.4',
                             wordWrap: 'break-word',
                             fontFamily: "'Inter', sans-serif"
                           }}>
@@ -1048,8 +1078,8 @@ const handleCancelReady = async () => {
                 <div ref={messageEndRef} />
               </div>
 
-              <form 
-                onSubmit={handleSendMessage} 
+              <form
+                onSubmit={handleSendMessage}
                 style={sstyles.inputForm}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = 'rgba(79, 172, 254, 0.6)';
@@ -1075,8 +1105,8 @@ const handleCancelReady = async () => {
                     }
                   }}
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   style={{
                     ...sstyles.button,
                     ...(newMessage.trim() ? {} : {
@@ -1153,7 +1183,7 @@ const sstyles = {
     position: 'relative',
     overflow: 'hidden',
   },
-  
+
   chatBox: {
     border: '2px solid rgba(79, 172, 254, 0.4)',
     borderRadius: '15px',
@@ -1162,7 +1192,7 @@ const sstyles = {
     backdropFilter: 'blur(15px)',
     boxShadow: 'inset 0 0 30px rgba(79, 172, 254, 0.1)',
   },
-  
+
   messages: {
     height: '300px',
     overflowY: 'auto',
@@ -1175,7 +1205,7 @@ const sstyles = {
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(79, 172, 254, 0.6) rgba(0, 0, 0, 0.2)',
   },
-  
+
   message: {
     padding: '12px 16px',
     borderRadius: '15px',
@@ -1191,7 +1221,7 @@ const sstyles = {
     border: '1px solid rgba(255, 255, 255, 0.1)',
     cursor: 'pointer',
   },
-  
+
   inputForm: {
     display: 'flex',
     gap: '12px',
@@ -1203,7 +1233,7 @@ const sstyles = {
     transition: 'all 0.3s ease',
     backdropFilter: 'blur(10px)',
   },
-  
+
   input: {
     flex: 1,
     border: 'none',
@@ -1216,7 +1246,7 @@ const sstyles = {
     fontWeight: '400',
     letterSpacing: '-0.01em',
   },
-  
+
   button: {
     padding: '10px 16px',
     borderRadius: '15px',
@@ -1232,7 +1262,7 @@ const sstyles = {
     textShadow: '0 0 8px rgba(255, 255, 255, 0.3)',
     letterSpacing: '-0.02em',
   },
-  
+
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -1240,14 +1270,14 @@ const sstyles = {
     marginBottom: '4px',
     fontSize: '12px',
   },
-  
+
   timestamp: {
     color: 'rgba(160, 174, 192, 0.8)',
     fontSize: '11px',
     fontFamily: "'JetBrains Mono', monospace",
     letterSpacing: '0.02em',
   },
-  
+
   // 제목 스타일
   h2: {
     fontSize: '1.3rem',
