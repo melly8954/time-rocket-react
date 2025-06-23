@@ -103,12 +103,6 @@ const GroupRocketCreate = () => {
         const groupData = response.data.data;
         setGroup(groupData);
         setIsOwner(groupData.leaderId === userId);
-
-        setFormData(prev => ({
-          ...prev,
-          rocketName: `${groupData.groupName} 로켓`,
-          design: DESIGN_OPTIONS[0].value
-        }));
         console.log('groupData:', groupData);
         console.log('ownerId:', groupData.ownerId);
         console.log('userId:', userId);
@@ -528,6 +522,7 @@ const GroupRocketCreate = () => {
     return `${paddedMonth}월 ${paddedDay}일 ${period} ${displayHour}:${paddedMinute}`;
   };
 
+  // 모임 로켓 컨텐츠 저장
   const handleSubmit = async () => {
     if (!formData.content.trim()) {
       alert('메시지를 작성해주세요.');
@@ -560,7 +555,10 @@ const GroupRocketCreate = () => {
       console.log(response.data);
 
       // 저장 후 초기화
-      setFormData({ content: '' });
+      setFormData(prev => ({
+        ...prev,
+        content: '',
+      }));
       setFiles([]);
 
       // 퍼블리시 준비 상태 전송
