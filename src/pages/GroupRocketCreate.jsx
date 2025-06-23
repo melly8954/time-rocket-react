@@ -91,6 +91,7 @@ const GroupRocketCreate = () => {
     if (groupId) {
       fetchGroupInfo();
       fetchMembers();
+      fetchRocketConfig();
     }
   }, [isLoggedIn, groupId]);
 
@@ -145,15 +146,7 @@ const GroupRocketCreate = () => {
   // 입력값 변경 핸들러
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const updated = { ...formData, [name]: value };
-    setFormData(updated);
-
-    if (isOwner) {
-      broadcastRocketConfig({
-        ...updated,
-        rocketName: updated.rocketName.trim(),
-      });
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   // 파일 선택 핸들러
@@ -179,18 +172,79 @@ const GroupRocketCreate = () => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // 방장이 설정 바꿀 때마다 publish
-  const broadcastRocketConfig = debounce((config) => {
-    if (!stompClient || !isOwner) return;
+  // 모임 로켓 설정 확정
+  const handleConfigSave = async () => {
+    const newErrors = {};
+    if (!formData.rocketName.trim()) {
+      newErrors.rocketName = '로켓 이름을 입력해주세요.';
+    }
+    if (!formData.design) {
+      newErrors.design = '로켓 디자인을 선택해주세요.';
+    }
+    if (!formData.lockExpiredAt) {
+      newErrors.lockExpiredAt = '잠금 해제 시간을 설정해주세요.';
+    } else {
+      const now = new Date();
+      const selectedTime = new Date(formData.lockExpiredAt);
+      if (selectedTime <= now) {
+        newErrors.lockExpiredAt = '미래 시간을 선택해주세요.';
+      }
+    }
 
-    stompClient.publish({
-      destination: `/app/group/${groupId}/rocket-config`,
-      body: JSON.stringify({
-        ...config,
-        senderId: userId,
-      }),
-    });
-  }, 500); // 500ms 딜레이
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      // API 호출: DB에 설정 저장
+      await api.put(`/groups/${groupId}/rocket-config`, {
+        rocketName: formData.rocketName.trim(),
+        design: formData.design,
+        lockExpiredAt: formData.lockExpiredAt,
+      });
+
+      // 저장 성공 시 소켓으로 브로드캐스트
+      if (stompClient && isOwner) {
+        stompClient.publish({
+          destination: `/app/group/${groupId}/rocket-config`,
+          body: JSON.stringify({
+            rocketName: formData.rocketName.trim(),
+            design: formData.design,
+            lockExpiredAt: formData.lockExpiredAt,
+            senderId: userId,
+          }),
+        });
+      }
+
+      alert('설정이 성공적으로 저장되었습니다!');
+    } catch (error) {
+      console.error('설정 저장 실패:', error);
+      alert('설정 저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 모임 로켓 설정 조회
+  const fetchRocketConfig = async () => {
+    try {
+      const res = await api.get(`/groups/${groupId}/rocket-config`);
+      const data = res.data?.data;
+
+      if (data) {
+        setFormData(prev => ({
+          ...prev,
+          rocketName: data.rocketName || '',
+          design: data.design || '',
+          lockExpiredAt: data.lockExpiredAt || '',
+        }));
+      }
+    } catch (err) {
+      console.error('로켓 설정 불러오기 실패:', err);
+    }
+  };
 
   // 모임 로켓 전송
   const handleRocketSubmit = async (e) => {
@@ -893,6 +947,16 @@ const GroupRocketCreate = () => {
                     <div className={styles.errorText}>{errors.design}</div>
                   )}
                 </div>
+                <div className={styles.formField}>
+                  <button
+                    type="button"
+                    className={styles.saveButton}
+                    onClick={handleConfigSave}
+                  >
+                    설정 확정
+                  </button>
+                </div>
+
               </div>
             </div>
           )}
