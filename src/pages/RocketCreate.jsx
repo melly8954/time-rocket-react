@@ -77,7 +77,27 @@ function RocketCreate() {
                 alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
                 return;
             }
-            await api.post("rockets/temp-rockets", form);
+            const formData = new FormData();
+
+            // RocketRequestDto에 해당하는 JSON 객체를 Blob으로 변환
+            const jsonBlob = new Blob([JSON.stringify(form)], {
+                type: 'application/json'
+            });
+
+            // JSON DTO는 'data' 또는 원하는 키로 추가
+            formData.append('data', jsonBlob);
+
+            // 파일 배열을 반복하며 추가
+            files.forEach(file => {
+                formData.append('files', file); // name=files로 백엔드에서 받을 것
+            });
+
+            // 요청
+            await api.post('/rockets/temp-rockets', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             alert("임시 저장되었습니다.");
         } catch (err) {
             console.error("임시 저장 실패", err);
@@ -89,12 +109,12 @@ function RocketCreate() {
         try {
             const response = await api.get("rockets/temp-rockets");
             const tempRocket = response.data.data;
-            
+
             if (!tempRocket) {
                 alert("임시저장된 로켓이 없습니다.");
                 return;
             }
-            
+
             setForm({
                 rocketName: tempRocket.rocketName || "",
                 design: tempRocket.design || "",
@@ -103,10 +123,15 @@ function RocketCreate() {
                 receiverEmail: tempRocket.receiverEmail || "",
                 content: tempRocket.content || ""
             });
-            
+
+            setUploadedFiles(tempRocket.files?.map(file => ({
+                name: file.originalName,
+                size: formatFileSize(file.fileSize)
+            })) || []);
+
             const designIndex = designs.findIndex(d => d.imgUrl === tempRocket.design);
             if (designIndex !== -1) setCurrentDesignIdx(designIndex);
-            
+
             alert("임시저장된 로켓을 불러왔습니다.");
         } catch (err) {
             console.error("임시 저장 불러오기 실패", err);
@@ -119,40 +144,40 @@ function RocketCreate() {
             alert("로켓 이름을 입력해주세요.");
             return false;
         }
-        
+
         if (checkStep === 2) {
             if (!form.lockExpiredAt) {
                 alert("잠금 해제일을 설정해주세요.");
                 return false;
             }
-            
+
             if (!form.receiverType) {
                 alert("수신자 유형을 선택해주세요.");
                 return false;
             }
-            
+
             if (form.receiverType === "other" && !form.receiverEmail) {
                 alert("수신자 이메일을 입력해주세요.");
                 return false;
             }
-            
+
             if (new Date(form.lockExpiredAt) < new Date()) {
                 alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
                 return false;
             }
         }
-        
+
         return true;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!validateForm(1)) {
             setCurrentStep(1);
             return;
         }
-        
+
         if (!validateForm(2)) {
             setCurrentStep(2);
             return;
@@ -170,21 +195,21 @@ function RocketCreate() {
                 receiverEmail: form.receiverEmail,
                 content: form.content
             };
-            
+
             const formData = new FormData();
-            const jsonBlob = new Blob([JSON.stringify(rocketData)], { 
-                type: 'application/json' 
+            const jsonBlob = new Blob([JSON.stringify(rocketData)], {
+                type: 'application/json'
             });
             formData.append('data', jsonBlob);
-            
+
             if (files.length > 0) {
                 files.forEach(file => formData.append('files', file));
             }
-            
+
             const response = await api.post("rockets", formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            
+
             alert("로켓이 성공적으로 전송되었습니다!");
             navigate("/");
         } catch (err) {
@@ -194,12 +219,12 @@ function RocketCreate() {
             setIsSubmitting(false);
         }
     };
-    
+
     const nextStep = () => {
         if (!validateForm(currentStep)) return;
         if (currentStep < 3) setCurrentStep(currentStep + 1);
     };
-    
+
     const prevStep = () => {
         if (currentStep > 1) setCurrentStep(currentStep - 1);
     };
@@ -222,12 +247,12 @@ function RocketCreate() {
                     <div className={`step-line ${currentStep >= 3 ? 'active' : ''}`}></div>
                     <div className={`step-dot ${currentStep >= 3 ? 'active' : ''}`}></div>
                 </div>
-                
+
                 <div className="rocket-temp-btn-group">
                     <button type="button" onClick={handleTempSave} className="btn-green">임시 저장</button>
                     <button type="button" onClick={handleLoadTempRocket} className="btn-green">불러오기</button>
                 </div>
-                
+
                 {/* 스텝 1: 로켓 이름과 디자인 선택 */}
                 {currentStep === 1 && (
                     <div className="form-step">
@@ -249,7 +274,7 @@ function RocketCreate() {
                         />
                     </div>
                 )}
-                
+
                 {/* 스텝 2: 잠금 해제일과 수신자 유형 */}
                 {currentStep === 2 && (
                     <div className="form-step">
@@ -299,7 +324,7 @@ function RocketCreate() {
                         )}
                     </div>
                 )}
-                
+
                 {/* 스텝 3: 첨부파일과 내용 */}
                 {currentStep === 3 && (
                     <div className="form-step">
@@ -312,7 +337,7 @@ function RocketCreate() {
                                 onChange={handleFileChange} multiple
                                 style={{ display: 'none' }}
                             />
-                            <button 
+                            <button
                                 type="button" className="btn-file-upload"
                                 onClick={() => fileInputRef.current.click()}
                             >
@@ -325,7 +350,7 @@ function RocketCreate() {
                                             <li key={index} className="file-item">
                                                 <span className="file-name">{file.name}</span>
                                                 <span className="file-size">({file.size})</span>
-                                                <button 
+                                                <button
                                                     type="button" className="btn-remove-file"
                                                     onClick={() => removeFile(index)}
                                                 >×</button>
@@ -347,7 +372,7 @@ function RocketCreate() {
                             rows="8"
                         />
 
-                        <button 
+                        <button
                             type="submit" className={`btn-submit ${isSubmitting ? 'submitting' : ''}`}
                             disabled={isSubmitting}
                         >
@@ -355,17 +380,17 @@ function RocketCreate() {
                         </button>
                     </div>
                 )}
-                
+
                 {/* 네비게이션 버튼 */}
                 <div className="step-navigation">
-                    <button 
+                    <button
                         type="button" className={`nav-button prev ${currentStep === 1 ? 'disabled' : ''}`}
                         onClick={prevStep} disabled={currentStep === 1}
                     >&#8592;</button>
-                    
+
                     <div className="step-indicator">{currentStep} / 3</div>
-                    
-                    <button 
+
+                    <button
                         type="button" className={`nav-button next ${currentStep === 3 ? 'disabled' : ''}`}
                         onClick={nextStep} disabled={currentStep === 3}
                     >&#8594;</button>
