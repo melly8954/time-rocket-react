@@ -56,24 +56,12 @@ const SignUp = () => {
         }
 
         try {
-            const response = await axios.get(`http://localhost:8081/api/users/duplicate-nickname/${formData.nickname}`);
+            const response = await axios.get(`http://localhost:8081/api/users/duplicate-nickname?nickname=${formData.nickname}`);
             // 요청 성공 시 처리
             setIsNicknameAvailable("해당 닉네임을 사용 가능합니다."); // 닉네임 사용 가능
         } catch (err) {
             console.log(err);
-            if (err.response) {
-                const statusCode = err.response.status;
-                setIsNicknameAvailable("");
-                if (statusCode === 400) {
-                    alert("400 Error: 잘못된 요청입니다.");
-                } else if (statusCode === 500) {
-                    alert("500 Error: 서버에서 문제가 발생했습니다.");
-                } else {
-                    alert(`알 수 없는 오류 발생: ${statusCode}`);
-                }
-            } else {
-                alert("네트워크 오류 또는 요청을 처리할 수 없습니다.");
-            }
+            setIsNicknameAvailable(err.response.data.message);
         }
     };
 
