@@ -98,8 +98,7 @@ function RocketCreate() {
             setForm({
                 rocketName: tempRocket.rocketName || "",
                 design: tempRocket.design || "",
-                lockExpiredAt: tempRocket.lockExpiredAt ? 
-                    new Date(tempRocket.lockExpiredAt).toISOString().slice(0, 16) : "",
+                lockExpiredAt: tempRocket.lockExpiredAt?.slice(0, 16) || "",
                 receiverType: tempRocket.receiverType || "",
                 receiverEmail: tempRocket.receiverEmail || "",
                 content: tempRocket.content || ""
