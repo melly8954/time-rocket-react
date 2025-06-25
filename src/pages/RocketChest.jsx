@@ -807,9 +807,6 @@ const RocketChest = () => {
                   </>
                 ) : (
                   <>
-                    <p className="rocket-sender">
-                      <strong>보낸 사람:</strong> {selectedRocket.senderEmail || '알 수 없음'}
-                    </p>
                     <p className="rocket-receiver">
                       <strong>받는 사람:</strong> {selectedRocket.receiverEmail || selectedRocket.receiverNickname || '알 수 없음'}
                     </p>
