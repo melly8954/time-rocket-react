@@ -11,7 +11,8 @@ function RocketCreate() {
     const [userData, setUserData] = useState({ userId: null, email: "" });
     const [form, setForm] = useState({
         rocketName: "", design: "", lockExpiredAt: "",
-        receiverType: "", receiverEmail: "", content: ""
+        receiverType: "", receiverEmail: "", content: "",
+        existingFileNames: []  // 기존 임시 저장 파일의 uniqueName 저장용
     });
     const [files, setFiles] = useState([]);
     const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -121,7 +122,8 @@ function RocketCreate() {
                 lockExpiredAt: tempRocket.lockExpiredAt?.slice(0, 16) || "",
                 receiverType: tempRocket.receiverType || "",
                 receiverEmail: tempRocket.receiverEmail || "",
-                content: tempRocket.content || ""
+                content: tempRocket.content || "",
+                existingFileNames: tempRocket.files?.map(file => file.uniqueName) || []
             });
 
             setUploadedFiles(tempRocket.files?.map(file => ({
@@ -193,7 +195,8 @@ function RocketCreate() {
                 lockExpiredAt: form.lockExpiredAt || null,
                 receiverType: form.receiverType,
                 receiverEmail: form.receiverEmail,
-                content: form.content
+                content: form.content,
+                existingFileNames: form.existingFileNames || []  // 임시 저장 파일 식별자
             };
 
             const formData = new FormData();
