@@ -138,7 +138,8 @@
 }
 
 .box input[type="text"],
-.box input[type="password"] {
+.box input[type="password"],
+.box input[type="email"] {
   width: 100%;
   padding: 14px 16px;
   background: rgba(15, 14, 35, 0.7); /* 약간 더 어둡게 */
