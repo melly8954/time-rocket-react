@@ -413,11 +413,12 @@ const GroupDetail = () => {
             {group.isPrivate && <LockIcon className={styles.privateIcon} />}
           </div>
 
-          <h1 className={styles.groupName}>{group.groupName}</h1>
-
-          <p className={styles.groupDescription}>
-            {group.description || '모임 소개가 없습니다.'}
-          </p>
+          <div className={styles.textOverlay}>
+            <h1 className={styles.groupName}>{group.groupName}</h1>
+            <p className={styles.groupDescription}>
+              {group.description || '모임 소개가 없습니다.'}
+            </p>
+          </div>
 
           <div className={styles.groupStats}>
             <div className={styles.stat}>

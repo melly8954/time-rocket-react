@@ -32,7 +32,7 @@
 
 /* 그룹 정보 */
 .groupInfo {
-  background: white;
+  background: rgba(37, 37, 37, 0.721);
   border-radius: 20px;
   padding: 40px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -56,16 +56,19 @@
 .groupBackground img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .groupContent {
+  top: 120px;
   position: relative;
   z-index: 2;
 }
 
 .groupTheme {
   display: flex;
+  position: relative;
+  bottom: 130px;
   align-items: center;
   gap: 10px;
   margin-bottom: 20px;
@@ -90,20 +93,27 @@
   margin-left: 10px;
 }
 
+.textOverlay {
+  background: rgba(0, 0, 0, 0.26); /* 반투명 검정 배경 */
+  padding: 0px 20px;
+  border-radius: 15px;
+  display: inline-block;
+  backdrop-filter: blur(4px); /* 배경 블러 처리 */
+  color: white; /* 안에 있는 글씨 색깔 */
+  margin-top: 50px;
+  margin-bottom: 30px; /* 아래 간격 */
+}
+
 .groupName {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #333;
-  margin-top: 240px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   line-height: 1.2;
 }
 
 .groupDescription {
   font-size: 1.1rem;
-  color: #666;
   line-height: 1.6;
-  margin-bottom: 30px;
 }
 
 .groupStats {
@@ -117,7 +127,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #f8f9fa;
+  background: #f0f3fad0;
   padding: 15px 20px;
   border-radius: 15px;
 }
@@ -257,7 +267,7 @@
 
 /* 멤버 카드 */
 .memberCard {
-  background: #f8f9fa;
+  background: #f3f3f3;
   border-radius: 15px;
   padding: 20px;
   display: flex;
@@ -268,7 +278,7 @@
 }
 
 .memberCard:hover {
-  background: #e9ecef;
+  background: #dbdcde;
   border-color: #4facfe;
 }
 
