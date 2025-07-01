@@ -652,8 +652,7 @@
   text-align: center;
   padding: 30px 15px;
   border-radius: 8px;
-  background: #3b3b3b;
-  opacity: 80%;
+  background: rgb(59, 59, 58, 0.6);
   border: 1px dashed #ddd;
   height: 300px;
   display: flex;
@@ -1022,4 +1021,38 @@
 
 .rocket-item.contextmenu-enabled.unlocked:hover .context-menu-hint {
   opacity: 1;
+}
+
+.sub-tab-navigation {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sub-tab-button {
+  padding: 4px 10px;
+  border: 2px solid var(--glass-border);
+  background-color: var(--glass-bg);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-silver);
+  font-size: 0.9rem;
+  transition: var(--transition-smooth);
+  box-shadow: var(--card-shadow);
+  user-select: none;
+}
+
+.sub-tab-button:hover {
+  background-color: var(--glass-highlight);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+  box-shadow: 0 0 12px var(--secondary-color);
+}
+
+.sub-tab-button.active {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, #4a1dbb 0%, #0088cc 100%);
+  color: var(--text-white);
+  box-shadow: 0 0 15px #4a1dbb88;
 }
