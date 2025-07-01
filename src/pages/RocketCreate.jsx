@@ -213,7 +213,9 @@ function RocketCreate() {
             }
             
             const response = await api.post("rockets", formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: {
+                    
+                }
             });
             
             showAlert("로켓이 성공적으로 전송되었습니다!", 'success', '전송 완료');
