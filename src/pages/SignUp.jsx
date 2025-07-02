@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AlertModal } from '../components/common/Modal';
+import useAlertModal from '../components/common/useAlertModal';
 import styles from '../style/SignUp.module.css';
 
 const SignUp = () => {
@@ -11,11 +13,13 @@ const SignUp = () => {
         confirmPassword: "",
         nickname: ""
     });
-    const [isNicknameAvailable, setIsNicknameAvailable] = useState("");
+    const [isNicknameAvailable, setIsNicknameAvailable] = useState({ message: '', isError: false });
+    const [isNicknameChecked, setIsNicknameChecked] = useState(false);
     const [emailCode, setEmailCode] = useState(""); // 사용자가 입력한 인증 코드
     const [isEmailSent, setIsEmailSent] = useState(false); // 이메일 발송 여부
     const [isEmailVerified, setIsEmailVerified] = useState(false); // 인증 완료 여부
-
+    const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
+    const [onSuccessNavigate, setOnSuccessNavigate] = useState(false);
     const handleUserInput = (e) => {
         const { id, value } = e.target;
         setFormData((prev) => ({
@@ -28,10 +32,10 @@ const SignUp = () => {
         try {
             await axios.post(`http://localhost:8081/api/emails`, { email: formData.email });
             setIsEmailSent(true);
-            alert("이메일로 인증 코드를 전송했습니다.");
+            showAlert("이메일로 인증 코드를 전송했습니다.");
         } catch (err) {
-            console.log(err);
-            alert(err.response.data.message);
+            handleApiError(err);
+            showAlert(err.response.data.message);
         }
     };
 
@@ -42,42 +46,45 @@ const SignUp = () => {
                 verificationCode: emailCode
             });
             setIsEmailVerified(true);
-            alert("이메일 인증 성공!");
+            showAlert("이메일 인증 성공!");
         } catch (err) {
-            console.log(err);
-            alert(err.response.data.message);
+            handleApiError(err);
+            showAlert(err.response.data.message)
         }
     };
 
     const duplicateNickname = async () => {
         if (!formData.nickname.trim()) {
-            alert("닉네임을 입력해주세요.");
+            setIsNicknameAvailable({ message: "닉네임을 입력해주세요.", isError: true });
+            setIsNicknameChecked(false);
             return;
         }
 
         try {
             const response = await axios.get(`http://localhost:8081/api/users/duplicate-nickname?nickname=${formData.nickname}`);
             // 요청 성공 시 처리
-            setIsNicknameAvailable("해당 닉네임을 사용 가능합니다."); // 닉네임 사용 가능
+            setIsNicknameAvailable({ message: "해당 닉네임을 사용 가능합니다.", isError: false }); // 닉네임 사용 가능
+            setIsNicknameChecked(true); // 닉네임 유효성 통과
         } catch (err) {
             console.log(err);
-            setIsNicknameAvailable(err.response.data.message);
+            setIsNicknameAvailable({ message: err.response.data.message, isError: true });
+            setIsNicknameChecked(false);
         }
     };
 
     const formSubmit = async () => {
         if (!isEmailVerified) {
-            alert("이메일 인증을 완료해주세요.");
+            showAlert("이메일 인증을 완료해주세요.");
             return;
         }
 
         if (formData.password !== formData.confirmPassword) {
-            alert("비밀번호가 일치하지 않습니다.");
+            showAlert("비밀번호가 일치하지 않습니다.");
             return;
         }
 
-        if (!isNicknameAvailable) {
-            alert("닉네임 중복 확인을 해주세요.");
+        if (!isNicknameChecked) {
+            showAlert("닉네임 중복 확인을 해주세요.");
             return;
         }
 
@@ -85,10 +92,11 @@ const SignUp = () => {
 
         try {
             const response = await axios.post(`http://localhost:8081/api/users`, userData);
-            alert("회원가입 성공!");
-            navigate('/');
+            setOnSuccessNavigate(true);
+            showAlert("회원가입 성공!");
         } catch (err) {
-            alert(err.response.data.message);
+            handleApiError(err);
+            showAlert(err.response.data.message);
         }
     };
 
@@ -119,11 +127,28 @@ const SignUp = () => {
                     <input type="text" id="nickname" value={formData.nickname} onChange={handleUserInput} />
                     <button onClick={duplicateNickname}>중복 체크</button>
                 </div>
-                <span className={styles.nicknameStatus}>{isNicknameAvailable}</span><br />
+                <span
+                    className={`${styles.nicknameStatus} ${isNicknameAvailable.isError ? styles.nicknameStatusError : ''}`}
+                >
+                    {isNicknameAvailable.message}
+                </span>
 
                 <button className={styles.submitBtn} onClick={formSubmit}>신청</button>
             </div>
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => {
+                    closeAlert();
+                    if (onSuccessNavigate) {
+                        navigate('/');
+                    }
+                }}
+                message={alertModal.message}
+                title={alertModal.title}
+                type={alertModal.type}
+            />
         </div>
+
     );
 };
 

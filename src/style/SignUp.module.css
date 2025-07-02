@@ -7,13 +7,17 @@
   --glass-bg: rgba(26, 23, 62, 0.8);
   --glass-border: rgba(255, 255, 255, 0.12);
   --input-bg: rgba(15, 14, 35, 0.5);
-  --input-border: rgba(255, 255, 255, 0.2); /* 더 뚜렷한 테두리 */
+  --input-border: rgba(255, 255, 255, 0.2);
+  /* 더 뚜렷한 테두리 */
   --input-focus: rgba(0, 210, 255, 0.5);
   --neon-glow: 0 0 15px rgba(0, 210, 255, 0.7);
   --text-white: #ffffff;
-  --text-silver: #f0f0f0; /* 더 밝게 수정 */
-  --text-gray: #c0c5e4; /* 더 밝게 수정 */
+  --text-silver: #f0f0f0;
+  /* 더 밝게 수정 */
+  --text-gray: #c0c5e4;
+  /* 더 밝게 수정 */
   --success-color: #4cd964;
+  --danger-color: #ff4d4f ;
 }
 
 .container {
@@ -35,7 +39,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
+  background-image:
     radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.9) 1px, transparent 1px),
     radial-gradient(circle at 25% 45%, rgba(255, 255, 255, 0.6) 1px, transparent 2px),
     radial-gradient(circle at 35% 15%, rgba(255, 255, 255, 0.7) 1px, transparent 1px),
@@ -47,9 +51,9 @@
     radial-gradient(circle at 40% 30%, rgba(255, 27, 141, 0.7) 1px, transparent 2px),
     radial-gradient(circle at 60% 10%, rgba(180, 0, 255, 0.7) 1px, transparent 2px),
     radial-gradient(circle at 80% 40%, rgba(255, 247, 0, 0.6) 1px, transparent 2px);
-  background-size: 
-    250px 250px, 200px 200px, 300px 300px, 350px 350px, 
-    280px 280px, 230px 230px, 180px 180px, 
+  background-size:
+    250px 250px, 200px 200px, 300px 300px, 350px 350px,
+    280px 280px, 230px 230px, 180px 180px,
     400px 400px, 380px 380px, 350px 350px, 420px 420px;
   z-index: 0;
   opacity: 0.7;
@@ -78,7 +82,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
+  background:
     linear-gradient(135deg, rgba(0, 210, 255, 0.05) 0%, transparent 50%, rgba(146, 0, 255, 0.05) 100%),
     radial-gradient(ellipse at top right, rgba(255, 27, 141, 0.1) 0%, transparent 60%);
   pointer-events: none;
@@ -94,12 +98,11 @@
   width: 100%;
   height: 2px;
   background: linear-gradient(to right,
-    rgba(46, 134, 222, 0),
-    rgba(46, 134, 222, 0.5),
-    rgba(136, 84, 208, 0.5),
-    rgba(46, 134, 222, 0.5),
-    rgba(46, 134, 222, 0)
-  );
+      rgba(46, 134, 222, 0),
+      rgba(46, 134, 222, 0.5),
+      rgba(136, 84, 208, 0.5),
+      rgba(46, 134, 222, 0.5),
+      rgba(46, 134, 222, 0));
   z-index: 1;
 }
 
@@ -108,19 +111,24 @@
   margin-bottom: 30px;
   font-size: 28px;
   font-weight: 700;
-  color: #ffffff; /* 그라데이션 대신 순수 흰색 */
-  text-shadow: 0 0 10px rgba(0, 210, 255, 0.5); /* 그림자 추가 */
+  color: #ffffff;
+  /* 그라데이션 대신 순수 흰색 */
+  text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+  /* 그림자 추가 */
   letter-spacing: 1px;
 }
 
 .box label {
-  font-weight: 600; /* 더 두껍게 */
+  font-weight: 600;
+  /* 더 두껍게 */
   margin-top: 15px;
   margin-bottom: 8px;
   display: block;
-  color: #ffffff; /* 더 밝게 */
+  color: #ffffff;
+  /* 더 밝게 */
   letter-spacing: 0.5px;
-  font-size: 1rem; /* 크기 증가 */
+  font-size: 1rem;
+  /* 크기 증가 */
   position: relative;
   padding-left: 10px;
 }
@@ -141,12 +149,17 @@
 .box input[type="password"] {
   width: 100%;
   padding: 14px 16px;
-  background: rgba(15, 14, 35, 0.7); /* 약간 더 어둡게 */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* 더 뚜렷한 테두리 */
+  background: rgba(15, 14, 35, 0.7);
+  /* 약간 더 어둡게 */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  /* 더 뚜렷한 테두리 */
   border-radius: 12px;
-  color: #ffffff; /* 텍스트 색상 */
-  font-size: 1.05rem; /* 크기 증가 */
-  font-weight: 500; /* 더 두껍게 */
+  color: #ffffff;
+  /* 텍스트 색상 */
+  font-size: 1.05rem;
+  /* 크기 증가 */
+  font-weight: 500;
+  /* 더 두껍게 */
   transition: all 0.3s ease;
   margin-bottom: 15px;
   box-sizing: border-box;
@@ -167,7 +180,8 @@
   border-radius: 12px;
   color: white;
   font-weight: 600;
-  font-size: 1rem; /* 크기 증가 */
+  font-size: 1rem;
+  /* 크기 증가 */
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: 15px;
@@ -201,13 +215,19 @@
 }
 
 .nicknameStatus {
-  font-size: 0.9rem; /* 크기 증가 */
-  color: var(--success-color);
+  font-size: 0.9rem;
   margin-left: 10px;
   margin-top: 5px;
   display: inline-block;
-  font-weight: 600; /* 더 두껍게 */
-  text-shadow: 0 0 5px rgba(76, 217, 100, 0.4); /* 그림자 추가 */
+  font-weight: 600;
+  /* 기본은 성공 컬러로 유지 */
+  color: var(--success-color);
+  text-shadow: 0 0 5px rgba(76, 217, 100, 0.4);
+}
+
+.nicknameStatusError {
+  color: var(--danger-color);
+  text-shadow: 0 0 5px rgba(255, 50, 50, 0.5);
 }
 
 .submitBtn {
@@ -254,13 +274,15 @@
 
 /* 오류 메시지 스타일 추가 */
 .errorMessage {
-  color: #ff4757; /* 선명한 빨간색 */
+  color: #ff4757;
+  /* 선명한 빨간색 */
   font-size: 0.9rem;
   margin-top: -10px;
   margin-bottom: 10px;
   font-weight: 500;
   padding-left: 10px;
-  text-shadow: 0 0 5px rgba(255, 71, 87, 0.3); /* 그림자 추가 */
+  text-shadow: 0 0 5px rgba(255, 71, 87, 0.3);
+  /* 그림자 추가 */
 }
 
 /* 비밀번호 강도 표시 스타일 */
@@ -286,22 +308,22 @@
     width: 100%;
     max-width: 350px;
   }
-  
+
   .box input[type="text"],
   .box input[type="password"] {
     padding: 12px 14px;
   }
-  
+
   .nicknameCheck {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .nicknameCheck input,
   .nicknameCheck button {
     width: 100%;
   }
-  
+
   .submitBtn {
     padding: 12px;
   }
