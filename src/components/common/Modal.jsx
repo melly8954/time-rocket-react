@@ -78,16 +78,16 @@ export const ConfirmModal = ({
         <p className={styles.confirmMessage}>{message}</p>
         <div className={styles.confirmButtons}>
           <button
-            className={`${styles.button} ${styles.cancelButton}`}
-            onClick={onClose}
-          >
-            {cancelText}
-          </button>
-          <button
             className={`${styles.button} ${styles.confirmButton} ${styles[type]}`}
             onClick={handleConfirm}
           >
             {confirmText}
+          </button>
+          <button
+            className={`${styles.button} ${styles.cancelButton}`}
+            onClick={onClose}
+          >
+            {cancelText}
           </button>
         </div>
       </div>
