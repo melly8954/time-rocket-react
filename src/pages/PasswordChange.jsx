@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from "../utils/api";
 import { fetchUserProfile } from '../utils/profile';
-import styles from '../style/PasswordChange.module.css'; 
+import styles from '../style/PasswordChange.module.css';
+import { AlertModal } from '../components/common/Modal';
+import useAlertModal from '../components/common/useAlertModal';
+
 
 const PasswordChange = () => {
     const navigate = useNavigate();
@@ -10,8 +13,9 @@ const PasswordChange = () => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState('');
-
     const { userId } = useParams(); // URL 파라미터로 전달된 userId를 받음
+    const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
+    const [onSuccessNavigate, setOnSuccessNavigate] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -37,8 +41,8 @@ const PasswordChange = () => {
                     Authorization: `Bearer ${localStorage.getItem("accessToken")}`
                 }
             });
-            alert('비밀번호가 성공적으로 변경되었습니다.');
-            navigate('/mypage');
+            setOnSuccessNavigate(true);
+            showAlert('비밀번호가 성공적으로 변경되었습니다.');
         } catch (error) {
             const errorMsg = error.response?.data?.message || '비밀번호 변경 실패';
             setMessage(errorMsg);
@@ -79,6 +83,18 @@ const PasswordChange = () => {
                 {message && <p className={styles['error-message']}>{message}</p>}
                 <button type="submit" className={styles.submitBtn}>비밀번호 변경</button>
             </form>
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => {
+                    closeAlert();
+                    if (onSuccessNavigate) {
+                        navigate('/mypage');
+                    }
+                }}
+                message={alertModal.message}
+                title={alertModal.title}
+                type={alertModal.type}
+            />
         </div>
     );
 };

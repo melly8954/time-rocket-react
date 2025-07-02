@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import api from "../utils/api";
 import { fetchUserProfile } from '../utils/profile';
 import '../style/MyPage.css';
+import { ConfirmModal, AlertModal } from '../components/common/Modal';
+import useConfirmModal from '../components/common/useConfirmModal';
+import useAlertModal from '../components/common/useAlertModal';
 
 const MyPage = () => {
     const navigate = useNavigate();
+    const { confirmModal, showConfirm, closeConfirm } = useConfirmModal();
+    const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
     const [userId, setUserId] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [activeTab, setActiveTab] = useState('badges');
@@ -78,6 +83,39 @@ const MyPage = () => {
         getProfile();   // 마이페이지 렌더링 시에만 호출
     }, []);
 
+    const handleDeleteAccount = () => {
+        showConfirm({
+            message: "정말 계정을 탈퇴하시겠습니까?",
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    const accessToken = localStorage.getItem("accessToken");
+                    await api.patch(`/users/${userId}/status`,
+                        { status: "DELETED" },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json',
+                            },
+                            withCredentials: true,
+                        }
+                    );
+                    showAlert("계정이 탈퇴 처리되었습니다.", 'success', '완료');
+                } catch (err) {
+                    handleAlertClose(err);
+                }
+            }
+        });
+    };
+
+    // Alert 닫힐 때 로그아웃 이동 처리
+    const handleAlertClose = () => {
+        closeAlert();
+        if (alertModal.message === "계정이 탈퇴 처리되었습니다.") {
+            navigate("/logout");
+        }
+    };
+
     return (
         <div className="mypage-container">
             <div className="rocket-section">
@@ -113,32 +151,7 @@ const MyPage = () => {
                             >
                                 비밀번호 변경
                             </button>
-                            <button
-                                onClick={async () => {
-                                    if (!window.confirm("정말 계정을 탈퇴하시겠습니까?")) return;
-
-                                    try {
-                                        const accessToken = localStorage.getItem("accessToken");
-                                        await api.patch(`/users/${userId}/status`,
-                                            { status: "DELETED" },
-                                            {
-                                                headers: {
-                                                    Authorization: `Bearer ${accessToken}`,
-                                                    'Content-Type': 'application/json',
-                                                },
-                                                withCredentials: true,
-                                            }
-                                        );
-                                        alert("계정이 탈퇴 처리되었습니다.");
-                                        // 로그아웃 처리
-                                        navigate("/logout"); // 홈 또는 로그인 페이지로
-                                    } catch (error) {
-                                        console.error("계정 탈퇴 실패", error);
-                                        alert(error.data.data.message);
-                                    }
-                                }}
-                                className="delete-account-button"
-                            >
+                            <button className="delete-account-button" onClick={handleDeleteAccount}>
                                 계정 탈퇴
                             </button>
                         </p>
@@ -217,6 +230,23 @@ const MyPage = () => {
                     </div>
                 )}
             </div>
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={closeConfirm}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+                confirmText={confirmModal.confirmText}
+                cancelText={confirmModal.cancelText}
+            />
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={handleAlertClose}
+                message={alertModal.message}
+                title={alertModal.title}
+                type={alertModal.type}
+            />
         </div>
     );
 };
