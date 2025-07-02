@@ -53,8 +53,7 @@ const Login = () => {
       setOnSuccessNavigate(true);
       showAlert("로그인 성공!");
     } catch (err) {
-      console.error(err);
-      showAlert("아이디 또는 비밀번호가 일치하지 않습니다.");
+      handleApiError(err);
     }
   };
 
