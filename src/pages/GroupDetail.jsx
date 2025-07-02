@@ -198,10 +198,11 @@ const GroupDetail = () => {
     } catch (err) {
       console.error('그룹 상세 정보 조회 실패:', err);
       if (err.response?.status === 404) {
-        setError('존재하지 않는 모임입니다.');
+        setError(null);
+        showAlert('존재하지 않는 모임입니다.', 'danger', '에러 발생');
       } else {
         const errorMessage = err.response?.data?.message || '모임 정보를 불러오는데 실패했습니다.';
-        setError(errorMessage);
+        showAlert(errorMessage);
       }
     } finally {
       setIsLoading(false);

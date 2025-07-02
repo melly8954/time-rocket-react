@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
+import { AlertModal, ConfirmModal } from '../components/common/Modal';
 import styles from '../style/Groups.module.css';
 import { 
   SearchIcon, 
@@ -111,6 +112,28 @@ const Groups = () => {
   const [groupsPage, setGroupsPage] = useState(1);
   const [myGroupsPage, setMyGroupsPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const [alertModal, setAlertModal] = useState({ 
+    isOpen: false, 
+    message: '', 
+    type: 'default',
+    title: '알림'
+  });
+
+  // 모달 열기
+  const showAlert = (message, type = 'default', title = '알림') => {
+    setAlertModal({ 
+      isOpen: true, 
+      message, 
+      type,
+      title 
+    });
+  };
+
+  // 모달 닫기
+  const closeAlert = () => {
+    setAlertModal(prev => ({ ...prev, isOpen: false }));
+  };
   
   // 인증 확인
   useEffect(() => {
@@ -177,7 +200,8 @@ const Groups = () => {
       
       setGroups([]);
       setHasMoreGroups(false);
-      setError(null);
+      setError('데이터를 불러오는데 실패했습니다.');
+      showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
     } finally {
       if (isFetchingRef.current === currentFetchId) {
         isFetchingRef.current = false;
@@ -247,7 +271,8 @@ const Groups = () => {
       
       setMyGroups([]);
       setHasMoreMyGroups(false);
-      setError(null);
+      setError('데이터를 불러오는데 실패했습니다.');
+      showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
     } finally {
       if (isFetchingRef.current === currentFetchId) {
         isFetchingRef.current = false;

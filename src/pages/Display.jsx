@@ -86,6 +86,7 @@ const Display = () => {
       console.log("진열장 데이터 요청 중... userId:", userId);
       setLoading(true);
       setError(null);
+      showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
       
       const response = await api.get(`/displays`);
       
@@ -405,6 +406,7 @@ const Display = () => {
   const handleRefresh = useCallback(() => {
     setRetryCount(0);
     setError(null);
+    showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
     fetchDisplayItems();
   }, [fetchDisplayItems]);
 

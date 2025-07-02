@@ -320,7 +320,7 @@ const GroupRocketCreate = () => {
     }
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      showAlert(Object.values(newErrors).join('\n'), 'danger', '입력 오류');
       
       if (newErrors.rocketName && rocketNameRef.current) {
         rocketNameRef.current.focus();

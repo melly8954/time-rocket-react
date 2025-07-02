@@ -149,12 +149,12 @@ const CreateGroup = () => {
     }
     
     if (formData.memberLimit && (isNaN(formData.memberLimit) || formData.memberLimit < 2 || formData.memberLimit > 100)) {
-      newErrors.memberLimit = '모임 정원은 2명 이상 100명 이하의 숫자여야 합니다.';
+      newErrors.memberLimit = '모임 정원은 2명 이상 10명 이하의 숫자여야 합니다.';
     }
     
     if (formData.isPrivate && !formData.password.trim()) {
       newErrors.password = '비공개 모임은 비밀번호가 필요합니다.';
-    } else if (formData.password && formData.password.length < 4) {
+    } else if (formData.isPrivate && formData.password.length < 4) {
       newErrors.password = '비밀번호는 4글자 이상이어야 합니다.';
     }
     
@@ -188,7 +188,7 @@ const CreateGroup = () => {
         password: formData.isPrivate ? formData.password.trim() : null
       };
       
-      console.log('Sending group data:', groupData);
+      // console.log('Sending group data:', groupData);
       
       // JSON을 Blob으로 변환하여 추가
       submitData.append('data', new Blob([JSON.stringify(groupData)], {
@@ -207,7 +207,7 @@ const CreateGroup = () => {
         }
       });
       
-      console.log('Group created successfully:', response.data);
+      // console.log('Group created successfully:', response.data);
       showAlert('모임이 성공적으로 생성되었습니다!', 'success', '생성 완료');
       
       // 모달 닫힌 후 페이지 이동
@@ -216,8 +216,8 @@ const CreateGroup = () => {
       }, 1500);
       
     } catch (err) {
-      console.error('모임 생성 실패:', err);
-      console.error('Error response:', err.response?.data);
+      // console.error('모임 생성 실패:', err);
+      // console.error('Error response:', err.response?.data);
       
       // 통합 에러 핸들러 사용
       const errorMessage = err.response?.data?.message || '모임 생성에 실패했습니다.';
