@@ -86,7 +86,6 @@ const Display = () => {
       console.log("진열장 데이터 요청 중... userId:", userId);
       setLoading(true);
       setError(null);
-      showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
       
       const response = await api.get(`/displays`);
       
@@ -314,8 +313,10 @@ const Display = () => {
         });
         
         // 빈 슬롯으로 이동하는 API 호출
-        await api.patch(`/displays/${sourceChestId}/move-to-empty`, {
-          targetLocation: targetIndex
+        await api.patch(`/displays/location`, {
+          sourceChestId: sourceChestId,
+          targetChestId: null, // 빈 공간이니까 null
+          targetDisplayLocation: targetIndex + 1 // 진열장 위치는 1부터 시작
         });
         
         // 성공 시 로컬 상태 업데이트 (단순 이동)

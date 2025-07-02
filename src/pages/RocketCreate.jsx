@@ -102,48 +102,62 @@ function RocketCreate() {
 
     // API 통신 함수들 - alert를 showAlert로 변경
     const handleTempSave = async () => {
-        try {
-            if (form.lockExpiredAt && new Date(form.lockExpiredAt) < new Date()) {
-                showAlert("잠금 해제일은 현재 시간보다 이후여야 합니다.", 'warning', '입력 오류');
-                return;
-            }
-            await api.post("rockets/temp-rockets", form);
-            showAlert("임시 저장되었습니다.", 'success', '저장 완료');
-        } catch (err) {
-            console.error("임시 저장 실패", err);
-            handleApiError(err, "임시 저장 중 오류가 발생했습니다.");
-        }
+  try {
+    if (form.lockExpiredAt && new Date(form.lockExpiredAt) < new Date()) {
+      showAlert("잠금 해제일은 현재 시간보다 이후여야 합니다.", 'warning', '입력 오류');
+      return;
+    }
+
+    const rocketData = {
+      rocketName: form.rocketName,
+      design: form.design,
+      lockExpiredAt: form.lockExpiredAt || null,
+      receiverType: form.receiverType,
+      receiverEmail: form.receiverEmail,
+      content: form.content
     };
 
-    const handleLoadTempRocket = async () => {
-        try {
-            const response = await api.get("rockets/temp-rockets");
-            const tempRocket = response.data.data;
-            
-            if (!tempRocket) {
-                showAlert("임시저장된 로켓이 없습니다.", 'warning', '알림');
-                return;
-            }
-            
-            setForm({
-                rocketName: tempRocket.rocketName || "",
-                design: tempRocket.design || "",
-                lockExpiredAt: tempRocket.lockExpiredAt ? 
-                    new Date(tempRocket.lockExpiredAt).toISOString().slice(0, 16) : "",
-                receiverType: tempRocket.receiverType || "",
-                receiverEmail: tempRocket.receiverEmail || "",
-                content: tempRocket.content || ""
-            });
-            
-            const designIndex = designs.findIndex(d => d.imgUrl === tempRocket.design);
-            if (designIndex !== -1) setCurrentDesignIdx(designIndex);
-            
-            showAlert("임시저장된 로켓을 불러왔습니다.", 'success', '불러오기 완료');
-        } catch (err) {
-            console.error("임시 저장 불러오기 실패", err);
-            handleApiError(err, "임시 저장 불러오기 중 오류가 발생했습니다.");
-        }
-    };
+    // formData 변수를 선언하고 FormData 객체 할당
+    const formData = new FormData();
+
+    formData.append('data', new Blob([JSON.stringify(rocketData)], { type: 'application/json' }));
+
+    if (files && files.length > 0) {
+      files.forEach(file => formData.append('files', file));
+    }
+
+    await api.post("rockets/temp-rockets", formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    showAlert("임시 저장되었습니다.", 'success', '저장 완료');
+  } catch (err) {
+    console.error("임시 저장 실패", err);
+    handleApiError(err, "임시 저장 중 오류가 발생했습니다.");
+  }
+};
+
+const handleLoadTempRocket = async () => {
+  try {
+    const response = await api.get('/rockets/temp-rockets');
+    const tempRocketData = response.data.data; // API 응답 구조에 따라 수정 필요
+    // 불러온 데이터로 상태 업데이트
+    setForm({
+      rocketName: tempRocketData.rocketName || '',
+      design: tempRocketData.design || '',
+      lockExpiredAt: tempRocketData.lockExpiredAt || '',
+      receiverType: tempRocketData.receiverType || '',
+      receiverEmail: tempRocketData.receiverEmail || '',
+      content: tempRocketData.content || ''
+    });
+    // 필요시 파일 관련 상태도 업데이트
+    showAlert('임시 저장 데이터를 불러왔습니다.', 'success');
+  } catch (error) {
+    console.error('임시 저장 데이터 불러오기 실패', error);
+    showAlert('임시 저장 데이터를 불러오는데 실패했습니다.', 'error');
+  }
+};
+
 
     const validateForm = (checkStep) => {
         if (checkStep === 1 && !form.rocketName) {

@@ -209,11 +209,7 @@ const CreateGroup = () => {
       
       // console.log('Group created successfully:', response.data);
       showAlert('모임이 성공적으로 생성되었습니다!', 'success', '생성 완료');
-      
-      // 모달 닫힌 후 페이지 이동
-      setTimeout(() => {
-        navigate('/groups');
-      }, 1500);
+      navigate('/groups');
       
     } catch (err) {
       // console.error('모임 생성 실패:', err);
