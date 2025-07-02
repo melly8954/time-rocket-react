@@ -2,17 +2,19 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../authStore"; // zustand store 가져오기
 import axios from "axios";
-import { handleApiError } from '../utils/errorHandler';
 import SocialLoginButtons from "../components/ui/SocialLoginButtons";
 import styles from '../style/Login.module.css'; // 스타일 적용
 import { connectSocket } from "../utils/socket";
+import { AlertModal } from '../components/common/Modal';
+import useAlertModal from '../components/common/useAlertModal';
 
 const Login = () => {
   const navigate = useNavigate();
   const { isLoggedIn, setIsLoggedIn, setAccessToken, rememberMe, setRememberMe, setUserId, setNickname } = useAuthStore(); // 상태 업데이트 함수 가져오기
   const [userData, setUserData] = useState({ username: "", password: "" });
   const setStompClient = useAuthStore((state) => state.setStompClient);
-
+  const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
+  const [onSuccessNavigate, setOnSuccessNavigate] = useState(false);
   const handleSignupPage = () => {  // 화살표 함수로 정의
     navigate("/signup");
   };
@@ -48,11 +50,11 @@ const Login = () => {
 
       // 로그인 성공 후 소켓 연결
       connectSocket(accessToken);
-
-      alert("로그인 성공!");
-      navigate("/");
+      setOnSuccessNavigate(true);
+      showAlert("로그인 성공!");
     } catch (err) {
-      handleApiError(err, '로그인에 실패했습니다.', navigate);
+      handleApiError(err);
+      showAlert("아이디 또는 비밀번호가 일치하지 않습니다.")
     }
   };
 
@@ -60,11 +62,11 @@ const Login = () => {
     navigate("/password-reset");
   };
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      navigate("/"); // 이미 로그인되어 있으면 홈으로 리디렉션
-    }
-  }, [isLoggedIn, navigate]);
+  // useEffect(() => {
+  //   if (isLoggedIn) {
+  //     navigate("/"); // 이미 로그인되어 있으면 홈으로 리디렉션
+  //   }
+  // }, [isLoggedIn, navigate]);
 
   return (
     <div className={styles.container}>
@@ -113,6 +115,18 @@ const Login = () => {
         <h2>소셜 로그인</h2>
         <SocialLoginButtons />
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => {
+          closeAlert();
+          if (onSuccessNavigate) {
+            navigate('/');
+          }
+        }}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
+      />
     </div>
   );
 };
