@@ -456,13 +456,16 @@ const RocketChest = () => {
         setRockets([]);
         setTotalPages(0);
         setTotalRockets(0);
-        setError(null);
+        setError('데이터를 불러오는데 실패했습니다.');
+        showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
       }
     } catch (err) {
       if (isFetchingRef.current !== currentFetchId) return;
       
       console.error('데이터 로드 실패:', err);
       const shouldShowEmpty = handleApiError(err);
+      setError('데이터를 불러오는데 실패했습니다.');
+      showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
       
       setRockets([]);
       setTotalPages(0);

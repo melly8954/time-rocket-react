@@ -383,6 +383,7 @@ const GroupChest = () => {
         setTotalPages(0);
         setTotalRockets(0);
         setError(null);
+        showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
       }
     } catch (err) {
       if (isFetchingRef.current !== currentFetchId) return;
@@ -395,8 +396,10 @@ const GroupChest = () => {
       
       if (err.response?.status !== 404) {
         setError('모임 로켓 데이터를 불러오는데 실패했습니다.');
+        showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
       } else {
         setError(null);
+        showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
       }
     } finally {
       if (isFetchingRef.current === currentFetchId) {
