@@ -1,0 +1,210 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at 70% 30%, #3a6cf6 0%, #222c5b 80%) no-repeat;
+  /* 우주 느낌의 별빛 효과 */
+  background-blend-mode: lighten;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+  /* 약간의 별빛 효과 추가 */
+  box-shadow: 0 0 80px 10px #7f53ac55 inset;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: linear-gradient(135deg, #222c5b 70%, #7f53ac 100%);
+  border-radius: 18px;
+  box-shadow: 0 10px 40px 0 #3a6cf6cc, 0 0 0 4px #a084ee22;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease-out;
+  position: relative;
+  border: 1.5px solid #5b8bf7;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.small { width: 100%; max-width: 400px; }
+.medium { width: 100%; max-width: 600px; }
+.large { width: 100%; max-width: 900px; }
+
+.modalHeader {
+  padding: 24px 28px 0 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #5b8bf722;
+  margin-bottom: 0;
+  padding-bottom: 18px;
+  background: linear-gradient(90deg, #3a6cf6 0%, #7f53ac 100%);
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f0f4ff;
+  text-shadow: 0 0 8px #a084ee88;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a084ee;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background-color: #3a6cf622;
+  color: #fff;
+  box-shadow: 0 0 8px #a084ee;
+}
+
+.closeButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.modalContent {
+  padding: 28px;
+  overflow-y: auto;
+  flex: 1;
+  color: #e0e6ff;
+  background: linear-gradient(120deg, #222c5b 70%, #3a6cf6 100%);
+}
+
+.confirmModal,
+.alertModal {
+  text-align: center;
+}
+
+.confirmMessage,
+.alertMessage {
+  margin: 0 0 24px 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #d2d8ff;
+  text-shadow: 0 0 4px #7f53ac99;
+}
+
+.confirmButtons,
+.alertButtons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 90px;
+  background: linear-gradient(90deg, #3a6cf6 0%, #a084ee 100%);
+  color: #fff;
+  box-shadow: 0 2px 10px #7f53ac33;
+  letter-spacing: 0.5px;
+}
+
+.cancelButton {
+  background: linear-gradient(90deg, #222c5b 0%, #5b8bf7 100%);
+  color: #a084ee;
+  border: 1px solid #5b8bf7;
+}
+
+.cancelButton:hover {
+  background: #3a6cf6;
+  color: #fff;
+  border-color: #a084ee;
+}
+
+.confirmButton.default {
+  background: linear-gradient(90deg, #3a6cf6 0%, #7f53ac 100%);
+}
+
+.confirmButton.default:hover {
+  background: linear-gradient(90deg, #5b8bf7 0%, #a084ee 100%);
+}
+
+.confirmButton.danger {
+  background: linear-gradient(90deg, #7f53ac 0%, #dc3545 100%);
+}
+
+.confirmButton.danger:hover {
+  background: linear-gradient(90deg, #a084ee 0%, #c82333 100%);
+}
+
+.confirmButton.warning {
+  background: linear-gradient(90deg, #ffc107 0%, #a084ee 100%);
+  color: #222c5b;
+}
+
+.confirmButton.warning:hover {
+  background: linear-gradient(90deg, #e0a800 0%, #7f53ac 100%);
+}
+
+.confirmButton.success {
+  background: linear-gradient(90deg, #28a745 0%, #7f53ac 100%);
+}
+
+.confirmButton.success:hover {
+  background: linear-gradient(90deg, #218838 0%, #a084ee 100%);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .modalOverlay { padding: 10px; }
+  .modal { max-height: 95vh; }
+  .modalHeader { padding: 16px 20px 0 20px; padding-bottom: 12px; }
+  .modalTitle { font-size: 1.1rem; }
+  .modalContent { padding: 20px; }
+  .confirmButtons, .alertButtons { flex-direction: column; }
+  .button { width: 100%; }
+}
+
+/* 스크롤바 스타일 */
+.modalContent::-webkit-scrollbar {
+  width: 6px;
+}
+.modalContent::-webkit-scrollbar-track {
+  background: #222c5b;
+  border-radius: 3px;
+}
+.modalContent::-webkit-scrollbar-thumb {
+  background: #7f53ac;
+  border-radius: 3px;
+}
+.modalContent::-webkit-scrollbar-thumb:hover {
+  background: #a084ee;
+}
