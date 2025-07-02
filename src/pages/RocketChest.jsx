@@ -44,7 +44,7 @@ const getDesignImage = (design) => {
 };
 
 // 통합 로켓 아이템 컴포넌트
-const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMenu, isSelected, isDeleteMode, timerTick }) => {
+const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMenu, isSelected, isDeleteMode, currentUserEmail, timerTick }) => {
   const [timeDisplay, setTimeDisplay] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [timeStatus, setTimeStatus] = useState('');
@@ -54,8 +54,17 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
     return;
   }
 
+  const isSelfSent = isSentTab && rocket.receiverEmail === currentUserEmail;
+
   const updateTime = () => {
-    // 잠금 상태 확인 (1: 잠금, 0: 해제)
+    if (isSelfSent) {
+      // 내가 나에게 보낸 로켓은 무조건 잠금 상태로 처리
+      setIsUnlocked(false);
+      setTimeDisplay('잠금 상태입니다.');
+      setTimeStatus('');
+      return;
+    }
+
     let lockStatus;
     if (isGroupTab) {
       lockStatus = rocket.isLock; // 모임 로켓은 isLock 직접 사용
@@ -65,7 +74,6 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
     
     const expireTime = rocket.lockExpiredAt;
     
-    // 1. 먼저 보낸 로켓함 특별 처리
     if (isSentTab && !expireTime) {
       setIsUnlocked(true);
       setTimeDisplay('전송 완료');
@@ -73,9 +81,7 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
       return;
     }
     
-    // 2. 시간 정보가 없는 경우
     if (!expireTime) {
-      // 잠금해제된 상태라면
       if (lockStatus === 0 || lockStatus === false) {
         setIsUnlocked(true);
         setTimeDisplay('오픈 완료');
@@ -88,13 +94,11 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
       return;
     }
     
-    // 3. 시간 정보가 있는 경우 - 시간 먼저 체크
     const targetDate = new Date(expireTime);
     const currentTime = new Date();
     const diff = targetDate - currentTime;
     
     if (diff > 0) {
-      // 아직 시간이 남은 경우 - 무조건 잠금 상태 (카운트다운 표시)
       setIsUnlocked(false);
       setTimeDisplay(calculateCountdown(expireTime));
       setTimeStatus(`${targetDate.toLocaleString('ko-KR', { 
@@ -104,20 +108,16 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
         minute: '2-digit' 
       })}까지`);
     } else {
-      // 시간이 지난 경우
       if (isSentTab) {
         setIsUnlocked(true);
         setTimeDisplay('전송 완료');
         setTimeStatus('');
       } else {
-        // 잠금 상태 확인
         if (lockStatus === 0 || lockStatus === false) {
-          // 잠금해제 버튼을 눌러서 해제된 상태
           setIsUnlocked(true);
           setTimeDisplay('오픈 완료');
           setTimeStatus('');
         } else {
-          // 시간은 지났지만 아직 잠금해제 버튼을 누르지 않은 상태
           setIsUnlocked(false);
           setTimeDisplay('오픈 가능');
           setTimeStatus('클릭하여 잠금 해제');
@@ -127,7 +127,7 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
   };
 
   updateTime();
-}, [rocket?.rocketName, rocket?.isLock, rocket?.isLocked, rocket?.lockExpiredAt, isSentTab, isGroupTab, timerTick]);
+}, [rocket?.rocketName, rocket?.isLock, rocket?.isLocked, rocket?.lockExpiredAt, isSentTab, isGroupTab, timerTick, currentUserEmail]);
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -316,7 +316,7 @@ const ModalContent = ({
 
 const RocketChest = () => {
   const navigate = useNavigate();
-  const { userId, isLoggedIn } = useAuthStore();
+  const { userId, isLoggedIn, email: currentUserEmail } = useAuthStore();
   const isFetchingRef = useRef(false);
   const searchTimeoutRef = useRef(null);
   
@@ -575,6 +575,19 @@ const RocketChest = () => {
 
   const deleteSingleRocket = useCallback(async (rocketId) => {
     if (!rocketId) return;
+
+    const rocketToDelete = rockets.find(r => r[idKey] === rocketId);
+    if (!rocketToDelete) {
+      showAlert('삭제할 로켓 정보를 찾을 수 없습니다.', 'danger');
+      return;
+    }
+
+    const lockStatus = rocketToDelete.isLock;
+    const isLocked = Number(lockStatus) === 1 || lockStatus === true;
+    if (isLocked) {
+      showAlert('잠금된 로켓은 삭제할 수 없습니다.', 'warning');
+      return;
+    }
     
     showConfirm(
       `해당 ${isGroupTab ? '모임 ' : ''}로켓을 삭제하시겠습니까?`,
@@ -583,7 +596,7 @@ const RocketChest = () => {
           const endpoint = isGroupTab 
             ? `${API_PATHS.GROUP_CHESTS}/${rocketId}/deleted-flag`
             : `${isSentTab ? API_PATHS.SENT_CHESTS : API_PATHS.RECEIVED_CHESTS}/${rocketId}/deleted-flag`;
-          
+
           await api.patch(endpoint);
           setIsModalOpen(false);
           fetchData();
@@ -593,7 +606,7 @@ const RocketChest = () => {
         }
       }
     );
-  }, [isSentTab, isGroupTab, fetchData]);
+  }, [isSentTab, isGroupTab, fetchData, rockets, idKey]);
 
   const deleteSelectedRockets = useCallback(async () => {
     if (rocketsToDelete.length === 0) return;
@@ -627,15 +640,18 @@ const RocketChest = () => {
     if (!detailId) return;
     
     if (isDeleteMode) {
-      const lockStatus = isGroupTab ? rocket.isLock : (rocket.isLocked !== undefined ? rocket.isLocked : rocket.isLock);
-      const canDelete = isGroupTab || isSentTab || lockStatus === 0;
-      if (canDelete) {
-        setRocketsToDelete(prev => 
+      const lockStatus = rocket.isLock;
+
+       if (Number(lockStatus) === 1 || lockStatus === true) {
+          return; // 잠금된 로켓은 선택 불가
+        }
+
+      // 잠금 해제된 로켓만 선택/해제 가능
+        setRocketsToDelete(prev =>
           prev.includes(detailId) ? prev.filter(id => id !== detailId) : [...prev, detailId]
         );
+        return;
       }
-      return;
-    }
     
     try {
       setSelectedRocket({ ...rocket, loading: true });
@@ -646,13 +662,16 @@ const RocketChest = () => {
       setSelectedRocket(prev => ({ ...prev, loading: false, loadError: true }));
       showAlert("로켓 정보를 가져오는데 실패했습니다.", 'danger');
     }
-  }, [idKey, isDeleteMode, isGroupTab, isSentTab, fetchDetail]);
+  }, [idKey, isDeleteMode, fetchDetail]);
 
   const handleContextMenu = useCallback((e, rocket) => {
     e.preventDefault();
     if (isSentTab || isGroupTab || activeTab !== 'received') return;
     const lockStatus = rocket.isLocked !== undefined ? rocket.isLocked : rocket.isLock;
-    if (lockStatus !== 0) {
+
+    console.log('우클릭 로켓 lockStatus:', lockStatus, '로켓:', rocket); // lockStatus 테스트
+    
+    if (lockStatus === 1) {
       showAlert('이 로켓은 잠금 상태입니다. 먼저 잠금을 해제해주세요.', 'warning');
       return;
     }
@@ -839,20 +858,29 @@ const RocketChest = () => {
         </div>
       ) : rockets.length > 0 ? (
         <div className="rockets-grid">
-          {rockets.map((rocket, index) => (
-            <RocketItem
-              key={`${rocket[idKey]}-${index}`}
-              rocket={rocket}
-              idKey={idKey}
-              isSentTab={isSentTab}
-              isGroupTab={isGroupTab}
-              onClick={handleRocketClick}
-              onContextMenu={handleContextMenu}
-              isSelected={rocketsToDelete.includes(rocket[idKey])}
-              isDeleteMode={isDeleteMode}
-              timerTick={timerTick}
-            />
-          ))}
+          {rockets.map((rocket, index) => {
+            const isLocked = Number(rocket.isLock) === 1 || rocket.isLock === true;
+            const isDisabled = isDeleteMode && isLocked;  
+
+            if (isDeleteMode && isLocked) return null; // 삭제 모드일 때 잠금된 로켓은 아예 안 보이게
+
+            return (
+              <RocketItem
+                key={`${rocket[idKey]}-${index}`}
+                rocket={rocket}
+                idKey={idKey}
+                isSentTab={isSentTab}
+                isGroupTab={isGroupTab}
+                onClick={isDisabled ? undefined : () => handleRocketClick(rocket)}
+                onContextMenu={handleContextMenu}
+                isSelected={rocketsToDelete.includes(rocket[idKey])}
+                isDeleteMode={isDeleteMode}
+                isDisabled={isDisabled}  // RocketItem 안에서 체크박스나 스타일 제어용
+                timerTick={timerTick}
+                currentUserEmail={currentUserEmail}
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="empty-storage">
@@ -939,9 +967,13 @@ const RocketChest = () => {
                   </>
                 ) : (
                   <>
-                    <p className="rocket-sender">
-                      <strong>보낸 사람:</strong> {selectedRocket.senderEmail || '알 수 없음'}
-                    </p>
+                    {/* 보낸 로켓함 탭일 때는 보낸 사람 표시 안 함 */}
+                    {!isSentTab && (
+                      <p className="rocket-sender">
+                        <strong>보낸 사람:</strong> {selectedRocket.senderEmail || '알 수 없음'}
+                      </p>
+                    )}
+
                     <p className="rocket-receiver">
                       <strong>받는 사람:</strong> {selectedRocket.receiverEmail || selectedRocket.receiverNickname || '알 수 없음'}
                     </p>
