@@ -35,7 +35,6 @@ const SignUp = () => {
             showAlert("이메일로 인증 코드를 전송했습니다.");
         } catch (err) {
             handleApiError(err);
-            showAlert(err.response.data.message);
         }
     };
 
@@ -49,7 +48,6 @@ const SignUp = () => {
             showAlert("이메일 인증 성공!");
         } catch (err) {
             handleApiError(err);
-            showAlert(err.response.data.message)
         }
     };
 
@@ -96,7 +94,6 @@ const SignUp = () => {
             showAlert("회원가입 성공!");
         } catch (err) {
             handleApiError(err);
-            showAlert(err.response.data.message);
         }
     };
 

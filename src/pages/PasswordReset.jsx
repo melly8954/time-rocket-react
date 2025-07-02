@@ -2,36 +2,34 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styles from '../style/PasswordReset.module.css';
+import { AlertModal } from '../components/common/Modal';
+import useAlertModal from '../components/common/useAlertModal';
 
 const PasswordReset = () => {
   const [email, setEmail] = useState('');
   const [tempPassword, setTempPassword] = useState('');
   const [isTempSent, setIsTempSent] = useState(false);
   const navigate = useNavigate();
-
+  const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
+  const [onSuccessNavigate, setOnSuccessNavigate] = useState(false);
   const handleSendTempPassword = async () => {
     if (!email) {
-      alert('이메일을 입력해주세요.');
+      showAlert('이메일을 입력해주세요.');
       return;
     }
 
     try {
       await axios.post('http://localhost:8081/api/emails/temp-password', { email });
-      alert('임시 비밀번호가 이메일로 발송되었습니다.');
+      showAlert('임시 비밀번호가 이메일로 발송되었습니다.');
       setIsTempSent(true);
     } catch (err) {
-      console.error(err);
-      if (err.response) {
-        alert(err.response.data.message || '오류가 발생했습니다.');
-      } else {
-        alert('서버에 연결할 수 없습니다.');
-      }
+      handleApiError(err);
     }
   };
 
   const handleVerifyTempPassword = async () => {
     if (!tempPassword) {
-      alert('임시 비밀번호를 입력해주세요.');
+      showAlert('임시 비밀번호를 입력해주세요.');
       return;
     }
 
@@ -40,15 +38,10 @@ const PasswordReset = () => {
         email,
         tempPassword,
       });
-      alert('임시 비밀번호 인증 및 변경이 완료되었습니다.');
-      navigate("/");
+      setOnSuccessNavigate(true);
+      showAlert('임시 비밀번호 인증 및 변경이 완료되었습니다.');
     } catch (err) {
-      console.error(err);
-      if (err.response) {
-        alert(err.response.data.message || '인증 실패');
-      } else {
-        alert('서버에 연결할 수 없습니다.');
-      }
+      handleApiError(err);
     }
   };
 
@@ -99,6 +92,18 @@ const PasswordReset = () => {
           </>
         )}
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => {
+          closeAlert();
+          if (onSuccessNavigate) {
+            navigate('/');
+          }
+        }}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
+      />
     </div>
   );
 };
