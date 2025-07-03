@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../utils/api";
 import { fetchUserProfile } from "../utils/profile";
+import api from "../utils/api";
 import DesignSelector, { designs } from "../components/ui/DesignSelector";
 import "../style/RocketCreate.css";
+import { AlertModal } from '../components/common/Modal';
+import useAlertModal from '../components/common/useAlertModal';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 
 function RocketCreate() {
     const navigate = useNavigate();
-    const [currentDesignIdx, setCurrentDesignIdx] = useState(0);
     const [userData, setUserData] = useState({ userId: null, email: "" });
+    const [currentDesignIdx, setCurrentDesignIdx] = useState(0);
     const [form, setForm] = useState({
         rocketName: "", design: "", lockExpiredAt: "",
         receiverType: "", receiverEmail: "", content: "",
@@ -19,20 +24,43 @@ function RocketCreate() {
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef(null);
-
-    // 초기 설정 및 API 호출 함수들
-    useEffect(() => {
-        fetchUserProfile().then(data => setUserData(data))
-            .catch(err => console.error("프로필 불러오기 실패", err));
-    }, []);
+    const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
+    const [onSuccessNavigate, setOnSuccessNavigate] = useState(false);
+    const [lockExpiredAt, setLockExpiredAt] = useState(null); // Date 객체
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     useEffect(() => {
         setForm(prev => ({ ...prev, design: designs[currentDesignIdx].imgUrl }));
     }, [currentDesignIdx]);
 
+    useEffect(() => {
+        fetchUserProfile().then(data => setUserData(data))
+            .catch(err => console.error("프로필 불러오기 실패", err));
+    }, []);
+
+    useEffect(() => {   // 동기화
+        if (lockExpiredAt) {
+            setForm(prev => ({
+                ...prev,
+                lockExpiredAt: formatDateToLocalString(lockExpiredAt)
+            }));
+        }
+    }, [lockExpiredAt]);
+
     // 입력값 처리 함수들
     const handleChange = (e) => {
         const { name, value } = e.target;
+
+        if (name === "lockExpiredAt") {
+            const now = new Date();
+            const selected = new Date(value);
+
+            if (selected < now) {
+                showAlert("잠금 해제일은 현재 시각보다 이후여야 합니다.");
+                return;
+            }
+        }
+
         if (name === "receiverType") {
             setForm(prev => ({
                 ...prev, receiverType: value,
@@ -71,13 +99,9 @@ function RocketCreate() {
         });
     };
 
-    // API 통신 함수들
+    // 임시저장 API
     const handleTempSave = async () => {
         try {
-            if (form.lockExpiredAt && new Date(form.lockExpiredAt) < new Date()) {
-                alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
-                return;
-            }
             const formData = new FormData();
 
             // RocketRequestDto에 해당하는 JSON 객체를 Blob으로 변환
@@ -99,32 +123,46 @@ function RocketCreate() {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-            alert("임시 저장되었습니다.");
+            showAlert("임시 저장되었습니다.");
         } catch (err) {
-            console.error("임시 저장 실패", err);
-            alert(err.response?.data?.message || "임시 저장 중 오류가 발생했습니다.");
+            handleApiError(err);
         }
     };
 
+    // 불러오기 API
     const handleLoadTempRocket = async () => {
         try {
             const response = await api.get("rockets/temp-rockets");
             const tempRocket = response.data.data;
 
             if (!tempRocket) {
-                alert("임시저장된 로켓이 없습니다.");
+                showAlert("임시저장된 로켓이 없습니다.");
                 return;
             }
+
+            const receiverTypeFromServer = tempRocket.receiverType || "";
+            const receiverEmailFromServer = tempRocket.receiverEmail;
+
+            const emailToSet = receiverTypeFromServer === "self"
+                ? (userData.email || "")
+                : (receiverEmailFromServer || "");
 
             setForm({
                 rocketName: tempRocket.rocketName || "",
                 design: tempRocket.design || "",
                 lockExpiredAt: tempRocket.lockExpiredAt?.slice(0, 16) || "",
                 receiverType: tempRocket.receiverType || "",
-                receiverEmail: tempRocket.receiverEmail || "",
+                receiverEmail: emailToSet,
                 content: tempRocket.content || "",
                 existingFileNames: tempRocket.files?.map(file => file.uniqueName) || []
             });
+            // Date 객체로 변환하여 DatePicker에도 반영
+            if (tempRocket.lockExpiredAt) {
+                const parsedDate = new Date(tempRocket.lockExpiredAt);
+                if (!isNaN(parsedDate)) {
+                    setLockExpiredAt(parsedDate);
+                }
+            }
 
             setUploadedFiles(tempRocket.files?.map(file => ({
                 name: file.originalName,
@@ -133,38 +171,32 @@ function RocketCreate() {
 
             const designIndex = designs.findIndex(d => d.imgUrl === tempRocket.design);
             if (designIndex !== -1) setCurrentDesignIdx(designIndex);
-
-            alert("임시저장된 로켓을 불러왔습니다.");
+            showAlert("임시저장된 로켓을 불러왔습니다.");
         } catch (err) {
-            console.error("임시 저장 불러오기 실패", err);
-            alert(err.response?.data?.message || "임시 저장 불러오기 중 오류가 발생했습니다.");
+            handleApiError(err);
         }
     };
 
+    // 데이터 유효성 검사
     const validateForm = (checkStep) => {
         if (checkStep === 1 && !form.rocketName) {
-            alert("로켓 이름을 입력해주세요.");
+            showAlert("로켓 이름을 입력해주세요.");
             return false;
         }
 
         if (checkStep === 2) {
             if (!form.lockExpiredAt) {
-                alert("잠금 해제일을 설정해주세요.");
+                showAlert("잠금 해제일을 설정해주세요.");
                 return false;
             }
 
             if (!form.receiverType) {
-                alert("수신자 유형을 선택해주세요.");
+                showAlert("수신자 유형을 선택해주세요.");
                 return false;
             }
 
             if (form.receiverType === "other" && !form.receiverEmail) {
-                alert("수신자 이메일을 입력해주세요.");
-                return false;
-            }
-
-            if (new Date(form.lockExpiredAt) < new Date()) {
-                alert("잠금 해제일은 현재 시간보다 이후여야 합니다.");
+                showAlert("수신자 이메일을 입력해주세요.");
                 return false;
             }
         }
@@ -172,6 +204,7 @@ function RocketCreate() {
         return true;
     };
 
+    // 로켓 전송 API
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -192,7 +225,7 @@ function RocketCreate() {
             const rocketData = {
                 rocketName: form.rocketName,
                 design: form.design,
-                lockExpiredAt: form.lockExpiredAt || null,
+                lockExpiredAt: form.lockExpiredAt,
                 receiverType: form.receiverType,
                 receiverEmail: form.receiverEmail,
                 content: form.content,
@@ -213,11 +246,10 @@ function RocketCreate() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            alert("로켓이 성공적으로 전송되었습니다!");
-            navigate("/");
+            setOnSuccessNavigate(true);
+            showAlert("로켓이 성공적으로 전송되었습니다!");
         } catch (err) {
-            console.error("로켓 전송 실패", err);
-            alert(`로켓 전송 실패: ${err.response?.data?.message || "서버 오류가 발생했습니다"}`);
+            handleApiError(err);
         } finally {
             setIsSubmitting(false);
         }
@@ -231,6 +263,67 @@ function RocketCreate() {
     const prevStep = () => {
         if (currentStep > 1) setCurrentStep(currentStep - 1);
     };
+
+    function LockDatePicker({ value, onChange }) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', maxWidth: 350 }}>
+                <DatePicker
+                    selected={value}
+                    onChange={(date) => {
+                        onChange(date);
+                        // 자동 닫힘 방지
+                    }}
+                    open={isDatePickerOpen}
+                    onClickOutside={() => setIsDatePickerOpen(false)}
+                    onSelect={() => { }}
+                    onFocus={() => setIsDatePickerOpen(true)}
+                    shouldCloseOnSelect={false}
+                    showTimeSelect
+                    timeIntervals={1}
+                    dateFormat="yyyy-MM-dd HH:mm"
+                    timeFormat="HH:mm"
+                    minDate={new Date()}
+                    placeholderText="클릭하여 잠금 해제일 선택"
+                    showYearDropdown
+                    scrollableYearDropdown
+                    yearDropdownItemNumber={15} // 표시할 연도 개수 (기본 10)
+                    showMonthDropdown
+                />
+                {/* 수동 닫기 버튼 추가 */}
+                {isDatePickerOpen && (
+                    <button
+                        type="button"
+                        onClick={() => setIsDatePickerOpen(false)}
+                        style={{
+                            marginLeft: 8,
+                            cursor: 'pointer',
+                            padding: '4px 12px',
+                            fontSize: '0.9rem',
+                            flexShrink: 0,
+                            borderRadius: 6,
+                            border: '1px solid #ccc',
+                            background: '#eee',
+                        }}
+                    >
+                        닫기
+                    </button>
+                )}
+            </div>
+        );
+    }
+
+    function formatDateToLocalString(date) {
+        if (!date) return "";
+        const pad = (num) => num.toString().padStart(2, "0");
+
+        const year = date.getFullYear();
+        const month = pad(date.getMonth() + 1); // 월은 0부터 시작
+        const day = pad(date.getDate());
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
 
     // UI 렌더링
     return (
@@ -284,12 +377,16 @@ function RocketCreate() {
                         <div className="form-header">
                             <label htmlFor="lockExpiredAt">잠금 해제일</label>
                         </div>
-                        <input
-                            type="datetime-local" name="lockExpiredAt" id="lockExpiredAt"
-                            value={form.lockExpiredAt} onChange={handleChange}
-                            min={new Date().toISOString().slice(0, 16)}
+                        <LockDatePicker
+                            value={lockExpiredAt}
+                            onChange={(date) => {
+                                if (!date || date < new Date()) {
+                                    showAlert("현재 시각보다 이후로 설정해주세요.");
+                                    return;
+                                }
+                                setLockExpiredAt(date); // 유효하면 저장
+                            }}
                         />
-
                         <div className="form-header">
                             <label>수신자 유형</label>
                         </div>
@@ -399,6 +496,18 @@ function RocketCreate() {
                     >&#8594;</button>
                 </div>
             </form>
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => {
+                    closeAlert();
+                    if (onSuccessNavigate) {
+                        navigate('/');
+                    }
+                }}
+                message={alertModal.message}
+                title={alertModal.title}
+                type={alertModal.type}
+            />
         </div>
     );
 }
