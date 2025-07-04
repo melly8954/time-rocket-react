@@ -2,13 +2,17 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
+import { AlertModal, ConfirmModal } from '../components/common/Modal';
+import useAlertModal from '../components/common/useAlertModal';
+import useConfirmModal from '../components/common/useConfirmModal';
+
 import styles from '../style/Groups.module.css';
-import { 
-  SearchIcon, 
-  CloseIcon, 
-  PeopleIcon, 
-  UserIcon, 
-  LockIcon, 
+import {
+  SearchIcon,
+  CloseIcon,
+  PeopleIcon,
+  UserIcon,
+  LockIcon,
   PlusIcon,
   CrownIcon
 } from '../components/ui/Icons';
@@ -46,9 +50,9 @@ const THEME_MAP = {
 // 그룹 카드 컴포넌트
 const GroupCard = ({ group, onClick, isMyGroup = false }) => {
   const themeEmoji = THEME_MAP[group.theme] || '🌟';
-  
+
   return (
-    <div 
+    <div
       className={`${styles.groupCard} ${isMyGroup ? styles.myGroupCard : ''}`}
       onClick={() => onClick(group)}
     >
@@ -62,14 +66,14 @@ const GroupCard = ({ group, onClick, isMyGroup = false }) => {
           {isMyGroup && group.isLeader && <CrownIcon className={styles.leaderIcon} />}
         </div>
       </div>
-      
+
       <div className={styles.groupInfo}>
         <h3 className={styles.groupName}>{group.groupName}</h3>
         <p className={styles.groupDescription}>
           {group.description || '모임 소개가 없습니다.'}
         </p>
       </div>
-      
+
       <div className={styles.groupStats}>
         <div className={styles.memberCount}>
           <UserIcon className={styles.statIcon} />
@@ -80,7 +84,7 @@ const GroupCard = ({ group, onClick, isMyGroup = false }) => {
           <span>{group.leaderNickname}</span>
         </div>
       </div>
-      
+
       {group.backgroundImage && (
         <div className={styles.groupBackground}>
           <img src={group.backgroundImage} alt="Group Background" />
@@ -96,7 +100,7 @@ const Groups = () => {
   const { userId, isLoggedIn } = useAuthStore();
   const isFetchingRef = useRef(false);
   const searchTimeoutRef = useRef(null);
-  
+
   // 상태 관리
   const [groups, setGroups] = useState([]);
   const [myGroups, setMyGroups] = useState([]);
@@ -111,7 +115,9 @@ const Groups = () => {
   const [groupsPage, setGroupsPage] = useState(1);
   const [myGroupsPage, setMyGroupsPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
+  const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
+  const { confirmModal, showConfirm, closeConfirm } = useConfirmModal();
+
   // 인증 확인
   useEffect(() => {
     if (!isLoggedIn) navigate('/login');
@@ -120,10 +126,10 @@ const Groups = () => {
   // 전체 그룹 조회
   const fetchGroups = useCallback(async (isLoadMore = false) => {
     if (isFetchingRef.current) return;
-    
+
     const currentFetchId = Date.now();
     isFetchingRef.current = currentFetchId;
-    
+
     if (isLoadMore) {
       setIsLoadingMore(true);
     } else {
@@ -137,35 +143,35 @@ const Groups = () => {
         page: currentPage,
         size: 12
       };
-      
+
       if (searchTerm.trim()) {
         params['group-name'] = searchTerm.trim();
       }
-      
+
       if (selectedTheme) {
         params['group-theme'] = selectedTheme;
       }
 
       const response = await api.get(API_PATHS.GROUPS, { params });
-      
+
       if (isFetchingRef.current !== currentFetchId) return;
-      
+
       if (response.data?.data) {
         const responseData = response.data.data;
         const newGroups = responseData.groups || [];
-        
+
         if (isLoadMore) {
           setGroups(prev => [...prev, ...newGroups]);
         } else {
           setGroups(newGroups);
         }
-        
+
         setHasMoreGroups(responseData.hasNext || false);
-        
+
         if (responseData.hasNext) {
           setGroupsPage(currentPage + 1);
         }
-        
+
         setError(null);
       } else {
         setGroups([]);
@@ -174,10 +180,10 @@ const Groups = () => {
       }
     } catch (err) {
       if (isFetchingRef.current !== currentFetchId) return;
-      
+
       setGroups([]);
       setHasMoreGroups(false);
-      setError(null);
+      handleApiError(err);
     } finally {
       if (isFetchingRef.current === currentFetchId) {
         isFetchingRef.current = false;
@@ -190,10 +196,10 @@ const Groups = () => {
   // 내가 참여한 그룹 조회
   const fetchMyGroups = useCallback(async (isLoadMore = false) => {
     if (isFetchingRef.current) return;
-    
+
     const currentFetchId = Date.now();
     isFetchingRef.current = currentFetchId;
-    
+
     if (isLoadMore) {
       setIsLoadingMore(true);
     } else {
@@ -207,35 +213,35 @@ const Groups = () => {
         page: currentPage,
         size: 12
       };
-      
+
       if (searchTerm.trim()) {
         params['group-name'] = searchTerm.trim();
       }
-      
+
       if (selectedTheme) {
         params['group-theme'] = selectedTheme;
       }
 
       const response = await api.get(API_PATHS.MY_GROUPS, { params });
-      
+
       if (isFetchingRef.current !== currentFetchId) return;
-      
+
       if (response.data?.data) {
         const responseData = response.data.data;
         const newGroups = responseData.groups || [];
-        
+
         if (isLoadMore) {
           setMyGroups(prev => [...prev, ...newGroups]);
         } else {
           setMyGroups(newGroups);
         }
-        
+
         setHasMoreMyGroups(responseData.hasNext || false);
-        
+
         if (responseData.hasNext) {
           setMyGroupsPage(currentPage + 1);
         }
-        
+
         setError(null);
       } else {
         setMyGroups([]);
@@ -244,10 +250,9 @@ const Groups = () => {
       }
     } catch (err) {
       if (isFetchingRef.current !== currentFetchId) return;
-      
       setMyGroups([]);
       setHasMoreMyGroups(false);
-      setError(null);
+      handleApiError(err);
     } finally {
       if (isFetchingRef.current === currentFetchId) {
         isFetchingRef.current = false;
@@ -270,7 +275,7 @@ const Groups = () => {
   // 실시간 검색 기능 - 의존성 배열에서 함수 제거
   useEffect(() => {
     clearTimeout(searchTimeoutRef.current);
-    
+
     if (searchTerm.trim() === '') {
       if (isSearchMode) {
         setIsSearchMode(false);
@@ -282,7 +287,7 @@ const Groups = () => {
       }
       return;
     }
-    
+
     searchTimeoutRef.current = setTimeout(() => {
       setIsSearchMode(true);
       if (activeTab === 'all') {
@@ -293,21 +298,21 @@ const Groups = () => {
         fetchMyGroups();
       }
     }, 500);
-    
+
     return () => clearTimeout(searchTimeoutRef.current);
   }, [searchTerm, activeTab]); // 함수들 제거
 
   // 무한스크롤 구현
   const handleScroll = useCallback(() => {
     if (isLoadingMore) return;
-    
+
     const currentHasMore = activeTab === 'all' ? hasMoreGroups : hasMoreMyGroups;
     if (!currentHasMore) return;
-    
+
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const scrollHeight = document.documentElement.scrollHeight;
     const clientHeight = window.innerHeight;
-    
+
     if (scrollTop + clientHeight >= scrollHeight - 200) {
       if (activeTab === 'all') {
         fetchGroups(true);
@@ -399,7 +404,7 @@ const Groups = () => {
             같은 관심사를 가진 사람들과 함께 추억을 만들어보세요
           </p>
         </div>
-        
+
         <button className={styles.createGroupBtn} onClick={handleCreateGroup}>
           <PlusIcon />
           새 모임 만들기
@@ -408,13 +413,13 @@ const Groups = () => {
 
       {/* 탭 네비게이션 */}
       <div className={styles.tabNavigation}>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeTab === 'all' ? styles.active : ''}`}
           onClick={() => handleTabChange('all')}
         >
           전체 모임
         </button>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeTab === 'my' ? styles.active : ''}`}
           onClick={() => handleTabChange('my')}
         >
@@ -426,10 +431,10 @@ const Groups = () => {
       <div className={styles.groupsControls}>
         <div className={styles.searchBar}>
           <form onSubmit={handleSearch}>
-            <input 
-              type="text" 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="모임 이름으로 검색..."
             />
             <button type="submit" className={styles.searchButton}>
@@ -444,8 +449,8 @@ const Groups = () => {
         </div>
 
         <div className={styles.filterControls}>
-          <select 
-            value={selectedTheme} 
+          <select
+            value={selectedTheme}
             onChange={handleThemeChange}
             className={styles.themeFilter}
           >
@@ -496,7 +501,7 @@ const Groups = () => {
               />
             ))}
           </div>
-          
+
           {/* 무한스크롤 로딩 표시 */}
           {isLoadingMore && (
             <div className={styles.loadingMore} style={{
@@ -535,6 +540,25 @@ const Groups = () => {
           )}
         </div>
       )}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+      />
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => {
+          closeAlert();
+        }}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
+      />
     </div>
   );
 };
