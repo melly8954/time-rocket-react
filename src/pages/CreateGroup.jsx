@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
-import { handleApiError } from '../utils/errorHandler';
+import { AlertModal } from '../components/common/Modal';
+import useAlertModal from '../components/common/useAlertModal';
 import styles from '../style/CreateGroup.module.css';
 import {
   BackIcon,
@@ -28,7 +29,7 @@ const CreateGroup = () => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuthStore();
   const fileInputRef = useRef(null);
-  
+
   // 폼 상태
   const [formData, setFormData] = useState({
     groupName: '',
@@ -38,11 +39,13 @@ const CreateGroup = () => {
     isPrivate: false,
     password: ''
   });
-  
+
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
+  const [onSuccessNavigate, setOnSuccessNavigate] = useState(false);
 
   // 인증 확인
   React.useEffect(() => {
@@ -52,12 +55,12 @@ const CreateGroup = () => {
   // 입력값 변경 핸들러
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    
+
     // 에러 초기화
     if (errors[name]) {
       setErrors(prev => ({
@@ -70,22 +73,22 @@ const CreateGroup = () => {
   // 이미지 파일 선택
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    
+
     if (file) {
       // 파일 크기 체크 (5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('이미지 파일은 5MB 이하만 업로드 가능합니다.');
         return;
       }
-      
+
       // 파일 타입 체크
       if (!file.type.startsWith('image/')) {
         alert('이미지 파일만 업로드 가능합니다.');
         return;
       }
-      
+
       setBackgroundImage(file);
-      
+
       // 미리보기 생성
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -107,7 +110,7 @@ const CreateGroup = () => {
   // 폼 검증
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.groupName.trim()) {
       newErrors.groupName = '모임 이름을 입력해주세요.';
     } else if (formData.groupName.trim().length < 2) {
@@ -115,27 +118,27 @@ const CreateGroup = () => {
     } else if (formData.groupName.trim().length > 50) {
       newErrors.groupName = '모임 이름은 50글자 이하이어야 합니다.';
     }
-    
+
     if (!formData.description.trim()) {
       newErrors.description = '모임 소개를 입력해주세요.';
     } else if (formData.description.trim().length > 500) {
       newErrors.description = '모임 소개는 500글자 이하이어야 합니다.';
     }
-    
+
     if (!formData.themeId) {
       newErrors.themeId = '모임 테마를 선택해주세요.';
     }
-    
+
     if (formData.memberLimit && (isNaN(formData.memberLimit) || formData.memberLimit < 2 || formData.memberLimit > 100)) {
       newErrors.memberLimit = '모임 정원은 2명 이상 100명 이하의 숫자여야 합니다.';
     }
-    
+
     if (formData.isPrivate && !formData.password.trim()) {
       newErrors.password = '비공개 모임은 비밀번호가 필요합니다.';
     } else if (formData.password && formData.password.length < 4) {
       newErrors.password = '비밀번호는 4글자 이상이어야 합니다.';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -143,19 +146,19 @@ const CreateGroup = () => {
   // 폼 제출
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     try {
       setIsLoading(true);
-      
+
       // FormData 생성
       const submitData = new FormData();
-      
+
       // 테마 ID를 테마 이름으로 변환
       const selectedThemeOption = THEME_OPTIONS.find(theme => theme.id === parseInt(formData.themeId));
       const themeName = selectedThemeOption ? selectedThemeOption.value : null;
-      
+
       // 백엔드 CreateGroupRequest에 맞는 JSON 데이터 생성
       const groupData = {
         groupName: formData.groupName.trim(),
@@ -165,37 +168,31 @@ const CreateGroup = () => {
         isPrivate: formData.isPrivate,
         password: formData.isPrivate ? formData.password.trim() : null
       };
-      
+
       console.log('Sending group data:', groupData);
-      
+
       // JSON을 Blob으로 변환하여 추가
       submitData.append('data', new Blob([JSON.stringify(groupData)], {
         type: 'application/json'
       }));
-      
+
       // 이미지 파일 추가 (선택사항)
       if (backgroundImage) {
         submitData.append('file', backgroundImage);
       }
-      
+
       // 요청 전송
       const response = await api.post('/groups', submitData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
+
       console.log('Group created successfully:', response.data);
-      alert('모임이 성공적으로 생성되었습니다!');
-      navigate('/groups');
-      
+      setOnSuccessNavigate(true);
+      showAlert('모임이 성공적으로 생성되었습니다!');
     } catch (err) {
-      console.error('모임 생성 실패:', err);
-      console.error('Error response:', err.response?.data);
-      
-      // 통합 에러 핸들러 사용
-      const errorMessage = err.response?.data?.message || '모임 생성에 실패했습니다.';
-      alert(errorMessage);
+      handleApiError(err);
     } finally {
       setIsLoading(false);
     }
@@ -206,8 +203,8 @@ const CreateGroup = () => {
       {/* 나머지 JSX는 동일하게 유지 */}
       {/* 헤더 */}
       <div className={styles.createGroupHeader}>
-        <button 
-          onClick={() => navigate('/groups')} 
+        <button
+          onClick={() => navigate('/groups')}
           className={styles.backButton}
         >
           <BackIcon /> 돌아가기
@@ -220,7 +217,7 @@ const CreateGroup = () => {
         {/* 기본 정보 */}
         <div className={styles.formSection}>
           <h2 className={styles.sectionTitle}>기본 정보</h2>
-          
+
           <div className={styles.formGroup}>
             <label htmlFor="groupName" className={styles.formLabel}>
               모임 이름 *
@@ -240,7 +237,7 @@ const CreateGroup = () => {
               <span className={styles.errorMessage}>{errors.groupName}</span>
             )}
           </div>
-          
+
           <div className={styles.formGroup}>
             <label htmlFor="description" className={styles.formLabel}>
               모임 소개 *
@@ -265,7 +262,7 @@ const CreateGroup = () => {
               <span className={styles.errorMessage}>{errors.description}</span>
             )}
           </div>
-          
+
           <div className={styles.formGroup}>
             <label htmlFor="themeId" className={styles.formLabel}>
               모임 테마 *
@@ -294,7 +291,7 @@ const CreateGroup = () => {
         {/* 모임 설정 */}
         <div className={styles.formSection}>
           <h2 className={styles.sectionTitle}>모임 설정</h2>
-          
+
           <div className={styles.formGroup}>
             <label htmlFor="memberLimit" className={styles.formLabel}>
               모임 정원 (선택사항)
@@ -316,7 +313,7 @@ const CreateGroup = () => {
               <span className={styles.errorMessage}>{errors.memberLimit}</span>
             )}
           </div>
-          
+
           <div className={styles.formGroup}>
             <div className={styles.checkboxGroup}>
               <input
@@ -333,7 +330,7 @@ const CreateGroup = () => {
               </label>
             </div>
           </div>
-          
+
           {formData.isPrivate && (
             <div className={styles.formGroup}>
               <label htmlFor="password" className={styles.formLabel}>
@@ -360,7 +357,7 @@ const CreateGroup = () => {
         {/* 배경 이미지 */}
         <div className={styles.formSection}>
           <h2 className={styles.sectionTitle}>배경 이미지 (선택사항)</h2>
-          
+
           <div className={styles.imageUploadSection}>
             {imagePreview ? (
               <div className={styles.imagePreview}>
@@ -374,7 +371,7 @@ const CreateGroup = () => {
                 </button>
               </div>
             ) : (
-              <div 
+              <div
                 className={styles.imageUploadArea}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -383,7 +380,7 @@ const CreateGroup = () => {
                 <p className={styles.uploadHint}>JPG, PNG 파일 (최대 5MB)</p>
               </div>
             )}
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -412,7 +409,7 @@ const CreateGroup = () => {
             {isLoading ? '생성 중...' : '모임 만들기'}
           </button>
         </div>
-        
+
         {/* 미리보기 */}
         {formData.groupName && formData.description && formData.themeId && (
           <div className={styles.previewSection}>
@@ -430,17 +427,17 @@ const CreateGroup = () => {
                   </div>
                   {formData.isPrivate && <LockIcon className={styles.previewPrivateIcon} />}
                 </div>
-                
+
                 <h3 className={styles.previewName}>{formData.groupName}</h3>
                 <p className={styles.previewDescription}>{formData.description}</p>
-                
+
                 <div className={styles.previewStats}>
                   <div className={styles.previewStat}>
                     <PeopleIcon />
                     <span>1/{formData.memberLimit || '∞'}</span>
                   </div>
                 </div>
-                
+
                 {imagePreview && (
                   <div className={styles.previewBackground}>
                     <img src={imagePreview} alt="배경 미리보기" />
@@ -451,6 +448,18 @@ const CreateGroup = () => {
           </div>
         )}
       </form>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => {
+          closeAlert();
+          if (onSuccessNavigate) {
+            navigate('/groups');
+          }
+        }}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
+      />
     </div>
   );
 };
