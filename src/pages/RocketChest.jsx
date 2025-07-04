@@ -873,6 +873,7 @@ const RocketChest = () => {
                   selectedRocket={selectedRocket}
                   isSentTab={isSentTab}
                   isGroupTab={isGroupTab}
+                  activeTab={activeTab}
                   idKey={idKey}
                   handleUnlockManually={handleUnlockManually}
                   handleUnlockGroupRocket={handleUnlockGroupRocket}
