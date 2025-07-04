@@ -178,7 +178,7 @@ const GroupDetail = () => {
         setIsMember(!!currentUserMember && !currentUserMember.isKicked);
       }
     } catch (err) {
-      handleApiError(err);
+      console.log(err);
     }
   }, [groupId, userId]);
 
