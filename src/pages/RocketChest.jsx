@@ -126,10 +126,12 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
 // 보관함 로켓 아이템 상세화면 컴포넌트
 const RocketItemDetail = ({
   selectedRocket,
+  activeTab,
   isSentTab,
   isGroupTab,
   idKey,
   handleUnlockManually,
+  handleUnlockGroupRocket,
   toggleVisibility,
   deleteSingleRocket,
   renderFiles,
@@ -165,7 +167,7 @@ const RocketItemDetail = ({
         )}
         {renderFiles()}
         <div className="rocket-actions">
-          {!isSentTab && (
+          {activeTab === 'received' && (
             <button
               className="display-button"
               onClick={() => toggleVisibility(selectedRocket[idKey])}
@@ -184,11 +186,13 @@ const RocketItemDetail = ({
     );
   }
 
+  // 보낸 탭이면서 모임 탭이 아닌 경우: 단순 전송 완료 메시지만 표시
   if (isSentTab && !isGroupTab) {
     return (
       <div className="rocket-locked">
         <div className="lock-icon"></div>
         <p>이 로켓은 아직 수신자가 열어보지 않았습니다.</p>
+        <p className="waiting-message">수신자가 열람할 때까지 기다려주세요.</p>
         <div className="rocket-actions">
           <button className="delete-button" onClick={() => deleteSingleRocket(selectedRocket[idKey])}>
             로켓 삭제
@@ -202,33 +206,26 @@ const RocketItemDetail = ({
   const targetDate = new Date(selectedRocket.lockExpiredAt);
   const timeExpired = targetDate <= now;
 
+  // 시간이 만료된 경우 - 잠금 해제 가능
   if (timeExpired) {
     if (isGroupTab) {
       return (
-        <>
-          <div className="group-rocket-contents">
-            <h3>모임원들의 메시지</h3>
-            {renderContents()}
-          </div>
-          {renderFiles()}
-          <div className="auto-unlock-notice">
-            <p>✨ 이 모임 로켓은 시간이 되어 자동으로 열렸습니다!</p>
-          </div>
-          <div className="rocket-actions">
-            <button className="display-button" onClick={() => toggleVisibility(selectedRocket[idKey])}>
-              {selectedRocket.isPublic ? '진열장에서 제거' : '진열장에 추가'}
-            </button>
-            <button className="delete-button" onClick={() => deleteSingleRocket(selectedRocket[idKey])}>
-              로켓 삭제
-            </button>
-          </div>
-        </>
+        <div className="rocket-locked rocket-unlockable">
+          <div className="lock-icon"></div>
+          <p>모임 로켓 잠금 해제가 가능합니다.</p>
+          <button
+            className="unlock-button"
+            onClick={() => handleUnlockGroupRocket(selectedRocket[idKey])}
+          >
+            🔓 모임 로켓 열기
+          </button>
+        </div>
       );
     } else {
       return (
         <div className="rocket-locked rocket-unlockable">
           <div className="lock-icon"></div>
-          <p>잠금 해제가 가능합니다.</p>
+          <p>로켓 잠금 해제가 가능합니다.</p>
           <button
             className="unlock-button"
             onClick={() => handleUnlockManually(selectedRocket.rocketId)}
@@ -416,6 +413,30 @@ const RocketChest = () => {
       handleApiError(err);
     }
   }, [fetchChestDetail, rockets]);
+
+  const handleUnlockGroupRocket = useCallback(async (groupChestId) => {
+    if (!groupChestId) return;
+
+    try {
+      const groupId = selectedRocket?.groupId;
+      const groupRocketId = selectedRocket?.groupRocketId;
+
+      // 바로 올바른 ID로 호출 (첫 번째 실패하는 호출 제거)
+      await api.patch(`/groups/${groupId}/rockets/${groupRocketId}/unlock`);
+      // 잠금 해제 후 상세정보 새로 받아오기
+      const unlockedRocket = rockets.find(r => r[idKey] === groupChestId);
+      if (!unlockedRocket) return;
+
+      const updatedDetail = await fetchChestDetail(unlockedRocket);
+
+      setSelectedRocket({ ...unlockedRocket, ...updatedDetail, isLock: 0, isLocked: false, loading: false });
+      setRockets(prev => prev.map(r => r[idKey] === groupChestId ? { ...r, isLock: 0, isLocked: false } : r));
+
+      showAlert('모임 로켓이 성공적으로 잠금 해제되었습니다.');
+    } catch (err) {
+      handleApiError(err);
+    }
+  }, [selectedRocket, rockets, idKey, fetchChestDetail]);
 
   const toggleVisibility = useCallback(async (chestId) => {
     if (!chestId) return;
@@ -855,6 +876,7 @@ const RocketChest = () => {
                   isGroupTab={isGroupTab}
                   idKey={idKey}
                   handleUnlockManually={handleUnlockManually}
+                  handleUnlockGroupRocket={handleUnlockGroupRocket}
                   toggleVisibility={toggleVisibility}
                   deleteSingleRocket={deleteSingleRocket}
                   renderFiles={renderFiles}
