@@ -537,7 +537,7 @@ const RocketChest = () => {
       setSelectedRocket({ ...rocket, ...detailData, loading: false });
     } catch (err) {
       setSelectedRocket(prev => ({ ...prev, loading: false, loadError: true }));
-      alert("로켓 정보를 가져오는데 실패했습니다.");
+      showAlert("로켓 정보를 가져오는데 실패했습니다.");
     }
   }, [idKey, isDeleteMode, isGroupTab, isSentTab, fetchChestDetail]);
 
