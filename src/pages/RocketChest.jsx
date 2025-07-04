@@ -548,7 +548,8 @@ const RocketChest = () => {
     if (!detailId) return;
 
     if (isDeleteMode) {
-      const canDelete = isGroupTab || isSentTab || Number(rocket.isLocked !== undefined ? rocket.isLocked : rocket.isLock || 0) === 0;
+      const canDelete =
+        isSentTab || Number(rocket.isLocked !== undefined ? rocket.isLocked : rocket.isLock || 0) === 0;
       if (canDelete) {
         setRocketsToDelete(prev =>
           prev.includes(detailId) ? prev.filter(id => id !== detailId) : [...prev, detailId]
