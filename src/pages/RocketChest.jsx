@@ -41,24 +41,28 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
     const targetDate = new Date(rocket.lockExpiredAt);
     const isExpired = targetDate <= now;
 
-    if (!lockStatus || lockStatus === 0) {
+    if (isSentTab) {
       setIsUnlocked(true);
-      setTimeDisplay('오픈 완료');
+      setTimeDisplay('전송 완료');
       setTimeStatus('');
-    } else if (isExpired) {
-      if (isSentTab && !isGroupTab) {
-        setIsUnlocked(false);
-        setTimeDisplay('수신자 미확인');
-        setTimeStatus('열람 대기중');
-      } else {
-        setIsUnlocked(true);
-        setTimeDisplay(isGroupTab ? '오픈 완료' : '오픈 가능');
-        setTimeStatus('');
-      }
     } else {
-      setIsUnlocked(false);
-      setTimeDisplay(calculateCountdown(rocket.lockExpiredAt));
-      setTimeStatus(formatLockDeadline(rocket.lockExpiredAt));
+      // 받은 탭에서 처리 시작
+      if (!lockStatus || lockStatus === 0) {
+        // 잠금이 안 걸린 경우: 오픈 완료
+        setIsUnlocked(true);
+        setTimeDisplay('오픈 완료');
+        setTimeStatus('');
+      } else if (isExpired) {
+        // 잠금은 걸려있지만 시간이 만료된 경우
+        setIsUnlocked(false); // 클릭으로 해제할 수 있음
+        setTimeDisplay('오픈 가능');
+        setTimeStatus('클릭하여 잠금 해제');
+      } else {
+        // 아직 시간이 남은 상태 (잠금 유지 중)
+        setIsUnlocked(false);
+        setTimeDisplay(calculateCountdown(rocket.lockExpiredAt));
+        setTimeStatus(formatLockDeadline(rocket.lockExpiredAt));
+      }
     }
   }, [rocket.lockExpiredAt, rocket.isLock, rocket.isLocked, isSentTab, isGroupTab, timerTick]);
 
@@ -528,7 +532,7 @@ const RocketChest = () => {
         setRocketsToDelete(prev =>
           prev.includes(detailId) ? prev.filter(id => id !== detailId) : [...prev, detailId]
         );
-      }else{
+      } else {
         showAlert("로켓의 잠금을 해제하셔야 삭제가 가능합니다.");
       }
       return;
@@ -912,7 +916,7 @@ const calculateCountdown = (expireDate) => {
 const formatLockDeadline = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleString('ko-KR', {
-    year: '2-digit', 
+    year: '2-digit',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
