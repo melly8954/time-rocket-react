@@ -364,11 +364,12 @@ const GroupDetail = () => {
             {group.isPrivate && <LockIcon className={styles.privateIcon} />}
           </div>
 
-          <h1 className={styles.groupName}>{group.groupName}</h1>
-
-          <p className={styles.groupDescription}>
-            {group.description || '모임 소개가 없습니다.'}
-          </p>
+          <div className={styles.textOverlay}>
+            <h1 className={styles.groupName}>{group.groupName}</h1>
+            <p className={styles.groupDescription}>
+              {group.description || '모임 소개가 없습니다.'}
+            </p>
+          </div>
 
           <div className={styles.groupStats}>
             <div className={styles.stat}>
@@ -458,24 +459,25 @@ const GroupDetail = () => {
         onSubmit={handleJoinGroup}
         isLoading={isJoining}
       />
+
+      {/* 모달들 */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={closeAlert}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        buttonText="확인"
+      />
+
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={closeConfirm}
         onConfirm={confirmModal.onConfirm}
-        title={confirmModal.title}
         message={confirmModal.message}
-        type={confirmModal.type}
-        confirmText={confirmModal.confirmText}
-        cancelText={confirmModal.cancelText}
-      />
-      <AlertModal
-        isOpen={alertModal.isOpen}
-        onClose={() => {
-          closeAlert();
-        }}
-        message={alertModal.message}
-        title={alertModal.title}
-        type={alertModal.type}
+        confirmText="확인"
+        cancelText="취소"
+        type="danger"
       />
     </div>
   );
