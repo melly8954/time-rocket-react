@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
+import { AlertModal } from '../components/common/Modal';
 import '/src/style/Display.css';
 
 // API 인스턴스 생성 (기본 설정)
@@ -39,6 +40,41 @@ const Display = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
 
+  // 모달 상태
+  const [alertModal, setAlertModal] = useState({ 
+    isOpen: false, 
+    message: '', 
+    type: 'default',
+    title: '알림'
+  });
+
+  const showAlert = (message, type = 'default', title = '알림') => {
+    setAlertModal({ 
+      isOpen: true, 
+      message, 
+      type,
+      title 
+    });
+  };
+
+  const closeAlert = () => {
+    setAlertModal({ ...alertModal, isOpen: false });
+  };
+
+  // 통합된 에러 처리 함수
+  const handleApiError = (err, defaultMessage = '오류가 발생했습니다.') => {
+    console.error('API 오류:', err);
+    
+    // 백엔드에서 제공하는 message 우선 사용
+    const errorMessage = err.response?.data?.message || defaultMessage;
+    showAlert(errorMessage, 'danger', '오류');
+    
+    // 401 인증 오류만 특별 처리 (자동 로그인 페이지 이동)
+    if (err.response?.status === 401) {
+      setTimeout(() => navigate('/login'), 2000);
+    }
+  };
+
   // 진열장 아이템 불러오기
   const fetchDisplayItems = useCallback(async () => {
     if (!userId || !isLoggedIn) {
@@ -56,16 +92,16 @@ const Display = () => {
       console.log("진열장 응답 데이터:", response.data);
       
       if (response.data && response.data.data) {
-      // 받아온 데이터를 10개 슬롯에 맞게 배치
-      const items = Array(10).fill(null);
-      response.data.data.forEach(item => {
-        // displayLocation을 1부터 10까지에서 0부터 9까지로 변환
-        const position = item.displayLocation !== undefined ? 
-                        Math.max(0, Math.min(9, item.displayLocation - 1)) : 
-                        0;
-        items[position] = item;
-      });
-        
+        // 받아온 데이터를 10개 슬롯에 맞게 배치
+        const items = Array(10).fill(null);
+        response.data.data.forEach(item => {
+          // displayLocation을 1부터 10까지에서 0부터 9까지로 변환
+          const position = item.displayLocation !== undefined ? 
+                          Math.max(0, Math.min(9, item.displayLocation - 1)) : 
+                          0;
+          items[position] = item;
+        });
+          
         setDisplayItems(items);
         setRetryCount(0); // 성공하면 재시도 카운트 초기화
       } else {
@@ -74,31 +110,7 @@ const Display = () => {
       }
       setLoading(false);
     } catch (err) {
-      console.error('진열장 로딩 중 오류 발생:', err);
-      console.error('오류 세부 정보:', err.response || err);
-      
-      if (err.response?.status === 401) {
-        // 인증 오류 시 로그인 페이지로 이동
-        setError('인증이 만료되었습니다. 다시 로그인해주세요.');
-        setTimeout(() => navigate('/login'), 3000);
-      } else if (err.response?.status === 404) {
-        console.log("진열장 데이터가 없습니다 (404)");
-        setDisplayItems(Array(10).fill(null));
-        setError(null);
-      } else if (err.response?.status === 500) {
-        // 서버 내부 오류 처리
-        setError(`서버 오류가 발생했습니다. 관리자에게 문의하세요. (${retryCount + 1}/3)`);
-        if (retryCount < 2) {
-          console.log(`${retryCount + 1}번째 재시도 예정...`);
-          setIsRetrying(true);
-          setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-            setIsRetrying(false);
-          }, 3000);
-        }
-      } else {
-        setError('진열장을 불러오는데 실패했습니다. 다시 시도해주세요.');
-      }
+      handleApiError(err, '진열장을 불러오는데 실패했습니다.');
       setLoading(false);
     }
   }, [userId, isLoggedIn, navigate, retryCount]);
@@ -119,7 +131,6 @@ const Display = () => {
     try {
       setRocketDetailLoading(true);
       
-      // API 경로 수정: 현재 서버 에러가 발생하고 있어서 안전한 방식으로 접근
       const response = await api.get(`/received-chests/${chestId}`);
       
       console.log("로켓 상세 정보:", response.data);
@@ -142,14 +153,8 @@ const Display = () => {
         content: detailData.content || detailData.message || ''
       };
     } catch (err) {
-      console.error('로켓 상세 정보 조회 실패:', err);
-      console.error('오류 세부 정보:', err.response || err);
-      
-      if (err.response?.status === 401) {
-        setError('인증이 만료되었습니다. 다시 로그인해주세요.');
-      }
-      
       setRocketDetailLoading(false);
+      handleApiError(err, '로켓 상세 정보를 불러오는데 실패했습니다.');
       throw err;
     }
   }, []);
@@ -162,7 +167,7 @@ const Display = () => {
     const chestId = item.receivedChestId || item.chestId;
     
     if (!chestId) {
-      setError('로켓 ID 정보가 없습니다.');
+      showAlert('로켓 ID 정보가 없습니다.', 'warning');
       return;
     }
     
@@ -184,9 +189,7 @@ const Display = () => {
         loading: false
       }));
     } catch (err) {
-      console.error("상세 정보 로드 실패:", err);
-      setError('로켓 상세 정보를 불러오는데 실패했습니다.');
-      // 모달은 열린 상태 유지하되 로딩 상태 해제
+      // fetchRocketDetail에서 이미 에러 처리됨
       setSelectedRocket(prev => ({
         ...prev,
         loading: false,
@@ -195,99 +198,37 @@ const Display = () => {
     }
   }, [fetchRocketDetail]);
   
-  // 파일 다운로드 처리 (수정된 경로)
-const handleFileDownload = useCallback(async (fileId, fileName) => {
-  if (!fileId) {
-    alert('파일 ID가 유효하지 않습니다.');
-    return;
-  }
-  
-  try {
-    setError(null);
-    // 로딩 표시
-    const loadingMessage = document.createElement('div');
-    loadingMessage.className = 'download-loading';
-    loadingMessage.innerHTML = '파일을 다운로드하는 중...';
-    document.body.appendChild(loadingMessage);
-    
-    // 올바른 API 경로로 수정 (/files/{fileId}/download)
-    const response = await api.get(`/files/${fileId}/download`, {
-      responseType: 'blob',
-    });
-    
-    // 응답 처리
-    const contentType = response.headers['content-type'];
-    
-    // JSON 오류인지 확인
-    if (contentType && contentType.includes('application/json')) {
-      const reader = new FileReader();
-      reader.onload = function() {
-        try {
-          const errorJson = JSON.parse(reader.result);
-          console.log("서버 오류 메시지:", errorJson);
-          setError(`서버 오류: ${errorJson.message || '알 수 없는 오류'}`);
-        } catch (e) {
-          setError('서버에서 오류가 반환되었습니다.');
-        }
-      };
-      reader.readAsText(response.data);
+  // 파일 다운로드 처리
+  const handleFileDownload = useCallback(async (fileId, fileName) => {
+    if (!fileId) {
+      showAlert('파일 ID가 유효하지 않습니다.', 'warning');
       return;
     }
     
-    // 파일 다운로드
-    const blob = new Blob([response.data], { type: contentType });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName || `download_${fileId}`;
-    document.body.appendChild(link);
-    link.click();
-    
-    // 자원 정리
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(link);
-    
-    console.log('파일 다운로드 성공:', fileName);
-  } catch (err) {
-    console.error('파일 다운로드 실패:', err);
-    
-    if (err.response) {
-      console.error('응답 오류:', err.response.status, err.response.data);
+    try {
+      const response = await api.get(`/files/${fileId}/download`, {
+        responseType: 'blob',
+      });
       
-      // Blob 형태의 오류 응답 처리
-      if (err.response.data instanceof Blob) {
-        const reader = new FileReader();
-        reader.onload = function() {
-          try {
-            const errorText = reader.result;
-            console.log("오류 응답 내용:", errorText);
-            try {
-              const errorJson = JSON.parse(errorText);
-              setError(`서버 오류: ${errorJson.message || '알 수 없는 오류'}`);
-            } catch (e) {
-              setError('서버 오류가 발생했습니다.');
-            }
-          } catch (e) {
-            console.error("오류 내용 읽기 실패:", e);
-          }
-        };
-        reader.readAsText(err.response.data);
-      } else {
-        setError('파일 다운로드에 실패했습니다.');
-      }
-    } else {
-      setError('네트워크 오류로 다운로드에 실패했습니다.');
+      // 파일 다운로드
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName || `download_${fileId}`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // 자원 정리
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      
+      console.log('파일 다운로드 성공:', fileName);
+      showAlert('파일 다운로드가 완료되었습니다.', 'success');
+    } catch (err) {
+      handleApiError(err, '파일 다운로드에 실패했습니다.');
     }
-  } finally {
-    // 로딩 표시 제거
-    const loadingMessages = document.querySelectorAll('.download-loading');
-    loadingMessages.forEach(el => {
-      if (el.parentNode) {
-        el.parentNode.removeChild(el);
-      }
-    });
-  }
-}, [api, setError]);
+  }, []);
   
   // 아이템 드래그 시작
   const handleDragStart = useCallback((e, item, index) => {
@@ -316,7 +257,7 @@ const handleFileDownload = useCallback(async (fileId, fileName) => {
     e.currentTarget.classList.remove('drag-over');
   }, []);
 
-  // 아이템 위치 이동 처리 - 빈 공간으로도 이동 가능하게 수정
+  // 아이템 위치 이동 처리
   const handleDrop = useCallback(async (e, targetIndex) => {
     e.preventDefault();
     e.currentTarget.classList.remove('drag-over');
@@ -355,6 +296,8 @@ const handleFileDownload = useCallback(async (fileId, fileName) => {
         newItems[draggedIndex] = {...newItems[targetIndex]};
         newItems[targetIndex] = temp;
         setDisplayItems(newItems);
+        
+        showAlert('로켓 위치가 교환되었습니다.', 'success');
       } 
       // 타겟 위치가 빈 공간인 경우 - 직접 이동
       else {
@@ -369,9 +312,11 @@ const handleFileDownload = useCallback(async (fileId, fileName) => {
           targetLocation: targetIndex + 1
         });
         
-        // 빈 슬롯으로 이동하는 API 호출 (백엔드 API가 있다고 가정)
-        await api.patch(`/displays/${sourceChestId}/move-to-empty`, {
-          targetLocation: targetIndex
+        // 빈 슬롯으로 이동하는 API 호출
+        await api.patch(`/displays/location`, {
+          sourceChestId: sourceChestId,
+          targetChestId: null, // 빈 공간이니까 null
+          targetDisplayLocation: targetIndex + 1 // 진열장 위치는 1부터 시작
         });
         
         // 성공 시 로컬 상태 업데이트 (단순 이동)
@@ -379,45 +324,11 @@ const handleFileDownload = useCallback(async (fileId, fileName) => {
         newItems[targetIndex] = {...draggedItem, displayLocation: targetIndex};
         newItems[draggedIndex] = null;
         setDisplayItems(newItems);
+        
+        showAlert('로켓이 새 위치로 이동되었습니다.', 'success');
       }
-      
-      // 성공 알림 효과
-      const targetElement = document.getElementById(`display-slot-${targetIndex}`);
-      if (targetElement) {
-        const glowElement = document.createElement('div');
-        glowElement.className = 'success-glow';
-        targetElement.appendChild(glowElement);
-        setTimeout(() => {
-          if (glowElement.parentNode === targetElement) {
-            glowElement.remove();
-          }
-        }, 1000);
-      }
-      
     } catch (err) {
-      console.error('아이템 이동 오류:', err);
-      console.error('오류 세부 정보:', err.response || err);
-      
-      if (err.response?.status === 401) {
-        setError('인증이 만료되었습니다. 다시 로그인해주세요.');
-      } else if (err.response?.status === 404) {
-        setError('로켓을 찾을 수 없습니다.');
-      } else if (err.response?.status === 400) {
-        setError('잘못된 요청입니다. 다시 시도해주세요.');
-      } else {
-        // 백엔드 API 미구현 또는 에러 발생 시 프론트에서만 처리
-        // 실제 운영에서는 백엔드 API 연동 필요
-        if (!displayItems[targetIndex]) {
-          const newItems = [...displayItems];
-          newItems[targetIndex] = {...draggedItem, displayLocation: targetIndex};
-          newItems[draggedIndex] = null;
-          setDisplayItems(newItems);
-          setError('서버 연동 없이 프론트에서만 이동되었습니다. 새로고침 시 복원됩니다.');
-          setTimeout(() => setError(null), 3000);
-        } else {
-          setError('아이템 위치 변경에 실패했습니다. 서버 연결을 확인해주세요.');
-        }
-      }
+      handleApiError(err, '로켓 위치 변경에 실패했습니다.');
     } finally {
       // 드래그 상태 초기화
       setDraggedItem(null);
@@ -496,6 +407,7 @@ const handleFileDownload = useCallback(async (fileId, fileName) => {
   const handleRefresh = useCallback(() => {
     setRetryCount(0);
     setError(null);
+    showAlert('데이터를 불러오는데 실패했습니다.', 'danger', '에러 발생');
     fetchDisplayItems();
   }, [fetchDisplayItems]);
 
@@ -665,6 +577,16 @@ const handleFileDownload = useCallback(async (fileId, fileName) => {
           </div>
         </div>
       )}
+
+      {/* AlertModal 추가 */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={closeAlert}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        buttonText="확인"
+      />
     </div>
   );
 };
