@@ -4,6 +4,9 @@ import useAuthStore from '../authStore';
 import api from '../utils/api';
 import debounce from 'lodash/debounce';
 import styles from '../style/GroupRocketCreate.module.css';
+import { ConfirmModal, AlertModal } from '../components/common/Modal';
+import useAlertModal from '../components/common/useAlertModal';
+import useConfirmModal from '../components/common/useConfirmModal';
 import {
   BackIcon,
   RocketIcon,
@@ -51,7 +54,9 @@ const GroupRocketCreate = () => {
   const myNickname = useAuthStore(state => state.nickname);
   const stompClient = useAuthStore((state) => state.stompClient);
   const subscriptionRef = useRef(null);
-
+  const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
+  const { confirmModal, showConfirm, closeConfirm } = useConfirmModal();
+  const [navigatePath, setNavigatePath] = useState(null);
   // 로켓 컨텐츠 준비 state
   const [textContent, setTextContent] = useState('');
   const [files, setFiles] = useState([]);
@@ -82,6 +87,14 @@ const GroupRocketCreate = () => {
     }
   ];
 
+  const handleCloseAlert = () => {
+    closeAlert();
+    if (navigatePath) {
+      navigate(navigatePath);
+      setNavigatePath(null);
+    }
+  };
+
   // 인증 및 그룹 정보 확인
   useEffect(() => {
     if (!isLoggedIn) {
@@ -104,15 +117,10 @@ const GroupRocketCreate = () => {
         const groupData = response.data.data;
         setGroup(groupData);
         setIsOwner(groupData.leaderId === userId);
-        console.log('groupData:', groupData);
-        console.log('ownerId:', groupData.ownerId);
-        console.log('userId:', userId);
-        console.log('isOwner:', groupData.ownerId === userId);
       }
     } catch (err) {
-      console.error('그룹 정보 조회 실패:', err);
-      alert('모임 정보를 불러올 수 없습니다.');
-      navigate('/groups');
+      handleApiError(err)
+      setNavigatePath('/groups');
     } finally {
       setIsLoading(false);
     }
@@ -127,14 +135,11 @@ const GroupRocketCreate = () => {
       if (responseData && Array.isArray(responseData.members)) {
         setMembers(responseData.members); // 불필요한 가공 없이 바로 저장
         setCurrentRound(responseData.currentRound);
-        console.log("최신 멤버 현황 : " + members);
       } else {
-        console.warn('응답 데이터 형식이 올바르지 않습니다:', response.data);
         setMembers([]);
       }
     } catch (err) {
-      console.error('멤버 조회 실패:', err);
-      alert('멤버 정보를 불러오는 데 실패했습니다.');
+      handleApiError(err);
     }
   };
 
@@ -154,13 +159,13 @@ const GroupRocketCreate = () => {
     const selectedFiles = Array.from(e.target.files);
 
     if (selectedFiles.length > 5) {
-      alert('최대 5개의 파일만 업로드 가능합니다.');
+      showAlert('최대 5개의 파일만 업로드 가능합니다.');
       return;
     }
 
     const oversizedFiles = selectedFiles.filter(file => file.size > 10 * 1024 * 1024);
     if (oversizedFiles.length > 0) {
-      alert('각 파일은 10MB 이하여야 합니다.');
+      showAlert('각 파일은 10MB 이하여야 합니다.');
       return;
     }
 
@@ -218,10 +223,9 @@ const GroupRocketCreate = () => {
         });
       }
 
-      alert('설정이 성공적으로 저장되었습니다!');
+      showAlert('설정이 성공적으로 저장되었습니다!');
     } catch (error) {
-      console.error('설정 저장 실패:', error);
-      alert('설정 저장 중 오류가 발생했습니다.');
+      handleApiError(err);
     } finally {
       setIsLoading(false);
     }
@@ -242,7 +246,7 @@ const GroupRocketCreate = () => {
         }));
       }
     } catch (err) {
-      console.error('로켓 설정 불러오기 실패:', err);
+      console.log("기존 저장된 로켓 설정이 존재하지 않습니다." + err);
     }
   };
 
@@ -251,12 +255,12 @@ const GroupRocketCreate = () => {
     e.preventDefault();
 
     if (!isOwner) {
-      alert('방장만 로켓을 발사할 수 있습니다.');
+      showAlert('방장만 로켓을 발사할 수 있습니다.');
       return;
     }
 
     if (!isAllMembersComplete()) {
-      alert('모든 참가자가 작업을 완료해야 로켓을 발사할 수 있습니다.');
+      showAlert('모든 참가자가 작업을 완료해야 로켓을 발사할 수 있습니다.');
       return;
     }
 
@@ -294,8 +298,8 @@ const GroupRocketCreate = () => {
 
       await api.post(`/groups/${groupId}/rockets`, dataToSend);
 
-      alert('모임 로켓이 성공적으로 발사되었습니다! 🚀');
-      navigate(`/groups/${groupId}`);
+      showAlert('모임 로켓이 성공적으로 발사되었습니다! 🚀');
+      setNavigatePath(`/groups/${groupId}`);
 
       // 모임 로켓 전송 pub
       stompClient.publish({
@@ -305,8 +309,7 @@ const GroupRocketCreate = () => {
       console.log('모임 로켓 전송');
 
     } catch (err) {
-      console.error('로켓 전송 실패:', err);
-      alert(err.response?.data?.message);
+      handleApiError(err);
     } finally {
       setIsLoading(false);
     }
@@ -340,8 +343,8 @@ const GroupRocketCreate = () => {
       setMessages(prev => [...historyMessages.reverse(), ...prev]);
 
       setHasMore(hasNext);
-    } catch (error) {
-      console.error('히스토리 로드 실패:', error);
+    } catch (err) {
+      handleApiError(err);
     } finally {
       setLoading(false);
     }
@@ -402,8 +405,8 @@ const GroupRocketCreate = () => {
       console.log(`Subscribed to /topic/group/${groupId}/kick`);
 
       const myKickSub = stompClient.subscribe('/user/queue/kick', (message) => {
-        alert('방장에 의해 강퇴당했습니다.');
-        navigate(`/groups/${groupId}`);
+        showAlert('방장에 의해 강퇴당했습니다.');
+        setNavigatePath(`/groups/${groupId}`);
       });
       console.log(`Subscribed to /user/queue/kick`);
 
@@ -446,8 +449,8 @@ const GroupRocketCreate = () => {
           if (payload.senderId === userId) return;
 
           if (payload.type === 'rocketSent') {
-            alert(`모임장이 로켓을 전송했습니다!`);
-            navigate(`/groups/${groupId}`);
+            showAlert(`모임장이 로켓을 전송했습니다!`);
+            setNavigatePath(`/groups/${groupId}`);
           }
         }
       );
@@ -578,11 +581,6 @@ const GroupRocketCreate = () => {
 
   // 모임 로켓 컨텐츠 저장
   const handleSubmit = async () => {
-    if (!formData.content.trim()) {
-      alert('메시지를 작성해주세요.');
-      return;
-    }
-
     const form = new FormData();
     const requestData = {
       content: formData.content,
@@ -605,7 +603,7 @@ const GroupRocketCreate = () => {
         },
       });
 
-      alert('모임 로켓 메시지를 성공적으로 저장했습니다!');
+      showAlert('모임 로켓 메시지를 성공적으로 저장했습니다!');
       console.log(response.data);
 
       // 저장 후 초기화
@@ -624,9 +622,8 @@ const GroupRocketCreate = () => {
           isReady: true,
         }),
       });
-    } catch (error) {
-      alert('저장 중 오류가 발생했습니다.');
-      console.error(error);
+    } catch (err) {
+      handleApiError(err);
     }
   };
 
@@ -650,10 +647,9 @@ const GroupRocketCreate = () => {
         }),
       });
 
-      alert(`컨텐츠 준비를 취소했습니다.`);
-    } catch (error) {
-      alert('준비 상태 변경 중 오류가 발생했습니다.');
-      console.error(error);
+      showAlert(`컨텐츠 준비를 취소했습니다.`);
+    } catch (err) {
+      handleApiError(err);
     }
   };
 
@@ -1306,6 +1302,13 @@ const GroupRocketCreate = () => {
           </div>
         )}
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={handleCloseAlert}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
+      />
     </div>
   );
 };
