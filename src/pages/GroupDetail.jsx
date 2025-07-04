@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAuthStore from '../authStore';
 import api from '../utils/api';
+import { ConfirmModal, AlertModal } from '../components/common/Modal';
+import useAlertModal from '../components/common/useAlertModal';
+import useConfirmModal from '../components/common/useConfirmModal';
 import styles from '../style/GroupDetail.module.css';
 import {
   UserIcon,
@@ -127,6 +130,8 @@ const GroupDetail = () => {
   const [isMember, setIsMember] = useState(false);
   const [isLeader, setIsLeader] = useState(false);
   const stompClient = useAuthStore((state) => state.stompClient);
+  const { alertModal, showAlert, closeAlert, handleApiError } = useAlertModal();
+  const { confirmModal, showConfirm, closeConfirm } = useConfirmModal();
 
   // 인증 확인
   useEffect(() => {
@@ -153,12 +158,7 @@ const GroupDetail = () => {
         setIsLeader(groupData.leaderId === userId);
       }
     } catch (err) {
-      console.error('그룹 상세 정보 조회 실패:', err);
-      if (err.response?.status === 404) {
-        setError('존재하지 않는 모임입니다.');
-      } else {
-        setError('모임 정보를 불러오는데 실패했습니다.');
-      }
+      handleApiError(err);
     } finally {
       setIsLoading(false);
     }
@@ -178,11 +178,7 @@ const GroupDetail = () => {
         setIsMember(!!currentUserMember && !currentUserMember.isKicked);
       }
     } catch (err) {
-      console.error('그룹 멤버 조회 실패:', err);
-      // 멤버가 아닌 경우 403 에러가 날 수 있음
-      if (err.response?.status === 403) {
-        setIsMember(false);
-      }
+      handleApiError(err);
     }
   }, [groupId, userId]);
 
@@ -211,72 +207,68 @@ const GroupDetail = () => {
         });
       }
 
-      alert('모임에 성공적으로 참가했습니다!');
+      showAlert('모임에 성공적으로 참가했습니다!');
     } catch (err) {
-      console.error('그룹 참가 실패:', err);
-      alert(err.response.data.message);
+      handleApiError(err);
     } finally {
       setIsJoining(false);
     }
   }, [groupId, fetchGroupDetail, fetchGroupMembers]);
 
   // 그룹 퇴장
-  const handleLeaveGroup = useCallback(async () => {
-    if (!window.confirm('정말로 이 모임을 떠나시겠습니까?')) return;
+  const handleLeaveGroup = useCallback(() => {
+    showConfirm({
+      title: '모임 퇴장',
+      message: '정말로 이 모임을 떠나시겠습니까?',
+      type: 'success',
+      confirmText: '퇴장',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          setIsLeaving(true);
+          await api.delete(`/groups/${groupId}/members/me`);
+          setIsMember(false);
 
-    try {
-      setIsLeaving(true);
+          await fetchGroupDetail();
+          await fetchGroupMembers();
 
-      await api.delete(`/groups/${groupId}/members/me`);
+          if (stompClient?.connected) {
+            stompClient.publish({
+              destination: `/app/group/${groupId}/leave_member`,
+              body: '',
+            });
+          }
 
-      setIsMember(false);
+          showAlert('모임을 성공적으로 떠났습니다.');
+        } catch (err) {
+          handleApiError(err);
+        } finally {
+          setIsLeaving(false);
+        }
+      },
+    });
+  }, [groupId, fetchGroupDetail, fetchGroupMembers, stompClient]);
 
-      // 데이터 새로고침
-      await fetchGroupDetail();
-      await fetchGroupMembers();
-
-      if (stompClient && stompClient.connected) {
-        stompClient.publish({
-          destination: `/app/group/${groupId}/leave_member`,
-          body: '', // 서버에서 principal 통해 userId 추출하면 body 없어도 됨
-        });
-      }
-
-      alert('모임을 성공적으로 떠났습니다.');
-    } catch (err) {
-      console.error('그룹 퇴장 실패:', err);
-      alert('모임 퇴장에 실패했습니다.');
-    } finally {
-      setIsLeaving(false);
-    }
-  }, [groupId, fetchGroupDetail, fetchGroupMembers]);
 
   // 멤버 강퇴
-  const handleKickMember = useCallback(async (memberId) => {
-    if (!window.confirm('정말로 이 멤버를 강퇴하시겠습니까?')) return;
-
-    try {
-      await api.patch(`/groups/${groupId}/members/${memberId}`);
-
-      // 멤버 목록 새로고침
-      await fetchGroupMembers();
-
-      alert('멤버가 성공적으로 강퇴되었습니다.');
-    } catch (err) {
-      console.error('멤버 강퇴 실패:', err);
-      alert('멤버 강퇴에 실패했습니다.');
-    }
+  const handleKickMember = useCallback((memberId) => {
+    showConfirm({
+      title: '멤버 강퇴',
+      message: '정말로 이 멤버를 강퇴하시겠습니까?',
+      confirmText: '강퇴',
+      cancelText: '취소',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.patch(`/groups/${groupId}/members/${memberId}`);
+          await fetchGroupMembers();
+          showAlert('멤버가 성공적으로 강퇴되었습니다.');
+        } catch (err) {
+          handleApiError(err);
+        }
+      },
+    });
   }, [groupId, fetchGroupMembers]);
-
-  // 참가 버튼 클릭
-  const handleJoinClick = useCallback(() => {
-    if (group?.isPrivate) {
-      setShowPasswordModal(true);
-    } else {
-      handleJoinGroup();
-    }
-  }, [group?.isPrivate, handleJoinGroup]);
-
   // 로켓 생성 페이지로 이동
   const handleCreateRocket = useCallback(async () => {
     try {
@@ -301,6 +293,15 @@ const GroupDetail = () => {
       alert('참가 가능 여부 확인 중 오류가 발생했습니다.');
     }
   }, [navigate, groupId, userId]);
+
+  // 참가 버튼 클릭
+  const handleJoinClick = useCallback(() => {
+    if (group?.isPrivate) {
+      setShowPasswordModal(true);
+    } else {
+      handleJoinGroup();
+    }
+  }, [group?.isPrivate, handleJoinGroup]);
 
   if (isLoading) {
     return (
@@ -456,6 +457,25 @@ const GroupDetail = () => {
         onClose={() => setShowPasswordModal(false)}
         onSubmit={handleJoinGroup}
         isLoading={isJoining}
+      />
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+      />
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => {
+          closeAlert();
+        }}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
       />
     </div>
   );
