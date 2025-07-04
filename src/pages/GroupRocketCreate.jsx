@@ -962,30 +962,109 @@ const GroupRocketCreate = () => {
           )}
 
           {/* 로켓 미리보기 (일반 멤버용) */}
+          {/* 로켓 미리보기 (일반 멤버용) */}
           {!isOwner && (
             <div className={styles.previewCard}>
               <div className={styles.cardHeader}>
                 <h3>🚀 로켓 미리보기</h3>
-                <p>방장이 설정 중인 로켓 정보예요</p>
+                <p>모임장이 설정 중인 로켓 정보예요</p>
               </div>
 
               <div className={styles.rocketPreview}>
                 <div className={styles.previewInfo}>
-                  <h4>{formData.rocketName || '로켓 이름 설정 중...'}</h4>
-                  <p>잠금 해제: {formData.lockExpiredAt ?
-                    new Date(formData.lockExpiredAt).toLocaleString('ko-KR') :
-                    '시간 설정 중...'}</p>
+                  <h4 style={{
+                    background: 'linear-gradient(135deg, #00d4ff 0%, #9333ea 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    textShadow: '0 0 10px rgba(0, 212, 255, 0.3)',
+                  }}>
+                    {formData.rocketName || '로켓 이름 설정 중...'}
+                  </h4>
+                  <p style={{ color: '#a0aec0', fontSize: '13px' }}>
+                    잠금 해제: {formData.lockExpiredAt
+                      ? new Date(formData.lockExpiredAt).toLocaleString('ko-KR')
+                      : '시간 설정 중...'}
+                  </p>
                 </div>
-                {formData.design && (
+
+                {formData.design ? (
                   <div className={styles.previewDesign}>
-                    <img
-                      src={formData.design}
-                      alt="선택된 로켓 디자인"
-                      className={styles.previewImage}
-                      onError={(e) => { e.target.src = '/src/assets/rocket.png' }}
-                    />
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+                      borderRadius: '15px',
+                      padding: '20px',
+                      border: '2px solid rgba(79, 172, 254, 0.3)',
+                      backdropFilter: 'blur(10px)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '10px'
+                    }}>
+                      <img
+                        src={formData.design}
+                        alt="실시간 로켓 디자인"
+                        className={styles.previewImage}
+                        style={{
+                          width: '100px',
+                          height: '100px',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 0 15px rgba(79, 172, 254, 0.6))',
+                          animation: 'rocketFloat 2s ease-in-out infinite'
+                        }}
+                        onError={(e) => { e.target.src = '/src/assets/rocket.png' }}
+                      />
+                      <span style={{
+                        fontSize: '12px',
+                        color: '#00d4ff',
+                        fontFamily: "'Space Grotesk', sans-serif",
+                        fontWeight: '600',
+                        textShadow: '0 0 8px rgba(0, 212, 255, 0.4)'
+                      }}>
+                        {DESIGN_OPTIONS.find(option => option.value === formData.design)?.label || '선택됨'}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#a0aec0',
+                    fontStyle: 'italic',
+                    background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(79, 172, 254, 0.05) 100%)',
+                    borderRadius: '15px',
+                    border: '2px dashed rgba(79, 172, 254, 0.3)'
+                  }}>
+                    <div style={{ fontSize: '32px', marginBottom: '10px' }}>🛠️</div>
+                    <p>모임장이 로켓 디자인을 선택하면<br />여기에 실시간으로 표시됩니다</p>
                   </div>
                 )}
+              </div>
+
+              {/* 실시간 업데이트 인디케이터 (원하면 생략 가능) */}
+              <div style={{
+                marginTop: '15px',
+                padding: '8px 12px',
+                background: 'linear-gradient(135deg, rgba(46, 213, 115, 0.1) 0%, rgba(0, 206, 201, 0.1) 100%)',
+                border: '1px solid rgba(46, 213, 115, 0.3)',
+                borderRadius: '20px',
+                textAlign: 'center',
+                fontSize: '12px',
+                color: '#2ed573',
+                fontFamily: "'Space Grotesk', sans-serif",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}>
+                <span style={{
+                  width: '6px',
+                  height: '6px',
+                  background: '#2ed573',
+                  borderRadius: '50%',
+                  animation: 'pulse 2s infinite'
+                }}></span>
+                실시간 동기화 중
               </div>
             </div>
           )}
