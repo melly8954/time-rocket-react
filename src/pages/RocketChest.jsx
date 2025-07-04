@@ -22,15 +22,13 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [timeStatus, setTimeStatus] = useState('');
 
+  // 보관함 리스트의 로켓 아이템의 잠금 해제일까지 남은시간 표기
   useEffect(() => {
-    const lockStatus = isGroupTab ? rocket.isLock : Number(rocket.isLocked !== undefined ? rocket.isLocked : rocket.isLock);
-
-    if (lockStatus === 0 || !lockStatus) {
-      setIsUnlocked(true);
-      setTimeDisplay('오픈 완료');
-      setTimeStatus('');
-      return;
-    }
+    const lockStatus = !!(
+      isGroupTab
+        ? rocket.isLock
+        : rocket.isLocked ?? rocket.isLock
+    );
 
     if (!rocket.lockExpiredAt) {
       setIsUnlocked(false);
@@ -41,13 +39,13 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
 
     const now = new Date();
     const targetDate = new Date(rocket.lockExpiredAt);
-    const diff = targetDate - now;
+    const isExpired = targetDate <= now;
 
-    if (diff > 0) {
-      setIsUnlocked(false);
-      setTimeDisplay(calculateCountdown(rocket.lockExpiredAt));
-      setTimeStatus(`${targetDate.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}까지`);
-    } else {
+    if (!lockStatus || lockStatus === 0) {
+      setIsUnlocked(true);
+      setTimeDisplay('오픈 완료');
+      setTimeStatus('');
+    } else if (isExpired) {
       if (isSentTab && !isGroupTab) {
         setIsUnlocked(false);
         setTimeDisplay('수신자 미확인');
@@ -57,6 +55,10 @@ const RocketItem = ({ rocket, idKey, isSentTab, isGroupTab, onClick, onContextMe
         setTimeDisplay(isGroupTab ? '오픈 완료' : '오픈 가능');
         setTimeStatus('');
       }
+    } else {
+      setIsUnlocked(false);
+      setTimeDisplay(calculateCountdown(rocket.lockExpiredAt));
+      setTimeStatus(formatLockDeadline(rocket.lockExpiredAt));
     }
   }, [rocket.lockExpiredAt, rocket.isLock, rocket.isLocked, isSentTab, isGroupTab, timerTick]);
 
@@ -471,7 +473,7 @@ const RocketChest = () => {
         }
       }
     });
-  }, [isSentTab,isGroupTab,fetchChestList,showConfirm,closeConfirm,rockets,currentPage,totalRockets]);
+  }, [isSentTab, isGroupTab, fetchChestList, showConfirm, closeConfirm, rockets, currentPage, totalRockets]);
 
   const deleteSelectedRockets = useCallback(() => {
     if (rocketsToDelete.length === 0) return;
@@ -526,6 +528,8 @@ const RocketChest = () => {
         setRocketsToDelete(prev =>
           prev.includes(detailId) ? prev.filter(id => id !== detailId) : [...prev, detailId]
         );
+      }else{
+        showAlert("로켓의 잠금을 해제하셔야 삭제가 가능합니다.");
       }
       return;
     }
@@ -882,8 +886,6 @@ const RocketChest = () => {
 
 export default RocketChest;
 
-
-
 const formatDate = dateString => {
   if (!dateString) return '정보 없음';
   return new Date(dateString).toLocaleString('ko-KR', {
@@ -893,18 +895,30 @@ const formatDate = dateString => {
 
 const calculateCountdown = (expireDate) => {
   if (!expireDate) return '00 : 00 : 00 : 00';
+
   const now = new Date();
-  const diff = new Date(expireDate) - now;
+  const target = new Date(expireDate);
+  const diff = target - now;
   if (diff <= 0) return '00 : 00 : 00 : 00';
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
 
-  return [days, hours, minutes, seconds]
-    .map(n => n.toString().padStart(2, '0'))
-    .join(' : ');
+  return [days, hours, minutes, seconds].map(v => String(v).padStart(2, '0')).join(' : ');
+};
+
+const formatLockDeadline = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('ko-KR', {
+    year: '2-digit', 
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }) + '까지';
 };
 
 const getDesignImage = (design) => {
@@ -912,3 +926,4 @@ const getDesignImage = (design) => {
   if (design.startsWith('http') || design.includes('/src/assets/')) return design;
   return '/src/assets/rocket.png';
 };
+

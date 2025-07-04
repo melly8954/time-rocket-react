@@ -975,10 +975,6 @@
   position: relative;
 }
 
-.rocket-item.locked::after {
-  content: '잠금 해제 후 진열 가능';
-}
-
 .unlock-date-hint {
   font-size: 0.8rem;
   color: #666;
