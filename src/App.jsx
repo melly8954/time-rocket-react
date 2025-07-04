@@ -19,7 +19,7 @@ import RocketCreate from "./pages/RocketCreate";
 import RocketChest from './pages/RocketChest';
 import Display from './pages/Display';
 import Groups from './pages/Groups';
-import GroupChest from './pages/GroupChest';
+
 import GroupDetail from './pages/GroupDetail';
 import CreateGroup from './pages/CreateGroup';
 import GroupRocketCreate from './pages/GroupRocketCreate';
@@ -99,7 +99,7 @@ function App() {
         <Route path="/groups/:groupId" element={<GroupDetail />} />
         <Route path="/groups/create" element={<CreateGroup />} />
         <Route path="/groups/:groupId/rockets/create" element={<GroupRocketCreate />} />
-        <Route path="/group-rocket-chest" element={<GroupChest />} />
+        
 
         {/* 진열장 페이지 */}
         <Route path="/display" element={<Display />} />
