@@ -963,7 +963,7 @@ const GroupRocketCreate = () => {
                 <div className={styles.formField}>
                   <button
                     type="button"
-                    className={styles.saveButton}
+                    className={styles.submitButton}
                     onClick={handleConfigSave}
                   >
                     설정 확정
