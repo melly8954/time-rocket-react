@@ -654,13 +654,30 @@ const GroupRocketCreate = () => {
   };
 
   // 참여자 강퇴(리더전용)
-  const handleKick = (targetUserId) => {
-    if (stompClient && stompClient.connected) {
-      stompClient.publish({
-        destination: `/app/group/${groupId}/kick`,
-        body: JSON.stringify({ userId: targetUserId }),
-      });
-    }
+  const openKickConfirmModal = (targetUserId) => {
+    showConfirm({
+      isOpen: true,
+      title: '멤버 강퇴 확인',
+      message: '정말 이 멤버를 강퇴하시겠습니까?',
+      type: 'danger',
+      confirmText: '강퇴',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          if (stompClient && stompClient.connected) {
+            stompClient.publish({
+              destination: `/app/group/${groupId}/kick`,
+              body: JSON.stringify({ userId: targetUserId }),
+            });
+          }
+          showAlert('멤버가 성공적으로 강퇴되었습니다.');
+        } catch (err) {
+          handleApiError(err);
+        } finally {
+          closeConfirm();
+        }
+      },
+    });
   };
 
   // -----
@@ -839,7 +856,7 @@ const GroupRocketCreate = () => {
                   {/* 리더이고 자기 자신이 아닌 경우만 강퇴 버튼 표시 */}
                   {isOwner && isNotMe && (
                     <button
-                      onClick={() => handleKick(member.userId)}
+                      onClick={() => openKickConfirmModal(member.userId)}
                       style={{
                         position: 'absolute',
                         top: '4px',
@@ -946,7 +963,7 @@ const GroupRocketCreate = () => {
                 <div className={styles.formField}>
                   <button
                     type="button"
-                    className={styles.saveButton}
+                    className={styles.submitButton}
                     onClick={handleConfigSave}
                   >
                     설정 확정
@@ -1308,6 +1325,16 @@ const GroupRocketCreate = () => {
         message={alertModal.message}
         title={alertModal.title}
         type={alertModal.type}
+      />
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
       />
     </div>
   );

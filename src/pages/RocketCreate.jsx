@@ -283,7 +283,7 @@ function RocketCreate() {
                     dateFormat="yyyy-MM-dd HH:mm"
                     timeFormat="HH:mm"
                     minDate={new Date()}
-                    placeholderText="클릭하여 잠금 해제일 선택"
+                    placeholderText="연도-월-일 --:--"
                     showYearDropdown
                     scrollableYearDropdown
                     yearDropdownItemNumber={15} // 표시할 연도 개수 (기본 10)
